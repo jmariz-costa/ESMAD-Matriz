@@ -1,52 +1,462 @@
 openapi: 3.1.0
 info:
   title: Matriz API
-  version: 0.1.0
+  version: 0.2.0
   contact:
     name: Equipa Matriz
     email: matriz@empresa.pt
   description: |
-    Contrato REST simplificado do MVP da Matriz (Ficha PL 02).
-    Documenta duas operações: criar tarefa (US05) e editar tarefa / mudar
-    estado (US05, US06).
+    Contrato REST do MVP da Matriz. Na Ficha PL 03 passou a descrever as
+    operações da **Fase 1** do plano de implementação
+    (docs/implementation-plan.md): autenticação, projetos, membros, tarefas,
+    responsáveis e comentários. As operações da Fase 2 (arquivar, histórico,
+    "As minhas tarefas", editar e apagar comentários, Administrador) são
+    acrescentadas quando forem implementadas.
 
-    **Autenticação:** todas as operações exigem sessão iniciada; sem sessão
-    devolvem 401. O mecanismo de autenticação e de sessão está por decidir
-    (D06, ver docs/constraints.md), por isso não é declarado nenhum
-    securityScheme nesta fase.
+    **Autenticação (D06):** `POST /auth/login` cria uma sessão e devolve o
+    cookie `matriz_sessao` (HttpOnly, SameSite=Strict; Secure quando servido
+    por HTTPS). O browser envia-o automaticamente nos pedidos seguintes. A
+    sessão expira ao fim de 30 minutos sem pedidos; cada pedido renova o
+    prazo. `POST /auth/logout` apaga a sessão. Sem sessão válida, todas as
+    operações (exceto o login) devolvem 401.
 
-    **Permissões:** são verificadas no servidor (S03). Só os membros do
-    projeto podem criar e editar tarefas (RN09, RN20); o Administrador não
-    participa em projetos (RN19).
+    **Identidade:** o Gestor de um projeto novo, o autor de um comentário e o
+    autor do histórico são sempre obtidos da sessão, e nunca aceites do
+    pedido.
 
-    **Pendentes:** controlo de edição simultânea (D08), tipo concreto dos
-    identificadores (D02) e tamanhos máximos dos textos (não definidos nos
-    requisitos).
+    **Permissões:** são verificadas no servidor (S03). Só os membros de um
+    projeto acedem a ele e ao que contém (RN20); algumas operações são só do
+    Gestor (indicado em cada uma). O Administrador não participa em projetos
+    (RN19): recebe 403 em todas as operações de projetos, tarefas e
+    comentários.
+
+    **Projeto inexistente vs. sem permissão:** um identificador que não
+    existe (ou que não é um UUID válido) devolve 404; um recurso que existe,
+    mas a que o utilizador não tem acesso, devolve 403.
+
+    **Projeto arquivado:** qualquer alteração dentro de um projeto arquivado
+    devolve 409 `PROJETO_ARQUIVADO` (RI10); a única exceção na Fase 1 é
+    eliminar o projeto (RN22).
+
+    **Textos:** os espaços no início e no fim são retirados antes de validar
+    os limites (RN23); um texto opcional que fique vazio é guardado como
+    null.
+
+    **Paginação:** as listagens devolvem `{ itens, total, pagina, tamanho }`.
+    `pagina` começa em 1; `tamanho` é 20 por omissão e no máximo 100. `total`
+    é o número de resultados de toda a listagem (com os filtros aplicados), e
+    não só da página.
 
     **Contacto:** o email indicado é provisório; o domínio de email da empresa
     ainda não foi indicado pelo cliente (IF01).
 
-    **Omissões intencionais:** não é declarado securityScheme (depende da
-    D06); não são indicados licença nem termos de serviço, por se tratar de
-    uma API interna de uma única empresa (RN01), sem licença definida.
+    **Omissões intencionais:** não são indicados licença nem termos de
+    serviço, por se tratar de uma API interna de uma única empresa (RN01).
+
+servers:
+  - url: /api
+    description: |
+      Mesma origem do Frontend. Em desenvolvimento, o servidor do Vite
+      reencaminha `/api` para o Backend Quarkus.
+
+security:
+  - cookieSessao: []
 
 tags:
+  - name: Autenticação
+    description: Entrar, sair e consultar o utilizador autenticado (US02).
+  - name: Projetos
+    description: Criar, listar, pesquisar, consultar, editar e eliminar projetos (US03, US16, US17, US18).
+  - name: Membros
+    description: Membros de um projeto e procura de utilizadores (US04).
   - name: Tarefas
-    description: Criação e edição de tarefas de um projeto.
+    description: Tarefas de um projeto (US05, US06, US07, US09, US17).
+  - name: Responsáveis
+    description: Atribuir e remover responsáveis de uma tarefa (US05).
+  - name: Comentários
+    description: Comentários de uma tarefa (US12).
 
 paths:
+  /auth/login:
+    post:
+      tags: [Autenticação]
+      operationId: entrar
+      summary: Iniciar sessão
+      description: |
+        Verifica o email e a palavra-passe. Se estiverem corretos, cria uma
+        sessão e devolve o cookie `matriz_sessao` (D06).
+
+        Qualquer falha devolve 401 com a mesma mensagem genérica, que não
+        indica se o erro foi no email ou na palavra-passe (PR03). Depois de 5
+        falhas seguidas para o mesmo email, esse email fica recusado durante
+        15 minutos, com a mesma resposta (D09).
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginPedido'
+            example:
+              email: ana@empresa.pt
+              palavraPasse: exemplo-ficticio
+      responses:
+        '200':
+          description: Sessão iniciada.
+          headers:
+            Set-Cookie:
+              description: Cookie de sessão (HttpOnly, SameSite=Strict, Path=/api).
+              schema:
+                type: string
+              example: matriz_sessao=abc123; Path=/api; HttpOnly; SameSite=Strict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UtilizadorAutenticado'
+        '400':
+          $ref: '#/components/responses/Validacao'
+        '401':
+          description: Credenciais inválidas ou email temporariamente bloqueado (PR03, D09).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+              example:
+                codigo: CREDENCIAIS_INVALIDAS
+                mensagem: Email ou palavra-passe incorretos.
+
+  /auth/logout:
+    post:
+      tags: [Autenticação]
+      operationId: sair
+      summary: Terminar sessão
+      description: |
+        Apaga a sessão atual e o cookie (US02 crit. 4). Responde 204 mesmo que
+        não exista sessão válida, para que sair funcione sempre.
+      security: []
+      responses:
+        '204':
+          description: Sessão terminada.
+
+  /auth/me:
+    get:
+      tags: [Autenticação]
+      operationId: utilizadorAutenticado
+      summary: Consultar o utilizador autenticado
+      responses:
+        '200':
+          description: Utilizador da sessão atual.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UtilizadorAutenticado'
+        '401':
+          $ref: '#/components/responses/NaoAutenticado'
+
+  /projetos:
+    get:
+      tags: [Projetos]
+      operationId: listarProjetos
+      summary: Listar e pesquisar os meus projetos
+      description: |
+        Devolve os projetos não arquivados de que o utilizador é membro
+        (RN20), ordenados pelo nome. Cada projeto traz as contagens de tarefas
+        por estado, usadas no painel inicial (US18).
+      parameters:
+        - name: q
+          in: query
+          description: |
+            Texto a procurar no nome do projeto, sem distinguir maiúsculas de
+            minúsculas (US17 crit. 1).
+          schema:
+            type: string
+        - $ref: '#/components/parameters/Pagina'
+        - $ref: '#/components/parameters/Tamanho'
+      responses:
+        '200':
+          description: Página de projetos.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginaProjetos'
+        '400':
+          $ref: '#/components/responses/Validacao'
+        '401':
+          $ref: '#/components/responses/NaoAutenticado'
+        '403':
+          $ref: '#/components/responses/SemPermissao'
+    post:
+      tags: [Projetos]
+      operationId: criarProjeto
+      summary: Criar um projeto
+      description: |
+        Cria um projeto. Quem o cria fica como Gestor e como membro (RN05,
+        RI01). O Administrador não pode criar projetos (RN19).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CriarProjetoPedido'
+            example:
+              nome: Portal do Cliente
+              descricao: Nova área reservada para clientes.
+      responses:
+        '201':
+          description: Projeto criado.
+          headers:
+            Location:
+              description: URL do projeto criado.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Projeto'
+        '400':
+          $ref: '#/components/responses/Validacao'
+        '401':
+          $ref: '#/components/responses/NaoAutenticado'
+        '403':
+          $ref: '#/components/responses/SemPermissao'
+
+  /projetos/{projetoId}:
+    parameters:
+      - $ref: '#/components/parameters/ProjetoId'
+    get:
+      tags: [Projetos]
+      operationId: consultarProjeto
+      summary: Consultar um projeto
+      description: Só para membros do projeto (RN20, US07 crit. 4).
+      responses:
+        '200':
+          description: Projeto.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Projeto'
+        '401':
+          $ref: '#/components/responses/NaoAutenticado'
+        '403':
+          $ref: '#/components/responses/SemPermissao'
+        '404':
+          $ref: '#/components/responses/NaoEncontrado'
+    patch:
+      tags: [Projetos]
+      operationId: editarProjeto
+      summary: Editar um projeto
+      description: |
+        Altera o nome e/ou a descrição. Só o Gestor (RN22). Enviar
+        `descricao: null` limpa a descrição. Um projeto arquivado não pode ser
+        editado.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EditarProjetoPedido'
+            example:
+              nome: Portal do Cliente 2.0
+      responses:
+        '200':
+          description: Projeto alterado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Projeto'
+        '400':
+          $ref: '#/components/responses/Validacao'
+        '401':
+          $ref: '#/components/responses/NaoAutenticado'
+        '403':
+          $ref: '#/components/responses/SemPermissao'
+        '404':
+          $ref: '#/components/responses/NaoEncontrado'
+        '409':
+          $ref: '#/components/responses/ProjetoArquivado'
+    delete:
+      tags: [Projetos]
+      operationId: eliminarProjeto
+      summary: Eliminar um projeto
+      description: |
+        Elimina o projeto de forma definitiva, incluindo os seus membros,
+        tarefas, responsáveis, comentários, histórico e registo de tarefas
+        eliminadas (RI17, L06). Só o Gestor (RN22). Também é permitido em
+        projetos arquivados. A confirmação é pedida pela interface.
+      responses:
+        '204':
+          description: Projeto eliminado.
+        '401':
+          $ref: '#/components/responses/NaoAutenticado'
+        '403':
+          $ref: '#/components/responses/SemPermissao'
+        '404':
+          $ref: '#/components/responses/NaoEncontrado'
+
+  /projetos/{projetoId}/membros:
+    parameters:
+      - $ref: '#/components/parameters/ProjetoId'
+    get:
+      tags: [Membros]
+      operationId: listarMembros
+      summary: Listar os membros de um projeto
+      description: |
+        Devolve todos os membros, ordenados pelo nome, incluindo os que têm a
+        conta desativada (PR15). Os membros com `ativo = true` são os
+        utilizadores elegíveis como responsáveis de tarefas (RI02).
+      responses:
+        '200':
+          description: Membros do projeto.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Membro'
+        '401':
+          $ref: '#/components/responses/NaoAutenticado'
+        '403':
+          $ref: '#/components/responses/SemPermissao'
+        '404':
+          $ref: '#/components/responses/NaoEncontrado'
+    post:
+      tags: [Membros]
+      operationId: adicionarMembro
+      summary: Adicionar um membro ao projeto
+      description: |
+        Só o Gestor (RN07). O utilizador tem de ser um Membro com conta ativa
+        (RI16); caso contrário, 400. Se já for membro, 409 `JA_EXISTE`
+        (US04 crit. 3).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UtilizadorIdPedido'
+      responses:
+        '201':
+          description: Membro adicionado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Membro'
+        '400':
+          $ref: '#/components/responses/Validacao'
+        '401':
+          $ref: '#/components/responses/NaoAutenticado'
+        '403':
+          $ref: '#/components/responses/SemPermissao'
+        '404':
+          $ref: '#/components/responses/NaoEncontrado'
+        '409':
+          $ref: '#/components/responses/Conflito'
+
+  /projetos/{projetoId}/membros/{utilizadorId}:
+    parameters:
+      - $ref: '#/components/parameters/ProjetoId'
+      - $ref: '#/components/parameters/UtilizadorId'
+    delete:
+      tags: [Membros]
+      operationId: removerMembro
+      summary: Remover um membro do projeto
+      description: |
+        Só o Gestor (RN07). A pessoa removida deixa de ser responsável pelas
+        tarefas não concluídas do projeto (RN08, RI04). O Gestor não pode ser
+        removido: 409 `GESTOR_NAO_REMOVIVEL` (US04 crit. 5).
+      responses:
+        '204':
+          description: Membro removido.
+        '401':
+          $ref: '#/components/responses/NaoAutenticado'
+        '403':
+          $ref: '#/components/responses/SemPermissao'
+        '404':
+          $ref: '#/components/responses/NaoEncontrado'
+        '409':
+          $ref: '#/components/responses/Conflito'
+
+  /utilizadores:
+    get:
+      tags: [Membros]
+      operationId: procurarUtilizadores
+      summary: Procurar Membros ativos
+      description: |
+        Usado pelo Gestor para escolher quem adicionar a um projeto. Devolve
+        só Membros com conta ativa (nunca Administradores, RI16), ordenados
+        pelo nome. Expõe apenas o id, o nome e o email (S07).
+      parameters:
+        - name: q
+          in: query
+          description: Texto a procurar no nome ou no email, sem distinguir maiúsculas de minúsculas.
+          schema:
+            type: string
+        - $ref: '#/components/parameters/Pagina'
+        - $ref: '#/components/parameters/Tamanho'
+      responses:
+        '200':
+          description: Página de utilizadores.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginaUtilizadores'
+        '400':
+          $ref: '#/components/responses/Validacao'
+        '401':
+          $ref: '#/components/responses/NaoAutenticado'
+        '403':
+          $ref: '#/components/responses/SemPermissao'
+
   /projetos/{projetoId}/tarefas:
+    parameters:
+      - $ref: '#/components/parameters/ProjetoId'
+    get:
+      tags: [Tarefas]
+      operationId: listarTarefas
+      summary: Listar e filtrar as tarefas de um projeto
+      description: |
+        Só para membros do projeto. Os filtros combinam-se (US17 crit. 3). As
+        tarefas vêm ordenadas por prazo (o mais próximo primeiro, sem prazo no
+        fim) e depois pelo título.
+
+        O quadro Kanban faz um pedido por coluna, com `estado` preenchido; o
+        `total` de cada resposta é o número de tarefas dessa coluna.
+      parameters:
+        - name: estado
+          in: query
+          schema:
+            $ref: '#/components/schemas/Estado'
+        - name: prioridade
+          in: query
+          description: Use `SEM_PRIORIDADE` para as tarefas sem prioridade.
+          schema:
+            $ref: '#/components/schemas/FiltroPrioridade'
+        - $ref: '#/components/parameters/Pagina'
+        - $ref: '#/components/parameters/Tamanho'
+      responses:
+        '200':
+          description: Página de tarefas.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginaTarefas'
+        '400':
+          $ref: '#/components/responses/Validacao'
+        '401':
+          $ref: '#/components/responses/NaoAutenticado'
+        '403':
+          $ref: '#/components/responses/SemPermissao'
+        '404':
+          $ref: '#/components/responses/NaoEncontrado'
     post:
       tags: [Tarefas]
       operationId: criarTarefa
       summary: Criar uma tarefa num projeto
       description: |
         Cria uma tarefa no projeto indicado (US05). A tarefa começa sempre no
-        estado `A_FAZER` (PR05), por isso o pedido não aceita `estado`.
-        Só o título é obrigatório (RN10). A criação fica registada no
-        histórico da tarefa (RI12).
-      parameters:
-        - $ref: '#/components/parameters/ProjetoId'
+        estado `A_FAZER` (PR05), sem responsáveis e com `versao = 0`. Só o
+        título é obrigatório (RN10). Os responsáveis são atribuídos depois,
+        em `/tarefas/{tarefaId}/responsaveis`. A criação fica registada no
+        histórico (RI12).
       requestBody:
         required: true
         content:
@@ -58,7 +468,6 @@ paths:
               descricao: Slides com o estado do projeto.
               prazo: '2026-11-15'
               prioridade: ALTA
-              responsavelId: u-102
       responses:
         '201':
           description: Tarefa criada.
@@ -67,22 +476,10 @@ paths:
               description: URL da tarefa criada.
               schema:
                 type: string
-              example: /tarefas/t-501
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TarefaResposta'
-              example:
-                id: t-501
-                projetoId: p-12
-                titulo: Preparar apresentação ao cliente
-                descricao: Slides com o estado do projeto.
-                prazo: '2026-11-15'
-                prioridade: ALTA
-                estado: A_FAZER
-                responsavel:
-                  id: u-102
-                  nome: Ana Exemplo
+                $ref: '#/components/schemas/Tarefa'
         '400':
           $ref: '#/components/responses/Validacao'
         '401':
@@ -95,21 +492,42 @@ paths:
           $ref: '#/components/responses/ProjetoArquivado'
 
   /tarefas/{tarefaId}:
+    parameters:
+      - $ref: '#/components/parameters/TarefaId'
+    get:
+      tags: [Tarefas]
+      operationId: consultarTarefa
+      summary: Consultar uma tarefa
+      description: Só para membros do projeto da tarefa.
+      responses:
+        '200':
+          description: Tarefa.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tarefa'
+        '401':
+          $ref: '#/components/responses/NaoAutenticado'
+        '403':
+          $ref: '#/components/responses/SemPermissao'
+        '404':
+          $ref: '#/components/responses/NaoEncontrado'
     patch:
       tags: [Tarefas]
       operationId: editarTarefa
       summary: Editar uma tarefa ou mudar o seu estado
       description: |
-        Altera um ou mais campos de uma tarefa (US05) e/ou o seu estado
-        (US06). Só os campos enviados são alterados. Enviar `null` limpa um
-        campo opcional (ex.: `responsavelId: null` deixa a tarefa sem
-        responsável). O título não pode ser limpo.
+        Altera um ou mais campos (US05) e/ou o estado (US06). Só os campos
+        enviados são alterados; enviar `null` limpa um campo opcional. O título
+        não pode ser limpo.
 
-        Qualquer estado pode passar para qualquer outro, incluindo
-        `CONCLUIDA` (RN13, RN14). Cada campo alterado fica registado no
-        histórico, com quem, quando, o valor anterior e o novo (RI12).
-      parameters:
-        - $ref: '#/components/parameters/TarefaId'
+        `versao` é obrigatório e tem de ser a versão que o cliente recebeu da
+        última vez. Se outra pessoa tiver alterado a tarefa entretanto, a
+        alteração é recusada com 409 `VERSAO_DESATUALIZADA` (D08, US05
+        crit. 8). Cada alteração aceite aumenta a versão.
+
+        Qualquer estado pode passar para qualquer outro (RN13, RN14). Cada
+        campo alterado fica registado no histórico (RI12).
       requestBody:
         required: true
         content:
@@ -120,29 +538,158 @@ paths:
               mudarEstado:
                 summary: Mudar o estado (US06)
                 value:
+                  versao: 3
                   estado: EM_REVISAO
-              tirarResponsavel:
-                summary: Deixar a tarefa sem responsável
+              limparPrazo:
+                summary: Retirar o prazo
                 value:
-                  responsavelId: null
+                  versao: 3
+                  prazo: null
       responses:
         '200':
           description: Tarefa alterada.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TarefaResposta'
-              example:
-                id: t-501
-                projetoId: p-12
-                titulo: Preparar apresentação ao cliente
-                descricao: Slides com o estado do projeto.
-                prazo: '2026-11-15'
-                prioridade: ALTA
-                estado: EM_REVISAO
-                responsavel:
-                  id: u-102
-                  nome: Ana Exemplo
+                $ref: '#/components/schemas/Tarefa'
+        '400':
+          $ref: '#/components/responses/Validacao'
+        '401':
+          $ref: '#/components/responses/NaoAutenticado'
+        '403':
+          $ref: '#/components/responses/SemPermissao'
+        '404':
+          $ref: '#/components/responses/NaoEncontrado'
+        '409':
+          $ref: '#/components/responses/Conflito'
+    delete:
+      tags: [Tarefas]
+      operationId: eliminarTarefa
+      summary: Eliminar uma tarefa
+      description: |
+        Só o Gestor (RN09). Apaga a tarefa, os seus comentários, atribuições e
+        histórico e cria um registo com o título, quem eliminou e quando
+        (RI09). A confirmação é pedida pela interface (US09 crit. 1).
+      responses:
+        '204':
+          description: Tarefa eliminada.
+        '401':
+          $ref: '#/components/responses/NaoAutenticado'
+        '403':
+          $ref: '#/components/responses/SemPermissao'
+        '404':
+          $ref: '#/components/responses/NaoEncontrado'
+        '409':
+          $ref: '#/components/responses/ProjetoArquivado'
+
+  /tarefas/{tarefaId}/responsaveis:
+    parameters:
+      - $ref: '#/components/parameters/TarefaId'
+    post:
+      tags: [Responsáveis]
+      operationId: atribuirResponsavel
+      summary: Atribuir um responsável à tarefa
+      description: |
+        Qualquer membro do projeto. O utilizador tem de ser membro do projeto
+        com conta ativa (RI02); caso contrário, 400. Se já for responsável
+        desta tarefa, 409 `JA_EXISTE` (RN11, CE8). Fica registado no histórico
+        (RI12). Devolve a tarefa atualizada.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UtilizadorIdPedido'
+      responses:
+        '201':
+          description: Responsável atribuído.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tarefa'
+        '400':
+          $ref: '#/components/responses/Validacao'
+        '401':
+          $ref: '#/components/responses/NaoAutenticado'
+        '403':
+          $ref: '#/components/responses/SemPermissao'
+        '404':
+          $ref: '#/components/responses/NaoEncontrado'
+        '409':
+          $ref: '#/components/responses/Conflito'
+
+  /tarefas/{tarefaId}/responsaveis/{utilizadorId}:
+    parameters:
+      - $ref: '#/components/parameters/TarefaId'
+      - $ref: '#/components/parameters/UtilizadorId'
+    delete:
+      tags: [Responsáveis]
+      operationId: removerResponsavel
+      summary: Remover um responsável da tarefa
+      description: |
+        Qualquer membro do projeto. Remove apenas esta atribuição; os outros
+        responsáveis mantêm-se (US05 crit. 7). Fica registado no histórico
+        (RI12). 404 se a pessoa não for responsável desta tarefa.
+      responses:
+        '204':
+          description: Atribuição removida.
+        '401':
+          $ref: '#/components/responses/NaoAutenticado'
+        '403':
+          $ref: '#/components/responses/SemPermissao'
+        '404':
+          $ref: '#/components/responses/NaoEncontrado'
+        '409':
+          $ref: '#/components/responses/ProjetoArquivado'
+
+  /tarefas/{tarefaId}/comentarios:
+    parameters:
+      - $ref: '#/components/parameters/TarefaId'
+    get:
+      tags: [Comentários]
+      operationId: listarComentarios
+      summary: Listar os comentários de uma tarefa
+      description: Só para membros do projeto. Ordenados do mais antigo para o mais recente.
+      parameters:
+        - $ref: '#/components/parameters/Pagina'
+        - $ref: '#/components/parameters/Tamanho'
+      responses:
+        '200':
+          description: Página de comentários.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginaComentarios'
+        '400':
+          $ref: '#/components/responses/Validacao'
+        '401':
+          $ref: '#/components/responses/NaoAutenticado'
+        '403':
+          $ref: '#/components/responses/SemPermissao'
+        '404':
+          $ref: '#/components/responses/NaoEncontrado'
+    post:
+      tags: [Comentários]
+      operationId: comentarTarefa
+      summary: Comentar uma tarefa
+      description: |
+        Qualquer membro do projeto (US12). O autor e a data são definidos pelo
+        Backend, a partir da sessão (US12 crit. 1).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CriarComentarioPedido'
+            example:
+              texto: Já enviei os slides para revisão.
+      responses:
+        '201':
+          description: Comentário publicado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comentario'
         '400':
           $ref: '#/components/responses/Validacao'
         '401':
@@ -155,6 +702,13 @@ paths:
           $ref: '#/components/responses/ProjetoArquivado'
 
 components:
+  securitySchemes:
+    cookieSessao:
+      type: apiKey
+      in: cookie
+      name: matriz_sessao
+      description: Token de sessão criado em `POST /auth/login` (D06).
+
   parameters:
     ProjetoId:
       name: projetoId
@@ -162,27 +716,225 @@ components:
       required: true
       description: Identificador do projeto.
       schema:
-        type: string
+        $ref: '#/components/schemas/Id'
     TarefaId:
       name: tarefaId
       in: path
       required: true
       description: Identificador da tarefa.
       schema:
-        type: string
+        $ref: '#/components/schemas/Id'
+    UtilizadorId:
+      name: utilizadorId
+      in: path
+      required: true
+      description: Identificador do utilizador.
+      schema:
+        $ref: '#/components/schemas/Id'
+    Pagina:
+      name: pagina
+      in: query
+      description: Número da página, a começar em 1.
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    Tamanho:
+      name: tamanho
+      in: query
+      description: Número de resultados por página.
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
 
   schemas:
+    Id:
+      type: string
+      format: uuid
+      example: 3f2a9c4e-7b1d-4e8a-9c2f-1a2b3c4d5e6f
+
     Estado:
       type: string
       description: |
         Estado da tarefa (RN13). Os valores são códigos; o texto mostrado
-        na interface (ex.: "Em revisão") é traduzido pelo frontend (PR18).
+        na interface (ex.: "Em revisão") é traduzido pelo Frontend (PR18).
       enum: [A_FAZER, EM_CURSO, EM_REVISAO, CONCLUIDA]
 
     Prioridade:
       type: string
       description: Prioridade da tarefa (RN10).
       enum: [BAIXA, MEDIA, ALTA]
+
+    FiltroPrioridade:
+      type: string
+      description: Filtro de prioridade; `SEM_PRIORIDADE` seleciona as tarefas sem prioridade.
+      enum: [BAIXA, MEDIA, ALTA, SEM_PRIORIDADE]
+
+    LoginPedido:
+      type: object
+      additionalProperties: false
+      required: [email, palavraPasse]
+      properties:
+        email:
+          type: string
+          format: email
+        palavraPasse:
+          type: string
+          minLength: 1
+
+    UtilizadorAutenticado:
+      type: object
+      required: [id, nome, email, tipo]
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        nome:
+          type: string
+        email:
+          type: string
+          format: email
+        tipo:
+          type: string
+          enum: [MEMBRO, ADMINISTRADOR]
+      example:
+        id: 3f2a9c4e-7b1d-4e8a-9c2f-1a2b3c4d5e6f
+        nome: Ana Exemplo
+        email: ana@empresa.pt
+        tipo: MEMBRO
+
+    PessoaResumo:
+      type: object
+      description: Apenas o identificador e o nome, sem expor outros dados da conta (S07).
+      required: [id, nome]
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        nome:
+          type: string
+
+    UtilizadorResumo:
+      type: object
+      required: [id, nome, email]
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        nome:
+          type: string
+        email:
+          type: string
+          format: email
+
+    UtilizadorIdPedido:
+      type: object
+      additionalProperties: false
+      required: [utilizadorId]
+      properties:
+        utilizadorId:
+          $ref: '#/components/schemas/Id'
+
+    ContagensEstado:
+      type: object
+      description: Número de tarefas do projeto em cada estado (US18), contando todas as tarefas.
+      required: [A_FAZER, EM_CURSO, EM_REVISAO, CONCLUIDA]
+      properties:
+        A_FAZER:
+          type: integer
+          minimum: 0
+        EM_CURSO:
+          type: integer
+          minimum: 0
+        EM_REVISAO:
+          type: integer
+          minimum: 0
+        CONCLUIDA:
+          type: integer
+          minimum: 0
+
+    CriarProjetoPedido:
+      type: object
+      additionalProperties: false
+      required: [nome]
+      properties:
+        nome:
+          type: string
+          minLength: 3
+          maxLength: 100
+          description: 3 a 100 caracteres, sem contar os espaços nas pontas (RN23).
+        descricao:
+          type: [string, 'null']
+          maxLength: 1000
+
+    EditarProjetoPedido:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      description: Pelo menos um campo. Os campos omitidos não são alterados.
+      properties:
+        nome:
+          type: string
+          minLength: 3
+          maxLength: 100
+          description: Não pode ser null (RN23).
+        descricao:
+          type: [string, 'null']
+          maxLength: 1000
+
+    Projeto:
+      type: object
+      required: [id, nome, descricao, arquivado, gestor, souGestor, contagens]
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        nome:
+          type: string
+        descricao:
+          type: [string, 'null']
+        arquivado:
+          type: boolean
+        gestor:
+          $ref: '#/components/schemas/PessoaResumo'
+        souGestor:
+          type: boolean
+          description: |
+            Verdadeiro se o utilizador autenticado é o Gestor. Serve apenas para
+            a interface mostrar ou esconder opções; o servidor verifica sempre
+            a permissão (S03).
+        contagens:
+          $ref: '#/components/schemas/ContagensEstado'
+      example:
+        id: 7c1e2d3f-4a5b-4c6d-8e9f-0a1b2c3d4e5f
+        nome: Portal do Cliente
+        descricao: Nova área reservada para clientes.
+        arquivado: false
+        gestor:
+          id: 3f2a9c4e-7b1d-4e8a-9c2f-1a2b3c4d5e6f
+          nome: Ana Exemplo
+        souGestor: true
+        contagens:
+          A_FAZER: 3
+          EM_CURSO: 1
+          EM_REVISAO: 0
+          CONCLUIDA: 2
+
+    Membro:
+      type: object
+      required: [id, nome, email, ativo, gestor]
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        nome:
+          type: string
+        email:
+          type: string
+          format: email
+        ativo:
+          type: boolean
+          description: Falso se a conta estiver desativada (PR15). Só os ativos são elegíveis como responsáveis.
+        gestor:
+          type: boolean
+          description: Verdadeiro se for o Gestor do projeto.
 
     CriarTarefaPedido:
       type: object
@@ -194,10 +946,12 @@ components:
       properties:
         titulo:
           type: string
-          minLength: 1
-          description: Obrigatório e não vazio (RN10, US05 crit. 3).
+          minLength: 3
+          maxLength: 150
+          description: 3 a 150 caracteres, sem contar os espaços nas pontas (RN23).
         descricao:
           type: [string, 'null']
+          maxLength: 2000
         prazo:
           type: [string, 'null']
           format: date
@@ -206,24 +960,28 @@ components:
           oneOf:
             - $ref: '#/components/schemas/Prioridade'
             - type: 'null'
-        responsavelId:
-          type: [string, 'null']
-          description: |
-            Tem de ser um membro do projeto com conta ativa (US05 crit. 4,
-            RI02). No máximo um responsável (RN11).
 
     EditarTarefaPedido:
       type: object
       additionalProperties: false
-      minProperties: 1
-      description: Pelo menos um campo. Os campos omitidos não são alterados.
+      required: [versao]
+      minProperties: 2
+      description: |
+        `versao` e pelo menos um campo a alterar. Os campos omitidos não são
+        alterados.
       properties:
+        versao:
+          type: integer
+          minimum: 0
+          description: Versão da tarefa que o cliente tem (D08).
         titulo:
           type: string
-          minLength: 1
-          description: Não pode ser vazio nem null (RN10).
+          minLength: 3
+          maxLength: 150
+          description: Não pode ser null (RN10).
         descricao:
           type: [string, 'null']
+          maxLength: 2000
         prazo:
           type: [string, 'null']
           format: date
@@ -232,35 +990,18 @@ components:
           oneOf:
             - $ref: '#/components/schemas/Prioridade'
             - type: 'null'
-        responsavelId:
-          type: [string, 'null']
-          description: Tem de ser um membro do projeto com conta ativa (RI02).
         estado:
           $ref: '#/components/schemas/Estado'
 
-    ResponsavelResumo:
+    Tarefa:
       type: object
-      description: |
-        Resumo do responsável de uma tarefa: apenas o identificador e o nome,
-        sem expor outros dados da conta (S07).
-      required: [id, nome]
+      description: Os campos opcionais sem valor vêm a null.
+      required: [id, projetoId, titulo, descricao, prazo, prioridade, estado, responsaveis, versao]
       properties:
         id:
-          type: string
-        nome:
-          type: string
-
-    TarefaResposta:
-      type: object
-      description: |
-        Representação de uma tarefa devolvida pela API, depois de criada ou
-        alterada. Os campos opcionais sem valor vêm a null.
-      required: [id, projetoId, titulo, descricao, prazo, prioridade, estado, responsavel]
-      properties:
-        id:
-          type: string
+          $ref: '#/components/schemas/Id'
         projetoId:
-          type: string
+          $ref: '#/components/schemas/Id'
         titulo:
           type: string
         descricao:
@@ -274,11 +1015,118 @@ components:
             - type: 'null'
         estado:
           $ref: '#/components/schemas/Estado'
-        responsavel:
-          description: Null quando a tarefa não tem responsável (mostrado como "Sem responsável", US07 crit. 3).
-          oneOf:
-            - $ref: '#/components/schemas/ResponsavelResumo'
-            - type: 'null'
+        responsaveis:
+          type: array
+          description: Ordenados pelo nome. Vazio quando não há responsáveis ("Sem responsável", US07 crit. 3).
+          items:
+            $ref: '#/components/schemas/PessoaResumo'
+        versao:
+          type: integer
+          minimum: 0
+      example:
+        id: 9a8b7c6d-5e4f-4a3b-2c1d-0e9f8a7b6c5d
+        projetoId: 7c1e2d3f-4a5b-4c6d-8e9f-0a1b2c3d4e5f
+        titulo: Preparar apresentação ao cliente
+        descricao: Slides com o estado do projeto.
+        prazo: '2026-11-15'
+        prioridade: ALTA
+        estado: EM_CURSO
+        responsaveis:
+          - id: 3f2a9c4e-7b1d-4e8a-9c2f-1a2b3c4d5e6f
+            nome: Ana Exemplo
+          - id: 5d4c3b2a-1f0e-4d9c-8b7a-6f5e4d3c2b1a
+            nome: Bruno Exemplo
+        versao: 3
+
+    CriarComentarioPedido:
+      type: object
+      additionalProperties: false
+      required: [texto]
+      properties:
+        texto:
+          type: string
+          minLength: 1
+          maxLength: 2000
+          description: 1 a 2000 caracteres, sem contar os espaços nas pontas (RN23).
+
+    Comentario:
+      type: object
+      required: [id, tarefaId, autor, texto, criadoEm, editadoEm]
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        tarefaId:
+          $ref: '#/components/schemas/Id'
+        autor:
+          $ref: '#/components/schemas/PessoaResumo'
+        texto:
+          type: string
+        criadoEm:
+          type: string
+          format: date-time
+        editadoEm:
+          type: [string, 'null']
+          format: date-time
+          description: Preenchido quando o autor edita o comentário (Fase 2).
+
+    Paginacao:
+      type: object
+      required: [total, pagina, tamanho]
+      properties:
+        total:
+          type: integer
+          minimum: 0
+          description: Número de resultados de toda a listagem, e não só desta página.
+        pagina:
+          type: integer
+          minimum: 1
+        tamanho:
+          type: integer
+          minimum: 1
+
+    PaginaProjetos:
+      allOf:
+        - $ref: '#/components/schemas/Paginacao'
+        - type: object
+          required: [itens]
+          properties:
+            itens:
+              type: array
+              items:
+                $ref: '#/components/schemas/Projeto'
+
+    PaginaUtilizadores:
+      allOf:
+        - $ref: '#/components/schemas/Paginacao'
+        - type: object
+          required: [itens]
+          properties:
+            itens:
+              type: array
+              items:
+                $ref: '#/components/schemas/UtilizadorResumo'
+
+    PaginaTarefas:
+      allOf:
+        - $ref: '#/components/schemas/Paginacao'
+        - type: object
+          required: [itens]
+          properties:
+            itens:
+              type: array
+              items:
+                $ref: '#/components/schemas/Tarefa'
+
+    PaginaComentarios:
+      allOf:
+        - $ref: '#/components/schemas/Paginacao'
+        - type: object
+          required: [itens]
+          properties:
+            itens:
+              type: array
+              items:
+                $ref: '#/components/schemas/Comentario'
 
     Erro:
       type: object
@@ -287,7 +1135,16 @@ components:
       properties:
         codigo:
           type: string
-          enum: [VALIDACAO, NAO_AUTENTICADO, SEM_PERMISSAO, NAO_ENCONTRADO, PROJETO_ARQUIVADO]
+          enum:
+            - VALIDACAO
+            - CREDENCIAIS_INVALIDAS
+            - NAO_AUTENTICADO
+            - SEM_PERMISSAO
+            - NAO_ENCONTRADO
+            - PROJETO_ARQUIVADO
+            - JA_EXISTE
+            - GESTOR_NAO_REMOVIVEL
+            - VERSAO_DESATUALIZADA
         mensagem:
           type: string
           description: Mensagem legível, em português de Portugal.
@@ -306,9 +1163,10 @@ components:
   responses:
     Validacao:
       description: |
-        Pedido inválido: título vazio, valor fora dos enumerados, data
-        inválida, pedido de edição sem campos, ou responsável que não é
-        membro ativo do projeto.
+        Pedido inválido: campo obrigatório em falta, texto só com espaços ou
+        fora dos limites (RN23), valor fora dos enumerados, data inválida,
+        paginação inválida, pedido de edição sem campos, ou utilizador que não
+        é elegível (não é Membro ativo, ou não é membro do projeto).
       content:
         application/json:
           schema:
@@ -318,20 +1176,20 @@ components:
             mensagem: O pedido tem dados inválidos.
             detalhes:
               - campo: titulo
-                mensagem: O título é obrigatório.
+                mensagem: O título deve ter entre 3 e 150 caracteres.
     NaoAutenticado:
-      description: Sem sessão iniciada (mecanismo por decidir, D06).
+      description: Sem sessão, ou sessão expirada ou terminada (D06).
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/Erro'
           example:
             codigo: NAO_AUTENTICADO
-            mensagem: É necessário iniciar sessão.
+            mensagem: A sessão não é válida. Inicie sessão novamente.
     SemPermissao:
       description: |
-        Quem pediu não é membro do projeto (RN20, US07 crit. 4) ou é
-        Administrador (RN19).
+        Quem pediu não é membro do projeto (RN20, US07 crit. 4), não é o
+        Gestor numa operação só do Gestor, ou é Administrador (RN19).
       content:
         application/json:
           schema:
@@ -340,7 +1198,7 @@ components:
             codigo: SEM_PERMISSAO
             mensagem: Não tem permissão para esta ação.
     NaoEncontrado:
-      description: O projeto ou a tarefa não existe.
+      description: O recurso não existe (ou o identificador não é um UUID válido).
       content:
         application/json:
           schema:
@@ -349,7 +1207,7 @@ components:
             codigo: NAO_ENCONTRADO
             mensagem: O recurso pedido não existe.
     ProjetoArquivado:
-      description: O projeto está arquivado e é só de leitura (RN15, CE4).
+      description: O projeto está arquivado e é só de leitura (RN15, RI10).
       content:
         application/json:
           schema:
@@ -357,3 +1215,22 @@ components:
           example:
             codigo: PROJETO_ARQUIVADO
             mensagem: O projeto está arquivado e não pode ser alterado.
+    Conflito:
+      description: |
+        O pedido entra em conflito com o estado atual: `PROJETO_ARQUIVADO`
+        (RI10), `JA_EXISTE` (associação repetida, US04 crit. 3, CE8),
+        `GESTOR_NAO_REMOVIVEL` (US04 crit. 5) ou `VERSAO_DESATUALIZADA`
+        (D08).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Erro'
+          examples:
+            jaExiste:
+              value:
+                codigo: JA_EXISTE
+                mensagem: Esta pessoa já é responsável pela tarefa.
+            versaoDesatualizada:
+              value:
+                codigo: VERSAO_DESATUALIZADA
+                mensagem: A tarefa foi alterada por outra pessoa. Recarregue-a antes de guardar.

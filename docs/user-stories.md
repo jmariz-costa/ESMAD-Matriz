@@ -26,7 +26,7 @@ e [constraints.md](constraints.md).
 
 | ID   | User Story                                         | Prioridade |
 |------|----------------------------------------------------|------------|
-| US01 | Registo com email da empresa                       | Alta       |
+| US01 | Registo com email da empresa *(adiada, ver L07)*   | Alta       |
 | US02 | Entrar e sair da conta                             | Alta       |
 | US03 | Criar projeto                                      | Alta       |
 | US04 | Gerir membros do projeto                           | Alta       |
@@ -40,13 +40,18 @@ e [constraints.md](constraints.md).
 | US12 | Comentar tarefas                                   | Média      |
 | US13 | Ver histórico de alterações de uma tarefa          | Média      |
 | US14 | Desativar e reativar contas (Administrador)        | Alta       |
+| US16 | Editar e eliminar projeto                          | Alta       |
+| US17 | Pesquisar projetos e filtrar tarefas               | Média      |
+| US18 | Ver o painel inicial                               | Média      |
 
 A US15 (etiquetas) ficou fora do MVP: ver a secção [Fora do MVP](#fora-do-mvp)
-no fim deste documento.
+no fim deste documento. As US16 a US18 foram acrescentadas na Ficha PL 03.
+A US01 foi adiada na Ficha PL 03: enquanto não for implementada, as contas de
+Membro são criadas por seed (L07 em [constraints.md](constraints.md)).
 
 ---
 
-## US01 — Registo com email da empresa · Alta
+## US01 — Registo com email da empresa · Alta *(adiada)*
 
 Como **pessoa da empresa**, quero registar-me com o meu email da empresa, para
 poder aceder à Matriz.
@@ -75,7 +80,8 @@ Como **Membro** ou **Administrador**, quero entrar e sair da minha conta, para
 que só eu aceda à minha informação.
 
 1. **Dado** que tenho uma conta de Membro ativa, **quando** entro com o meu
-   email e palavra-passe corretos, **então** acedo à lista dos meus projetos.
+   email e palavra-passe corretos, **então** acedo ao painel inicial, com os
+   meus projetos (US18).
 2. **Dado** que tenho uma conta de Administrador, **quando** entro com o meu
    email e palavra-passe corretos, **então** acedo apenas à gestão de contas.
 3. **Dado** que indico um email ou palavra-passe errados, **quando** tento
@@ -93,8 +99,9 @@ equipa.
 1. **Dado** que sou Membro com sessão iniciada, **quando** crio um projeto
    indicando um nome (e, opcionalmente, uma descrição), **então** o projeto é criado, fico
    como seu Gestor e ele aparece na minha lista de projetos.
-2. **Dado** que não indico nome, **quando** tento criar o projeto, **então** a
-   criação é recusada.
+2. **Dado** que não indico nome, ou indico um nome só com espaços ou fora dos
+   limites (RN23), **quando** tento criar o projeto, **então** a criação é
+   recusada.
 3. **Dado** que criei um projeto, **quando** outro Membro que não faz parte do
    projeto abre a sua lista de projetos, **então** esse projeto não aparece.
 
@@ -110,31 +117,38 @@ quem trabalha nele.
    não tenho opção para adicionar ou remover membros.
 3. **Dado** que um Membro já está no projeto, **quando** o tento adicionar
    outra vez, **então** não fica duplicado.
-4. **Dado** um membro com tarefas não concluídas, **quando** o Gestor o remove,
-   **então** essas tarefas ficam sem responsável, ele deixa de ver o projeto e
-   o histórico mantém o nome dele.
+4. **Dado** um membro responsável por tarefas não concluídas, **quando** o
+   Gestor o remove, **então** ele deixa de ser responsável por essas tarefas,
+   deixa de ver o projeto e o histórico mantém o nome dele.
 5. **Dado** que sou o Gestor, **quando** me tento remover do projeto, **então**
    a ação é recusada.
 
 ## US05 — Criar e editar tarefas · Alta
 
 Como **membro**, quero criar e editar tarefas (descrição, prazo, prioridade,
-responsável), para registar o trabalho a fazer.
+responsáveis), para registar o trabalho a fazer.
 
 1. **Dado** que sou membro de um projeto não arquivado, **quando** crio uma
    tarefa com um título, **então** a tarefa é criada no estado "A fazer" e
    aparece nessa coluna do quadro.
 2. **Dado** que estou a criar ou editar uma tarefa, **então** só o título é
    obrigatório; descrição, prazo, prioridade (Baixa / Média / Alta) e
-   responsável são opcionais.
-3. **Dado** que não indico título, **quando** tento guardar a tarefa, **então**
-   a operação é recusada.
-4. **Dado** que escolho um responsável, **então** só posso escolher entre os
-   membros do projeto, e no máximo um.
+   responsáveis são opcionais.
+3. **Dado** que não indico título, ou indico um título só com espaços, ou um
+   texto fora dos limites (RN23), **quando** tento guardar a tarefa, **então**
+   a operação é recusada e o que escrevi não se perde.
+4. **Dado** que escolho responsáveis, **então** só posso escolher entre os
+   membros do projeto com conta ativa; posso escolher vários, e a mesma pessoa
+   não fica atribuída duas vezes à mesma tarefa.
 5. **Dado** que indico um prazo, **então** é aceite qualquer data válida,
    incluindo datas passadas.
 6. **Dado** que edito um campo de uma tarefa, **quando** guardo, **então** a
    alteração fica visível para todos os membros e é registada no histórico.
+7. **Dado** uma tarefa com responsáveis, **quando** removo um deles, **então**
+   só essa atribuição é removida e os outros responsáveis mantêm-se.
+8. **Dado** que outra pessoa guardou a mesma tarefa depois de eu a abrir,
+   **quando** guardo, **então** a alteração é recusada, é-me pedido que
+   recarregue a tarefa e o que escrevi não se perde (D08).
 
 ## US06 — Mudar o estado de uma tarefa · Alta
 
@@ -158,8 +172,8 @@ relance o estado do projeto.
    por esta ordem: A fazer, Em curso, Em revisão, Concluída.
 2. **Dado** o quadro do projeto, **então** cada tarefa aparece uma única vez, na
    coluna do seu estado atual.
-3. **Dado** o quadro do projeto, **então** cada cartão mostra o título, o
-   responsável (ou "Sem responsável") e, quando existam, a prioridade e o
+3. **Dado** o quadro do projeto, **então** cada cartão mostra o título, os
+   responsáveis (ou "Sem responsável") e, quando existam, a prioridade e o
    prazo.
 4. **Dado** que não sou membro de um projeto, **quando** tento abrir o seu
    quadro, **então** o acesso é recusado.
@@ -230,8 +244,9 @@ Como **membro**, quero comentar tarefas, para discutir o trabalho com a equipa.
 1. **Dado** que sou membro de um projeto não arquivado, **quando** escrevo um
    comentário numa tarefa, **então** ele aparece na tarefa com o meu nome e a
    data e hora.
-2. **Dado** um comentário vazio, **quando** o tento publicar, **então** a
-   publicação é recusada.
+2. **Dado** um comentário vazio, só com espaços ou com mais de 2000
+   caracteres (RN23), **quando** o tento publicar, **então** a publicação é
+   recusada.
 3. **Dado** que sou o autor de um comentário num projeto não arquivado,
    **então** posso editá-lo ou apagá-lo.
 4. **Dado** que não sou o autor de um comentário, **então** não tenho opção para
@@ -243,8 +258,9 @@ Como **membro**, quero ver o histórico de alterações de uma tarefa, para sabe
 quem mudou o quê e quando.
 
 1. **Dado** uma tarefa, **então** o histórico regista a sua criação e cada
-   alteração de título, descrição, estado, prazo, prioridade e responsável,
-   com quem fez, quando, o valor anterior e o novo.
+   alteração de título, descrição, estado, prazo e prioridade, com quem fez,
+   quando, o valor anterior e o novo, e cada responsável atribuído ou
+   removido, com quem fez e quando.
 2. **Dado** o histórico de uma tarefa, **então** as entradas aparecem da mais
    recente para a mais antiga.
 3. **Dado** o histórico de uma tarefa, **então** ninguém consegue editar nem
@@ -258,9 +274,9 @@ saíram da empresa deixem de ter acesso à Matriz.
 1. **Dado** que sou Administrador, **quando** desativo uma conta de Membro
    ativa, **então** essa pessoa deixa de conseguir aceder à Matriz, incluindo se
    tiver uma sessão iniciada.
-2. **Dado** que desativei uma conta, **então** as tarefas não concluídas
-   atribuídas a essa pessoa ficam sem responsável, incluindo em projetos
-   arquivados, e o histórico mantém o nome dela.
+2. **Dado** que desativei uma conta, **então** essa pessoa deixa de ser
+   responsável pelas tarefas não concluídas que lhe estavam atribuídas,
+   incluindo em projetos arquivados, e o histórico mantém o nome dela.
 3. **Dado** que a pessoa a desativar é Gestora de um ou mais projetos
    (incluindo arquivados), **quando** a tento desativar, **então** vejo o nome
    desses projetos e a desativação só é concluída depois de eu escolher um novo
@@ -283,19 +299,75 @@ saíram da empresa deixem de ter acesso à Matriz.
    à gestão de contas: não posso criar projetos, ser adicionado a projetos nem
    ter tarefas atribuídas.
 
+## US16 — Editar e eliminar projeto · Alta
+
+Como **Gestor**, quero editar e eliminar o meu projeto, para corrigir os seus
+dados ou retirar um projeto que já não é necessário. *(Ficha PL 03)*
+
+1. **Dado** que sou Gestor de um projeto não arquivado, **quando** altero o
+   nome ou a descrição e guardo, **então** a alteração fica visível para todos
+   os membros.
+2. **Dado** que indico um nome vazio, só com espaços ou fora dos limites
+   (RN23), **quando** guardo, **então** a alteração é recusada e o que escrevi
+   não se perde.
+3. **Dado** que sou Gestor, **quando** escolho eliminar o projeto, **então** é
+   pedida confirmação antes de o eliminar.
+4. **Dado** que confirmei a eliminação, **então** o projeto e tudo o que
+   contém (membros, tarefas, responsáveis, comentários, histórico e registo de
+   tarefas eliminadas) deixam de existir (L06).
+5. **Dado** um projeto arquivado, **então** o Gestor não o pode editar, mas
+   pode eliminá-lo (RN22).
+6. **Dado** que sou Membro (não Gestor), **então** não tenho opção para editar
+   ou eliminar o projeto.
+
+## US17 — Pesquisar projetos e filtrar tarefas · Média
+
+Como **membro**, quero pesquisar projetos e filtrar tarefas, para encontrar
+depressa o que procuro. *(Ficha PL 03)*
+
+1. **Dado** a lista dos meus projetos, **quando** pesquiso por parte do nome,
+   sem distinguir maiúsculas de minúsculas, **então** só aparecem os projetos
+   de que faço parte cujo nome contém esse texto.
+2. **Dado** uma pesquisa sem resultados, **então** é mostrada uma mensagem a
+   indicar que não há projetos.
+3. **Dado** as tarefas de um projeto, **quando** filtro por estado e/ou por
+   prioridade (incluindo "Sem prioridade"), **então** só aparecem as tarefas
+   que cumprem todos os filtros escolhidos, e posso limpar os filtros para
+   voltar a ver todas.
+4. **Dado** uma listagem com mais resultados do que cabem numa página,
+   **então** os resultados são mostrados por páginas e os totais indicados
+   referem-se a todos os resultados, e não só à página visível.
+
+## US18 — Ver o painel inicial · Média
+
+Como **Membro**, quero ver um painel inicial com os meus projetos, para
+perceber de relance o estado do trabalho. *(Ficha PL 03)*
+
+1. **Dado** que entrei na Matriz, **então** o painel mostra o meu nome e os
+   projetos não arquivados de que faço parte, cada um com o número de tarefas
+   em cada um dos 4 estados.
+2. **Dado** o painel, **quando** escolho um projeto, **então** abro o detalhe
+   desse projeto.
+3. **Dado** que não faço parte de nenhum projeto, **então** o painel mostra
+   uma mensagem a indicar que não há projetos e a opção para criar um.
+4. **Dado** que uma tarefa é criada, eliminada ou muda de estado, **quando**
+   volto ao painel, **então** as contagens refletem essa alteração.
+
 ---
 
 ## Casos excecionais e casos-limite
 
 | ID  | Situação                                                  | Comportamento esperado                                               | Referência     |
 |-----|-----------------------------------------------------------|----------------------------------------------------------------------|----------------|
-| CE1 | O Gestor remove um membro com tarefas atribuídas          | As tarefas não concluídas ficam sem responsável                      | US04 (crit. 4) |
+| CE1 | O Gestor remove um membro com tarefas atribuídas          | O membro deixa de ser responsável pelas tarefas não concluídas       | US04 (crit. 4) |
 | CE2 | O Gestor tenta remover-se do próprio projeto              | Ação recusada                                                        | US04 (crit. 5) |
 | CE3 | O link de confirmação é aberto depois das 24 horas        | Link recusado; a pessoa pode pedir um novo link de confirmação       | US01 (crit. 7) |
 | CE4 | Tentativa de alterar qualquer coisa num projeto arquivado | Ação recusada; o projeto é só de leitura (única exceção: US14)       | US06, US08     |
-| CE5 | Duas pessoas editam a mesma tarefa ao mesmo tempo         | **Por decidir** (decisão técnica pendente, ver constraints.md)       | US05           |
+| CE5 | Duas pessoas editam a mesma tarefa ao mesmo tempo         | A segunda gravação é recusada; a interface pede para recarregar, sem perder o que foi escrito (D08) | US05 (crit. 8) |
 | CE6 | O Administrador desativa uma pessoa que é Gestora         | Tem de escolher primeiro um novo Gestor para cada projeto dela       | US14 (crit. 3) |
 | CE7 | O Administrador tenta desativar a sua conta ou a de outro Administrador | Ação recusada                                          | US14 (crit. 7) |
+| CE8 | Atribuir a uma tarefa uma pessoa que já é sua responsável | A atribuição não fica duplicada                                      | US05 (crit. 4) |
+| CE9 | O Gestor elimina um projeto arquivado                     | Eliminação permitida, com confirmação                                | US16 (crit. 5) |
 
 ---
 

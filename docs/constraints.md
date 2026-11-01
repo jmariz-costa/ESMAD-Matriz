@@ -3,13 +3,13 @@
 Este documento separa o que **não foi confirmado pelo cliente** (pressupostos)
 do que está em [requirements.md](requirements.md) (requisitos confirmados).
 Inclui também os requisitos de segurança e privacidade, as decisões técnicas
-ainda pendentes e as limitações de âmbito do MVP.
+(tomadas e pendentes) e as limitações de âmbito do MVP.
 
 ## 1. Restrições conhecidas
 
 | ID   | Restrição                                                                                              |
 |------|--------------------------------------------------------------------------------------------------------|
-| R01  | Nas Fichas PL 01 e PL 02 não é implementado código: apenas análise, especificação e conceção.          |
+| R01  | Nas Fichas PL 01 e PL 02 não é implementado código: apenas análise, especificação e conceção. O MVP é implementado a partir da Ficha PL 03. |
 | R02  | A Matriz é usada por uma única empresa.                                                                 |
 | R03  | A Matriz é uma aplicação web, usada apenas em computador; não há app móvel nem suporte a telemóvel.     |
 | R04  | Deve funcionar apenas no Firefox, nas 2 versões principais mais recentes, em ecrãs a partir de 1280 px de largura. |
@@ -35,7 +35,7 @@ mas são pressupostos e não requisitos pedidos pelo cliente: podem ser revistos
 | PR03 | Se o login falhar, a mensagem não indica se o erro foi no email ou na palavra-passe.                                                              | US02        |
 | PR04 | Um projeto tem nome obrigatório e descrição opcional.                                                                                             | US03        |
 | PR05 | Uma tarefa nova começa no estado "A fazer"; só o título é obrigatório.                                                                            | US05        |
-| PR06 | Cada cartão do quadro Kanban mostra título, responsável, prioridade e prazo.                                                                      | US07        |
+| PR06 | Cada cartão do quadro Kanban mostra título, responsáveis, prioridade e prazo.                                                                     | US07        |
 | PR07 | Só o Gestor arquiva e reativa o projeto; num projeto arquivado os membros continuam a poder consultar tudo, numa lista à parte.                    | US08        |
 | PR08 | Eliminar uma tarefa pede confirmação e apaga também os seus comentários e histórico; fica apenas um registo com o título, quem eliminou e quando. | US09        |
 | PR09 | Percentagem de conclusão = tarefas "Concluída" ÷ total de tarefas × 100, arredondada para baixo às unidades; projeto sem tarefas = 0%.            | US10        |
@@ -69,23 +69,24 @@ mas são pressupostos e não requisitos pedidos pelo cliente: podem ser revistos
 |------|---------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------|
 | RA01 | O registo indica quando um email já tem conta (US01, crit. 5), o que permite descobrir que emails estão registados, apesar do PR03.          | Aplicação interna de até 50 pessoas; os emails dos colegas já são conhecidos dentro da empresa. |
 
-## 4. Decisões técnicas pendentes
+## 4. Decisões técnicas
 
-A decidir a partir da Aula 2 (Conceção, Arquitetura & Prototipagem).
+As decisões D01 a D03 e D06 a D09 e D11 foram tomadas nas Fichas PL 02 e
+PL 03. As restantes continuam pendentes.
 
 | ID   | Decisão                                                                                                   |
 |------|-----------------------------------------------------------------------------------------------------------|
-| D01  | Linguagem e framework (frontend e backend).                                                               |
-| D02  | Base de dados.                                                                                            |
+| D01  | Linguagem e framework (frontend e backend). **Decidida** (Ficha PL 03): backend em Java com Quarkus; frontend em React (Vite). |
+| D02  | Base de dados. **Decidida** (Ficha PL 03): PostgreSQL, executado em Docker; esquema criado por migrations (Flyway). |
 | D03  | Arquitetura da aplicação. **Decidida** (Ficha PL 02): monólito modular, ver [architecture.md](architecture.md). |
 | D04  | Alojamento (onde a Matriz vai correr).                                                                    |
 | D05  | Serviço de envio de emails (confirmação de conta).                                                        |
-| D06  | Mecanismo de autenticação e de sessão, incluindo o tempo até uma sessão inativa expirar.                  |
-| D07  | Como são configuradas as contas de Administrador na instalação.                                           |
-| D08  | O que acontece quando duas pessoas editam a mesma tarefa ao mesmo tempo (caso CE5).                       |
-| D09  | Limite de tentativas de login falhadas e o que acontece quando é ultrapassado. **Bloqueante:** tem de ser decidida antes de implementar a US02, porque as palavras-passe têm só 8 caracteres no mínimo. |
+| D06  | Mecanismo de autenticação e de sessão, incluindo o tempo até uma sessão inativa expirar. **Decidida** (Ficha PL 03): sessão guardada na base de dados; o browser recebe um token aleatório num cookie HttpOnly e o servidor guarda apenas o hash do token. A sessão expira ao fim de 30 minutos sem atividade (cada pedido renova o prazo). Sair apaga a sessão; desativar uma conta apaga todas as sessões dessa pessoa (PR16). |
+| D07  | Como são configuradas as contas de Administrador na instalação. **Decidida** (Ficha PL 03): no arranque, se a conta de Administrador ainda não existir, é criada com o email e a palavra-passe indicados em variáveis de ambiente. Uma conta já existente nunca é alterada. |
+| D08  | O que acontece quando duas pessoas editam a mesma tarefa ao mesmo tempo (caso CE5). **Decidida** (Ficha PL 03): bloqueio otimista. A tarefa tem um número de versão; se outra pessoa a tiver guardado entretanto, a alteração é recusada (409) e a interface pede para recarregar, sem perder o que foi escrito. |
+| D09  | Limite de tentativas de login falhadas e o que acontece quando é ultrapassado. **Decidida** (Ficha PL 03): depois de 5 tentativas falhadas seguidas para o mesmo email, o login com esse email é recusado durante 15 minutos, com a mesma mensagem genérica (PR03). Um login correto volta a pôr o contador a zero. |
 | D10  | Como responder a um pedido de apagamento de dados pessoais (RGPD), dado que o histórico mantém nomes.     |
-| D11  | Estratégia de testes.                                                                                     |
+| D11  | Estratégia de testes. **Decidida** (Ficha PL 03): testes de integração ao backend (JUnit + RestAssured) contra um PostgreSQL real criado automaticamente para os testes; testes de componentes ao frontend (Vitest + Testing Library); verificações manuais registadas em [verification.md](verification.md). |
 
 ## 5. Limitações de âmbito
 
@@ -98,4 +99,5 @@ Consequências conhecidas das decisões tomadas para o MVP:
 | L03  | O estado "Em revisão" é apenas informativo: como os movimentos são livres e qualquer membro pode concluir, nada obriga a rever. |
 | L04  | A interface existe apenas em português.                                                                                         |
 | L05  | Não é possível anexar ficheiros às tarefas.                                                                                     |
-| L06  | Não é possível eliminar projetos, apenas arquivá-los.                                                                           |
+| L06  | Eliminar um projeto é definitivo: apaga também os seus membros, tarefas, responsáveis, comentários, histórico e registo de tarefas eliminadas, sem deixar registo da eliminação. Para guardar os dados, o Gestor deve arquivar em vez de eliminar. |
+| L07  | O registo público (US01) foi adiado: enquanto não for implementado, as contas de Membro são criadas por seed (dados de demonstração). |

@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<title>Matriz — Wireframe dos ecrãs de entrada, painel e projetos</title>
+<!--
+  Wireframe de baixa fidelidade (Ficha PL 03, Exercício 1).
+  Ecrãs: Início de sessão, Painel inicial e Projetos (vista de um Membro que é Gestor de alguns projetos).
+  O quadro Kanban e o detalhe da tarefa estão em wireframe.html.
+  Todos os dados são simulados. Largura alvo: 1280 px (RNF01), Firefox (RNF02).
+  Para gerar o PNG:
+    google-chrome --headless=new --hide-scrollbars --window-size=1280,2046 --screenshot=docs/ui/wireframe-ecras.png docs/ui/wireframe-ecras.html
+-->
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; width: 1280px; background: #fff; color: #333;
+    font: 14px/1.4 "DejaVu Sans", Arial, sans-serif;
+  }
+  .box { border: 2px solid #555; border-radius: 4px; }
+  .btn {
+    display: inline-block; border: 2px solid #555; border-radius: 4px;
+    padding: 6px 12px; background: #fff; font-weight: bold;
+  }
+  .btn.primary { background: #555; color: #fff; }
+  .btn.inativo { opacity: .5; }
+  .gestor { border-style: dashed; }
+  .n {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px; border-radius: 50%; background: #222; color: #fff;
+    font-size: 12px; font-weight: bold; vertical-align: middle; margin-left: 4px;
+  }
+  .input { border: 2px solid #555; border-radius: 3px; padding: 6px 8px; color: #888; background: #fff; }
+  .input.erro { border-color: #222; border-width: 3px; }
+  .msg-erro { font-size: 12px; font-weight: bold; margin-top: 4px; }
+  .aviso { border: 2px solid #555; border-left-width: 8px; padding: 8px 10px; background: #f2f2f2; font-size: 13px; }
+  label { display: block; font-weight: bold; margin: 12px 0 4px; font-size: 13px; }
+
+  .ecra { margin: 24px; }
+  .ecra > h2 { margin: 0 0 8px; font-size: 15px; text-transform: uppercase; color: #555; }
+  .moldura { border: 2px solid #555; border-radius: 4px; overflow: hidden; }
+
+  header {
+    display: flex; align-items: center; gap: 24px;
+    padding: 12px 24px; border-bottom: 2px solid #555; background: #eee;
+  }
+  .logo { font-weight: bold; font-size: 20px; border: 2px solid #555; padding: 2px 10px; }
+  nav a { margin-right: 16px; color: #333; text-decoration: none; }
+  nav a.ativo { font-weight: bold; border-bottom: 3px solid #333; }
+  .user { margin-left: auto; display: flex; gap: 12px; align-items: center; }
+  .avatar { width: 28px; height: 28px; border-radius: 50%; border: 2px solid #555; background: #ddd; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; }
+  .conteudo { padding: 16px 24px; }
+
+  /* Início de sessão */
+  .login-fundo { display: flex; gap: 48px; justify-content: center; padding: 32px; background: #f4f4f4; }
+  .login { width: 360px; padding: 20px 24px; background: #fff; }
+  .login .logo { display: inline-block; margin-bottom: 12px; }
+  .login h1 { margin: 0 0 12px; font-size: 20px; }
+  .login .btn { width: 100%; text-align: center; margin-top: 16px; }
+
+  /* Painel */
+  .ola { display: flex; align-items: center; margin-bottom: 12px; }
+  .ola h1 { margin: 0; font-size: 22px; }
+  .ola .direita { margin-left: auto; }
+  .cartoes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .proj { padding: 12px; }
+  .proj h3 { margin: 0 0 2px; font-size: 16px; display: flex; justify-content: space-between; }
+  .proj .gestor-tag { font-size: 11px; border: 1px dashed #555; padding: 0 6px; border-radius: 3px; font-weight: normal; }
+  .proj small { color: #666; }
+  .estados { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 10px; text-align: center; }
+  .estados div { background: #f2f2f2; border: 1px solid #999; border-radius: 3px; padding: 4px 2px; font-size: 11px; }
+  .estados b { display: block; font-size: 16px; }
+  .vazio { text-align: center; color: #666; padding: 28px; border: 2px dashed #999; border-radius: 4px; }
+
+  /* Projetos */
+  .ferramentas { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  .ferramentas .input { width: 340px; }
+  .ferramentas .direita { margin-left: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { border-bottom: 1px solid #999; padding: 8px; text-align: left; }
+  th { background: #eee; font-size: 13px; }
+  .paginacao { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; font-size: 13px; }
+  .paginas span { display: inline-block; border: 2px solid #555; border-radius: 3px; padding: 2px 8px; margin-left: 4px; }
+  .paginas .atual { background: #555; color: #fff; }
+  .lado { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 16px; }
+  .dialogo { padding: 16px 20px; background: #fff; box-shadow: 6px 6px 0 #bbb; }
+  .dialogo h3 { margin: 0 0 4px; font-size: 16px; }
+  .dialogo .botoes { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+
+  .notas { margin: 0 24px 24px; border-top: 2px solid #555; padding-top: 10px; font-size: 13px; columns: 2; column-gap: 32px; }
+  .notas p { margin: 0 0 6px; break-inside: avoid; }
+  .simulados { margin: 0 24px 16px; text-align: right; font-size: 12px; color: #777; }
+</style>
+</head>
+<body>
+
+<!-- 1. Início de sessão -->
+<section class="ecra">
+  <h2>1 · Início de sessão</h2>
+  <div class="moldura">
+    <div class="login-fundo">
+      <div class="login box">
+        <span class="logo">MATRIZ</span>
+        <h1>Iniciar sessão</h1>
+        <div class="aviso">Email ou palavra-passe incorretos. <span class="n">1</span></div>
+        <label>Email</label>
+        <div class="input">ana@empresa.pt</div>
+        <label>Palavra-passe</label>
+        <div class="input">••••••••</div>
+        <span class="btn primary">Entrar</span>
+      </div>
+      <div class="login box">
+        <span class="logo">MATRIZ</span>
+        <h1>Iniciar sessão</h1>
+        <div class="aviso">A sua sessão terminou. Inicie sessão novamente. <span class="n">2</span></div>
+        <label>Email</label>
+        <div class="input erro">&nbsp;</div>
+        <div class="msg-erro">Indique o email.</div>
+        <label>Palavra-passe</label>
+        <div class="input">&nbsp;</div>
+        <span class="btn primary inativo">A entrar…</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 2. Painel inicial -->
+<section class="ecra">
+  <h2>2 · Painel inicial</h2>
+  <div class="moldura">
+    <header>
+      <span class="logo">MATRIZ</span>
+      <nav>
+        <a href="#" class="ativo">Início</a>
+        <a href="#">Projetos</a>
+        <a href="#">As minhas tarefas</a>
+      </nav>
+      <div class="user">
+        <span class="avatar">AE</span>
+        <span>Ana Exemplo</span>
+        <span class="btn">Sair</span>
+      </div>
+    </header>
+    <div class="conteudo">
+      <div class="ola">
+        <h1>Olá, Ana Exemplo <span class="n">3</span></h1>
+        <span class="direita"><span class="btn primary">+ Novo projeto</span></span>
+      </div>
+      <div class="cartoes">
+        <div class="proj box">
+          <h3>Website institucional <span class="gestor-tag">Gestor</span></h3>
+          <small>44% concluído · 9 tarefas</small>
+          <div class="estados">
+            <div><b>2</b>A fazer</div><div><b>2</b>Em curso</div><div><b>1</b>Em revisão</div><div><b>4</b>Concluída</div>
+          </div>
+        </div>
+        <div class="proj box">
+          <h3>Portal do Cliente</h3>
+          <small>0% concluído · 3 tarefas</small>
+          <div class="estados">
+            <div><b>3</b>A fazer</div><div><b>0</b>Em curso</div><div><b>0</b>Em revisão</div><div><b>0</b>Concluída</div>
+          </div>
+        </div>
+        <div class="proj box">
+          <h3>Portal interno de RH <span><span class="gestor-tag">Gestor</span> <span class="n">4</span></span></h3>
+          <small>58% concluído · 12 tarefas</small>
+          <div class="estados">
+            <div><b>2</b>A fazer</div><div><b>2</b>Em curso</div><div><b>1</b>Em revisão</div><div><b>7</b>Concluída</div>
+          </div>
+        </div>
+      </div>
+      <div class="lado">
+        <div class="vazio">Ainda não faz parte de nenhum projeto.<br><br><span class="btn primary">+ Novo projeto</span> <span class="n">5</span></div>
+        <div class="vazio">A carregar os projetos… <br><br>⚠ Em caso de erro: "Não foi possível carregar os projetos." <span class="btn">Tentar novamente</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 3. Projetos -->
+<section class="ecra">
+  <h2>3 · Projetos</h2>
+  <div class="moldura">
+    <header>
+      <span class="logo">MATRIZ</span>
+      <nav>
+        <a href="#">Início</a>
+        <a href="#" class="ativo">Projetos</a>
+        <a href="#">As minhas tarefas</a>
+      </nav>
+      <div class="user">
+        <span class="avatar">AE</span>
+        <span>Ana Exemplo</span>
+        <span class="btn">Sair</span>
+      </div>
+    </header>
+    <div class="conteudo">
+      <div class="ferramentas">
+        <div class="input">🔍 portal</div> <span class="n">6</span>
+        <span class="direita"><span class="btn primary">+ Novo projeto</span></span>
+      </div>
+      <table class="box">
+        <tr><th>Nome</th><th>Gestor</th><th>Tarefas</th><th>Concluído</th><th>Ações</th></tr>
+        <tr><td><u>Portal do Cliente</u></td><td>Bruno Exemplo</td><td>3</td><td>0%</td><td>—</td></tr>
+        <tr><td><u>Portal interno de RH</u></td><td>Ana Exemplo</td><td>12</td><td>58%</td><td><span class="btn gestor">Editar</span> <span class="btn gestor">Eliminar</span> <span class="n">7</span></td></tr>
+      </table>
+      <div class="paginacao">
+        <span>2 projetos encontrados</span>
+        <span class="paginas">‹ <span class="atual">1</span> › <span class="n">8</span></span>
+      </div>
+
+      <div class="lado">
+        <div class="dialogo box">
+          <h3>Novo projeto <span class="n">9</span></h3>
+          <label>Nome *</label>
+          <div class="input erro">PR</div>
+          <div class="msg-erro">O nome deve ter entre 3 e 100 caracteres.</div>
+          <label>Descrição</label>
+          <div class="input" style="height:60px">Projeto de teste</div>
+          <div class="botoes"><span class="btn">Cancelar</span><span class="btn primary">Criar</span></div>
+        </div>
+        <div class="dialogo box">
+          <h3>Eliminar o projeto "Portal interno de RH"? <span class="n">10</span></h3>
+          <p>Esta ação é definitiva. Serão apagadas também as 12 tarefas do projeto, com os seus responsáveis, comentários e histórico.</p>
+          <p>Se quiser guardar os dados, arquive o projeto em vez de o eliminar.</p>
+          <div class="botoes"><span class="btn">Cancelar</span><span class="btn primary">Eliminar definitivamente</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="notas">
+  <p><span class="n">1</span> Credenciais erradas, ou email bloqueado após 5 tentativas: sempre a mesma mensagem genérica (PR03, D09). O email introduzido mantém-se.</p>
+  <p><span class="n">2</span> Quando a sessão expira (30 min sem atividade) ou deixa de ser válida, qualquer ecrã volta aqui com esta mensagem (D06). Campos validados antes de enviar; o botão fica inativo enquanto o pedido está em curso.</p>
+  <p><span class="n">3</span> Painel: nome do utilizador autenticado e os projetos não arquivados de que faz parte (US18). Cada cartão abre o detalhe do projeto (quadro Kanban, wireframe.html).</p>
+  <p><span class="n">4</span> Contagens por estado de todas as tarefas do projeto (não só da página visível), atualizadas depois de cada operação (US18 crit. 4).</p>
+  <p><span class="n">5</span> Estados do painel: sem projetos (com a opção de criar), a carregar e erro com "Tentar novamente".</p>
+  <p><span class="n">6</span> Pesquisa pelo nome, sem distinguir maiúsculas de minúsculas (US17). Sem resultados: "Nenhum projeto encontrado."</p>
+  <p><span class="n">7</span> Botões a tracejado: só nos projetos de que o utilizador é Gestor (US16). As permissões são também verificadas no servidor (S03).</p>
+  <p><span class="n">8</span> Paginação: 20 projetos por página; o total refere-se a todos os resultados da pesquisa.</p>
+  <p><span class="n">9</span> Criar e editar usam o mesmo formulário. Nome com 3 a 100 caracteres e descrição até 1000 (RN23); erros junto ao campo, sem perder o que foi escrito. Quem cria fica Gestor (RN05).</p>
+  <p><span class="n">10</span> Eliminar pede confirmação e explica o que será apagado (RN22, L06).</p>
+  <p>Interface para computador, Firefox, a partir de 1280 px (RNF01, RNF02); em larguras menores os cartões e a tabela adaptam-se, sem que isso seja requisito.</p>
+</section>
+
+<div class="simulados">Wireframe de baixa fidelidade · Vista de um Membro (Gestor de alguns projetos) · <strong>Dados simulados</strong></div>
+
+</body>
+</html>

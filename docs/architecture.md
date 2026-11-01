@@ -2,8 +2,8 @@
 
 Este documento regista a arquitetura escolhida para o MVP da Matriz e a sua
 justificação. Responde à decisão **D03** de
-[constraints.md](constraints.md). As tecnologias concretas continuam por
-decidir (ver secção 7).
+[constraints.md](constraints.md). As tecnologias foram escolhidas na Ficha
+PL 03 (D01, D02, D06; ver secção 7).
 
 ## 1. Decisão
 
@@ -16,10 +16,12 @@ responsabilidades bem separadas.
 Fatores do MVP que pesam na escolha:
 
 - **Escala pequena:** até 50 pessoas (RNF04), uma única empresa (RN01).
-- **Âmbito limitado:** 14 User Stories (US01 a US14).
+- **Âmbito limitado:** 17 User Stories (US01 a US14 e US16 a US18), com a
+  US01 adiada.
 - **Regras que cruzam áreas:** desativar uma conta mexe nos projetos e nas
   tarefas (RN17, RN18); remover um membro mexe nas tarefas (RN08); alterar
-  uma tarefa gera histórico (RF13).
+  uma tarefa gera histórico (RF13); eliminar um projeto apaga tudo o que ele
+  contém (RN22).
 - **Segurança:** as permissões têm de ser verificadas no servidor (S03, S04).
 
 ## 3. Alternativas consideradas
@@ -50,10 +52,10 @@ Fatores do MVP que pesam na escolha:
 
 ```mermaid
 flowchart LR
-    U[Utilizador<br/>Firefox] -->|HTTPS| FE[Frontend web]
-    FE -->|API REST / HTTPS| BE
+    U[Utilizador<br/>Firefox] -->|HTTPS| FE[Frontend web<br/>React + TypeScript]
+    FE -->|API REST / HTTPS<br/>cookie de sessão| BE
 
-    subgraph BE[Aplicação Matriz — monólito modular]
+    subgraph BE[Aplicação Matriz — monólito modular<br/>Java 21 + Quarkus]
         C[Contas]
         P[Projetos]
         T[Tarefas]
@@ -61,16 +63,16 @@ flowchart LR
         H[Histórico]
     end
 
-    BE --> DB[(Base de dados)]
-    C -->|links de confirmação| EM[Serviço de email externo]
+    BE --> DB[(PostgreSQL)]
+    C -.->|links de confirmação<br/>US01 adiada| EM[Serviço de email externo]
 ```
 
 | Componente                  | Responsabilidade                                                                                     |
 |-----------------------------|------------------------------------------------------------------------------------------------------|
-| Frontend web                | Interface em português de Portugal, para Firefox em ecrãs a partir de 1280 px (RNF01–RNF03). Não decide permissões: apenas mostra o que o servidor permite. |
-| Aplicação Matriz (backend)  | Expõe a API REST, aplica as regras de negócio e verifica as permissões no servidor (S03, S04).       |
-| Base de dados               | Uma única base de dados, partilhada pelos módulos da aplicação.                                      |
-| Serviço de email externo    | Envia os links de confirmação de conta (RF01). Fornecedor por decidir (D05).                         |
+| Frontend web                | Aplicação React (TypeScript, Vite) em português de Portugal, para Firefox em ecrãs a partir de 1280 px (RNF01–RNF03); o layout adapta-se a larguras menores, sem que isso passe a ser um requisito. Não decide permissões: apenas mostra o que o servidor permite. |
+| Aplicação Matriz (backend)  | Aplicação Quarkus (Java 21). Expõe a API REST, aplica as regras de negócio e verifica as permissões no servidor (S03, S04). |
+| Base de dados               | Uma única base de dados PostgreSQL, partilhada pelos módulos da aplicação. O esquema é criado por migrations Flyway. |
+| Serviço de email externo    | Envia os links de confirmação de conta (RF01). Fornecedor por decidir (D05); só é necessário quando a US01 for implementada. |
 
 Toda a comunicação entre o browser e o servidor é feita por HTTPS (S02).
 
@@ -78,9 +80,9 @@ Toda a comunicação entre o browser e o servidor é feita por HTTPS (S02).
 
 | Módulo          | Responsabilidade                                                                                                   | Requisitos             |
 |-----------------|--------------------------------------------------------------------------------------------------------------------|------------------------|
-| **Contas**      | Registo com email da empresa, confirmação por link, login e logout, sessões, desativar e reativar contas de Membro | RF01, RF02, RF14       |
-| **Projetos**    | Criar projetos, gerir membros e o Gestor, arquivar e reativar, calcular a percentagem de conclusão                 | RF03, RF04, RF08, RF10 |
-| **Tarefas**     | Criar, editar e eliminar tarefas, mudar estados, quadro Kanban, lista "As minhas tarefas"                          | RF05–RF07, RF09, RF11  |
+| **Contas**      | Registo com email da empresa e confirmação por link (adiados), login e logout, sessões, limite de tentativas, desativar e reativar contas de Membro | RF01, RF02, RF14       |
+| **Projetos**    | Criar, editar, eliminar e pesquisar projetos, gerir membros e o Gestor, arquivar e reativar, calcular a percentagem de conclusão e as contagens do painel | RF03, RF04, RF08, RF10, RF16–RF18 |
+| **Tarefas**     | Criar, editar e eliminar tarefas, mudar estados, atribuir e remover responsáveis, filtrar, quadro Kanban, lista "As minhas tarefas" | RF05–RF07, RF09, RF11, RF17 |
 | **Comentários** | Comentar tarefas; só o autor edita ou apaga o seu comentário (PR11)                                                | RF12                   |
 | **Histórico**   | Registar as alterações de cada tarefa e o registo das tarefas eliminadas                                           | RF13, RF09             |
 
@@ -92,14 +94,74 @@ As principais interações são:
 | Situação                              | Módulos envolvidos                       | Regra           |
 |---------------------------------------|------------------------------------------|-----------------|
 | Desativar uma conta de Gestor         | Contas → Projetos (nomear novo Gestor)   | RN17, PR14      |
-| Desativar qualquer conta              | Contas → Tarefas (tirar o responsável); termina as sessões dessa pessoa | RN18, PR16 |
-| Remover um membro de um projeto       | Projetos → Tarefas (tirar o responsável) | RN08            |
+| Desativar qualquer conta              | Contas → Tarefas (retirar as atribuições dessa pessoa); termina as sessões dessa pessoa | RN18, PR16 |
+| Remover um membro de um projeto       | Projetos → Tarefas (retirar as atribuições dessa pessoa) | RN08    |
 | Criar ou alterar uma tarefa           | Tarefas → Histórico                      | RF13            |
 | Eliminar uma tarefa                   | Tarefas → Comentários e Histórico (apagar e deixar registo da eliminação) | RF09, PR08 |
-| Calcular a percentagem de conclusão   | Projetos → Tarefas (contar estados)      | RF10, PR09      |
+| Eliminar um projeto                   | Projetos → Tarefas, Comentários e Histórico (apagar em cascata) | RN22, RI17 |
+| Calcular a percentagem e as contagens | Projetos → Tarefas (contar estados)      | RF10, RF18, PR09 |
 | Verificar se alguém é membro / Gestor | Tarefas, Comentários → Projetos          | S03, S04, RN20  |
 
-## 7. Pressupostos e decisões pendentes
+## 7. Tecnologias
+
+Escolhidas na Ficha PL 03 (decisões em [constraints.md](constraints.md)).
+
+| Camada        | Tecnologia                                                                                   | Decisão |
+|---------------|----------------------------------------------------------------------------------------------|---------|
+| Backend       | Java 21, Quarkus (REST com Jackson, Hibernate ORM com Panache, Hibernate Validator)           | D01     |
+| Base de dados | PostgreSQL, executado em Docker (Docker Compose, com volume persistente); migrations Flyway   | D02     |
+| Palavras-passe| Hash bcrypt (S01)                                                                            | S01     |
+| Frontend      | React com TypeScript, criado com Vite; React Router para a navegação                         | D01     |
+| Testes        | Backend: JUnit + RestAssured contra PostgreSQL criado pelo Quarkus Dev Services; Frontend: Vitest + Testing Library | D11 |
+
+### Organização do backend
+
+Decisão e alternativas em
+[ADR 0001](decisions/0001-arquitetura-interna-backend.md): **camadas por
+módulo com DDD leve**.
+
+Cada módulo da secção 6 corresponde a um package Java (um contexto
+delimitado) com as suas próprias camadas:
+
+- **recurso** — endpoints REST: recebe e devolve DTOs, nunca entidades;
+- **serviço** — caso de uso: transação, verificação de permissões e
+  comunicação com outros módulos;
+- **domínio e persistência** — entidades JPA com comportamento, que protegem
+  as suas invariantes (agregados `Projeto` e `Tarefa`), e repositórios
+  Panache.
+
+Um package comum guarda o que é partilhado: o formato único de erro, a
+autenticação (leitura do cookie e identificação do utilizador) e a
+configuração. Um módulo só usa outro através do serviço desse módulo.
+
+### Autenticação e sessão (D06)
+
+1. No login, o backend verifica o email e a palavra-passe (bcrypt) e o
+   limite de tentativas (D09).
+2. Se estiverem corretos, gera um token aleatório, guarda o seu hash na
+   tabela `sessao` e envia o token num cookie `HttpOnly`, `SameSite=Strict`
+   (e `Secure` quando servido por HTTPS, S02).
+3. Em cada pedido, o backend procura a sessão pelo hash do token, confirma que
+   não passaram 30 minutos desde a última atividade e atualiza-a. Sem sessão
+   válida, responde 401.
+4. Sair apaga a sessão; desativar uma conta apaga todas as sessões dessa
+   pessoa (PR16).
+
+A identidade usada nas regras (autor de um comentário, Gestor de um projeto
+novo, autor do histórico) vem sempre da sessão, e nunca de dados enviados
+pelo cliente.
+
+### Configuração e ambiente
+
+- A configuração sensível (ligação à base de dados, conta de Administrador,
+  D07) é lida de variáveis de ambiente. O repositório tem apenas um ficheiro
+  de exemplo com valores fictícios (S08).
+- Em desenvolvimento, o servidor do Vite reencaminha os pedidos `/api` para o
+  backend, para que frontend e backend fiquem na mesma origem e o cookie
+  funcione sem CORS. O endereço do backend fica num único sítio de
+  configuração.
+
+## 8. Pressupostos e decisões pendentes
 
 **Pressupostos desta arquitetura:**
 
@@ -111,8 +173,5 @@ As principais interações são:
 
 | ID  | Decisão                                       |
 |-----|-----------------------------------------------|
-| D01 | Linguagem e framework (frontend e backend)    |
-| D02 | Base de dados                                 |
 | D04 | Alojamento                                    |
 | D05 | Serviço de envio de emails                    |
-| D06 | Mecanismo de autenticação e de sessão         |

@@ -4,11 +4,12 @@
 <meta charset="utf-8">
 <title>Matriz — Wireframe do Quadro Kanban</title>
 <!--
-  Wireframe de baixa fidelidade (Ficha PL 02, Exercício 4).
-  Ecrã: Quadro Kanban de um projeto, vista do Gestor.
+  Wireframe de baixa fidelidade (Ficha PL 02, Exercício 4; atualizado na Ficha PL 03:
+  vários responsáveis, editar/eliminar projeto, filtros e paginação por coluna).
+  Ecrã: Quadro Kanban de um projeto, vista do Gestor. Outros ecrãs: wireframe-ecras.html.
   Todos os dados são simulados. Largura alvo: 1280 px (RNF01), Firefox (RNF02).
   Para gerar o PNG:
-    google-chrome --headless=new --hide-scrollbars --window-size=1280,1180 --screenshot=docs/ui/wireframe.png docs/ui/wireframe.html
+    google-chrome --headless=new --hide-scrollbars --window-size=1280,1442 --screenshot=docs/ui/wireframe.png docs/ui/wireframe.html
 -->
 <style>
   * { box-sizing: border-box; }
@@ -53,8 +54,12 @@
   .projeto p { margin: 0; color: #666; }
   .progresso { width: 260px; }
   .barra { height: 14px; border: 2px solid #555; border-radius: 7px; overflow: hidden; margin-top: 4px; }
-  .barra div { height: 100%; width: 37%; background: #777; }
+  .barra div { height: 100%; width: 44%; background: #777; }
   .acoes { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+  .barra-filtros { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; padding: 8px 10px; background: #f4f4f4; }
+  .barra-filtros .direita { margin-left: auto; }
+  .ver-mais { text-align: center; font-size: 13px; padding: 6px; border: 2px dashed #aaa; border-radius: 4px; color: #555; }
+  .chip { display: inline-block; border: 1px solid #777; border-radius: 10px; padding: 0 8px; font-size: 12px; background: #f2f2f2; margin: 0 4px 4px 0; }
 
   /* Quadro */
   .quadro { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
@@ -97,6 +102,7 @@
 <header>
   <span class="logo">MATRIZ</span>
   <nav>
+    <a href="#">Início</a>
     <a href="#" class="ativo">Projetos</a>
     <a href="#">As minhas tarefas</a>
   </nav>
@@ -116,17 +122,27 @@
       <p>Renovação do site da empresa.</p>
     </div>
     <div class="progresso">
-      <strong>37% concluído</strong> <span class="n">1</span>
+      <strong>44% concluído</strong> <span class="n">1</span>
       <div class="barra"><div></div></div>
-      <small>3 de 8 tarefas concluídas</small>
+      <small>4 de 9 tarefas concluídas</small>
     </div>
     <div class="acoes">
-      <span class="btn primary">+ Nova tarefa</span>
+      <span class="btn gestor">Editar</span>
       <span class="btn gestor">Membros</span>
       <span class="btn gestor">Tarefas eliminadas</span>
       <span class="btn gestor">Arquivar</span>
+      <span class="btn gestor">Eliminar</span>
       <span class="n">2</span>
     </div>
+  </section>
+
+  <section class="barra-filtros box">
+    <strong>Filtrar</strong>
+    <span>Estado</span><span class="select">Todos <span>▾</span></span>
+    <span>Prioridade</span><span class="select">Todas <span>▾</span></span>
+    <span class="btn">Limpar filtros</span>
+    <span class="n">7</span>
+    <span class="direita"><span class="btn primary">+ Nova tarefa</span></span>
   </section>
 
   <section class="quadro">
@@ -150,7 +166,7 @@
       <div class="cartao box a-arrastar">
         <span class="pega">⠿</span>
         <div class="titulo">Criar maquete da página inicial</div>
-        <div class="linha"><span>Ana Exemplo</span></div>
+        <div class="linha"><span>Ana Exemplo, Bruno Exemplo</span></div>
         <div class="meta"><span class="tag">Alta</span><span class="tag">05/11/2026</span></div>
       </div>
       <div class="cartao box">
@@ -167,13 +183,13 @@
       <div class="cartao box">
         <span class="pega">⠿</span>
         <div class="titulo">Validar acessibilidade</div>
-        <div class="linha"><span>Ana Exemplo</span></div>
+        <div class="linha"><span>Ana Exemplo, Carla Exemplo</span></div>
         <div class="meta"><span class="tag">Média</span><span class="tag">12/11/2026</span></div>
       </div>
     </div>
 
     <div class="coluna box">
-      <h2>Concluída <span class="contagem">3</span></h2>
+      <h2>Concluída <span class="contagem">4</span></h2>
       <div class="cartao box">
         <span class="pega">⠿</span>
         <div class="titulo">Reunião de arranque</div>
@@ -191,6 +207,7 @@
         <div class="linha"><span class="sem-resp">Sem responsável</span></div>
         <div class="meta"><span class="tag">Baixa</span><span class="tag">20/10/2026</span></div>
       </div>
+      <div class="ver-mais">Ver mais (1) <span class="n">8</span></div>
     </div>
   </section>
 
@@ -201,7 +218,7 @@
       <div class="campo"><strong>Criar maquete da página inicial</strong></div>
       <div class="campo"><span>Descrição</span><span class="select">Versão em papel e digital</span></div>
       <div class="campo"><span>Estado</span><span class="select">Em curso <span>▾</span></span></div>
-      <div class="campo"><span>Responsável</span><span class="select">Ana Exemplo <span>▾</span></span></div>
+      <div class="campo"><span>Responsáveis <span class="n">9</span></span><span style="text-align:right"><span class="chip">Ana Exemplo ✕</span><span class="chip">Bruno Exemplo ✕</span><br><span class="select" style="display:inline-flex">+ Adicionar <span>▾</span></span></span></div>
       <div class="campo"><span>Prioridade</span><span class="select">Alta <span>▾</span></span></div>
       <div class="campo"><span>Prazo</span><span class="select">05/11/2026 <span>▦</span></span></div>
       <div class="separadores"><strong>Comentários</strong><span>Histórico</span></div>
@@ -233,15 +250,19 @@
   </section>
 
   <section class="notas">
-    <p><span class="n">1</span> Percentagem = tarefas "Concluída" ÷ total × 100, arredondada para baixo (3/8 = 37,5% → 37%). Projeto sem tarefas = 0% (US10, PR09). A contagem "3 de 8" é uma proposta de UI (informação derivada).</p>
-    <p><span class="n">2</span> Botões a tracejado: visíveis apenas para o Gestor (US04, US08, US09). As permissões são também verificadas no servidor (S03).</p>
+    <p><span class="n">1</span> Percentagem = tarefas "Concluída" ÷ total × 100, arredondada para baixo (4/9 = 44,4% → 44%). Projeto sem tarefas = 0% (US10, PR09). Conta todas as tarefas, mesmo com filtros. A contagem "4 de 9" é uma proposta de UI (informação derivada).</p>
+    <p><span class="n">2</span> Botões a tracejado: visíveis apenas para o Gestor (US04, US08, US09, US16). As permissões são também verificadas no servidor (S03). Eliminar o projeto pede confirmação e avisa que apaga tudo o que ele contém (RN22, L06).</p>
     <p><span class="n">3</span> Mudar estado arrastando o cartão (pega ⠿) para outra coluna; qualquer estado para qualquer outro (RN13, US06).</p>
     <p><span class="n">4</span> Alternativa acessível por teclado: abrir o cartão e mudar o estado no seletor. Comentários e histórico no detalhe (US12, US13).</p>
     <p><span class="n">5</span> Num quadro com tarefas, uma coluna sem tarefas fica simplesmente vazia.</p>
     <p><span class="n">6</span> Eliminar (só Gestor) pede confirmação antes de eliminar (US09 crit. 1).</p>
-    <p>Cartão: título, responsável (ou "Sem responsável") e, quando existam, prioridade e prazo (US07 crit. 3, PR06). Prazos passados não têm destaque (fora do MVP).</p>
+    <p><span class="n">7</span> Filtros por estado e prioridade (incluindo "Sem prioridade"), aplicados a todas as colunas; filtrar por estado mostra só essa coluna. O número de cada coluna é o total com os filtros (US17).</p>
+    <p><span class="n">8</span> Cada coluna mostra até 20 tarefas; "Ver mais" carrega as seguintes (paginação por coluna). Aqui com menos tarefas, só para ilustrar.</p>
+    <p><span class="n">9</span> Vários responsáveis por tarefa (RN11): ✕ remove só essa atribuição; "+ Adicionar" mostra só membros ativos do projeto que ainda não são responsáveis (RI02, CE8).</p>
+    <p>Cartão: título, responsáveis (ou "Sem responsável") e, quando existam, prioridade e prazo (US07 crit. 3, PR06). Prazos passados não têm destaque (fora do MVP).</p>
+    <p>Erros ao guardar: mensagem junto ao formulário, sem perder o que foi escrito. Se outra pessoa alterou a tarefa entretanto, pede para recarregar (D08). Botões ficam inativos enquanto o pedido está em curso.</p>
     <p>Projeto arquivado: o mesmo ecrã só de leitura, sem botões de alteração e sem arrastar; o Gestor vê apenas <strong>Reativar</strong> (RN15, US08).</p>
-    <p>Interface só para computador, Firefox, a partir de 1280 px (RNF01, RNF02); textos em português de Portugal (RNF03).</p>
+    <p>Interface para computador, Firefox, a partir de 1280 px (RNF01, RNF02); textos em português de Portugal (RNF03). Em larguras menores o layout adapta-se (ex.: colunas empilhadas), sem que isso seja requisito.</p>
   </section>
 
   <div class="simulados">Wireframe de baixa fidelidade · Vista do Gestor · <strong>Dados simulados</strong></div>

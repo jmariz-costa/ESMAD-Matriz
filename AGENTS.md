@@ -20,7 +20,9 @@ Antes de qualquer tarefa, ler os documentos relevantes:
 - [docs/architecture.md](docs/architecture.md) — arquitetura, componentes e módulos.
 - [docs/database.md](docs/database.md) — modelo de dados, diagrama ER e regras de integridade.
 - [openapi.yaml](openapi.yaml) — contrato REST (OpenAPI 3.1).
-- [docs/ui/](docs/ui/) — wireframe da interface.
+- [docs/ui/](docs/ui/) — wireframes da interface.
+- [docs/decisions/](docs/decisions/) — decisões arquiteturais (ADRs).
+- [docs/implementation-plan.md](docs/implementation-plan.md) — plano de implementação e estado dos incrementos.
 
 Estes documentos são a fonte de verdade do projeto.
 
