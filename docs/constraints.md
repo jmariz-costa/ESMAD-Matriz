@@ -9,7 +9,7 @@ ainda pendentes e as limitações de âmbito do MVP.
 
 | ID   | Restrição                                                                                              |
 |------|--------------------------------------------------------------------------------------------------------|
-| R01  | Nesta fase (Ficha PL 01) não é implementado código: apenas análise e especificação.                     |
+| R01  | Nas Fichas PL 01 e PL 02 não é implementado código: apenas análise, especificação e conceção.          |
 | R02  | A Matriz é usada por uma única empresa.                                                                 |
 | R03  | A Matriz é uma aplicação web, usada apenas em computador; não há app móvel nem suporte a telemóvel.     |
 | R04  | Deve funcionar apenas no Firefox, nas 2 versões principais mais recentes, em ecrãs a partir de 1280 px de largura. |
@@ -77,7 +77,7 @@ A decidir a partir da Aula 2 (Conceção, Arquitetura & Prototipagem).
 |------|-----------------------------------------------------------------------------------------------------------|
 | D01  | Linguagem e framework (frontend e backend).                                                               |
 | D02  | Base de dados.                                                                                            |
-| D03  | Arquitetura da aplicação.                                                                                 |
+| D03  | Arquitetura da aplicação. **Decidida** (Ficha PL 02): monólito modular, ver [architecture.md](architecture.md). |
 | D04  | Alojamento (onde a Matriz vai correr).                                                                    |
 | D05  | Serviço de envio de emails (confirmação de conta).                                                        |
 | D06  | Mecanismo de autenticação e de sessão, incluindo o tempo até uma sessão inativa expirar.                  |

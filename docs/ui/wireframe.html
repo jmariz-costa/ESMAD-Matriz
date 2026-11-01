@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<title>Matriz — Wireframe do Quadro Kanban</title>
+<!--
+  Wireframe de baixa fidelidade (Ficha PL 02, Exercício 4).
+  Ecrã: Quadro Kanban de um projeto, vista do Gestor.
+  Todos os dados são simulados. Largura alvo: 1280 px (RNF01), Firefox (RNF02).
+  Para gerar o PNG:
+    google-chrome --headless=new --hide-scrollbars --window-size=1280,1180 --screenshot=docs/ui/wireframe.png docs/ui/wireframe.html
+-->
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; width: 1280px; background: #fff; color: #333;
+    font: 14px/1.4 "DejaVu Sans", Arial, sans-serif;
+  }
+  .box { border: 2px solid #555; border-radius: 4px; }
+  .btn {
+    display: inline-block; border: 2px solid #555; border-radius: 4px;
+    padding: 6px 12px; background: #fff; font-weight: bold;
+  }
+  .btn.primary { background: #555; color: #fff; }
+  .gestor { position: relative; border-style: dashed; }
+  .tag {
+    display: inline-block; border: 1px solid #777; border-radius: 3px;
+    padding: 0 6px; font-size: 12px; color: #444; background: #f2f2f2;
+  }
+  .n {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px; border-radius: 50%; background: #222; color: #fff;
+    font-size: 12px; font-weight: bold; vertical-align: middle; margin-left: 4px;
+  }
+
+  /* Barra superior */
+  header {
+    display: flex; align-items: center; gap: 24px;
+    padding: 12px 24px; border-bottom: 2px solid #555; background: #eee;
+  }
+  .logo { font-weight: bold; font-size: 20px; border: 2px solid #555; padding: 2px 10px; }
+  nav a { margin-right: 16px; color: #333; text-decoration: none; }
+  nav a.ativo { font-weight: bold; border-bottom: 3px solid #333; }
+  .user { margin-left: auto; display: flex; gap: 12px; align-items: center; }
+  .avatar { width: 28px; height: 28px; border-radius: 50%; border: 2px solid #555; background: #ddd; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; }
+
+  main { padding: 16px 24px; }
+  .breadcrumb { color: #666; font-size: 13px; margin-bottom: 8px; }
+
+  /* Cabeçalho do projeto */
+  .projeto { display: flex; align-items: flex-start; gap: 24px; margin-bottom: 16px; }
+  .projeto h1 { margin: 0 0 4px; font-size: 24px; }
+  .projeto p { margin: 0; color: #666; }
+  .progresso { width: 260px; }
+  .barra { height: 14px; border: 2px solid #555; border-radius: 7px; overflow: hidden; margin-top: 4px; }
+  .barra div { height: 100%; width: 37%; background: #777; }
+  .acoes { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+
+  /* Quadro */
+  .quadro { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .coluna { background: #f4f4f4; padding: 10px; min-height: 360px; }
+  .coluna h2 {
+    margin: 0 0 10px; font-size: 15px; display: flex; justify-content: space-between;
+  }
+  .contagem { font-weight: normal; color: #666; }
+  .cartao { background: #fff; padding: 10px; margin-bottom: 10px; position: relative; }
+  .cartao .titulo { font-weight: bold; margin-bottom: 6px; padding-right: 16px; }
+  .cartao .linha { display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
+  .cartao .meta { margin-top: 6px; display: flex; gap: 6px; font-size: 12px; }
+  .pega { position: absolute; top: 8px; right: 8px; color: #999; font-size: 14px; letter-spacing: -2px; }
+  .sem-resp { color: #888; font-style: italic; }
+  .a-arrastar { opacity: .55; border-style: dashed; transform: rotate(-2deg); }
+  .largar {
+    border: 2px dashed #888; border-radius: 4px; height: 70px; margin-bottom: 10px;
+    display: flex; align-items: center; justify-content: center; color: #888; font-size: 13px;
+  }
+
+  /* Faixa inferior: detalhe e estados */
+  .faixa-titulo { margin: 24px 0 8px; font-size: 15px; }
+  .faixa { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: 16px; }
+  .mini { padding: 10px; font-size: 13px; min-height: 190px; }
+  .mini h3 { margin: 0 0 8px; font-size: 13px; text-transform: uppercase; color: #555; }
+  .campo { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .select { border: 2px solid #555; border-radius: 3px; padding: 1px 8px; min-width: 130px; display: flex; justify-content: space-between; }
+  .separadores { display: flex; gap: 12px; border-bottom: 2px solid #ccc; margin: 8px 0; padding-bottom: 4px; }
+  .esqueleto { background: #ddd; border-radius: 3px; height: 14px; margin-bottom: 8px; }
+  .centro { text-align: center; color: #666; padding-top: 24px; }
+
+  /* Notas */
+  .notas { margin-top: 24px; border-top: 2px solid #555; padding-top: 10px; font-size: 13px; columns: 2; column-gap: 32px; }
+  .notas p { margin: 0 0 6px; break-inside: avoid; }
+  .simulados { margin-top: 12px; text-align: right; font-size: 12px; color: #777; }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="logo">MATRIZ</span>
+  <nav>
+    <a href="#" class="ativo">Projetos</a>
+    <a href="#">As minhas tarefas</a>
+  </nav>
+  <div class="user">
+    <span class="avatar" title="Iniciais do nome (sem fotografia, S07)">AE</span>
+    <span>Ana Exemplo</span>
+    <span class="btn">Sair</span>
+  </div>
+</header>
+
+<main>
+  <div class="breadcrumb">Projetos › Website institucional</div>
+
+  <section class="projeto">
+    <div>
+      <h1>Website institucional</h1>
+      <p>Renovação do site da empresa.</p>
+    </div>
+    <div class="progresso">
+      <strong>37% concluído</strong> <span class="n">1</span>
+      <div class="barra"><div></div></div>
+      <small>3 de 8 tarefas concluídas</small>
+    </div>
+    <div class="acoes">
+      <span class="btn primary">+ Nova tarefa</span>
+      <span class="btn gestor">Membros</span>
+      <span class="btn gestor">Tarefas eliminadas</span>
+      <span class="btn gestor">Arquivar</span>
+      <span class="n">2</span>
+    </div>
+  </section>
+
+  <section class="quadro">
+    <div class="coluna box">
+      <h2>A fazer <span class="contagem">2</span></h2>
+      <div class="cartao box">
+        <span class="pega">⠿</span>
+        <div class="titulo">Definir mapa do site</div>
+        <div class="linha"><span class="sem-resp">Sem responsável</span></div>
+        <div class="meta"><span class="tag">Alta</span><span class="tag">10/11/2026</span></div>
+      </div>
+      <div class="cartao box">
+        <span class="pega">⠿</span>
+        <div class="titulo">Escolher fotografias</div>
+        <div class="linha"><span>Bruno Exemplo</span></div>
+      </div>
+    </div>
+
+    <div class="coluna box">
+      <h2>Em curso <span class="contagem">2</span></h2>
+      <div class="cartao box a-arrastar">
+        <span class="pega">⠿</span>
+        <div class="titulo">Criar maquete da página inicial</div>
+        <div class="linha"><span>Ana Exemplo</span></div>
+        <div class="meta"><span class="tag">Alta</span><span class="tag">05/11/2026</span></div>
+      </div>
+      <div class="cartao box">
+        <span class="pega">⠿</span>
+        <div class="titulo">Configurar formulário de contacto</div>
+        <div class="linha"><span>Carla Exemplo</span></div>
+        <div class="meta"><span class="tag">Baixa</span><span class="tag">28/10/2026</span></div>
+      </div>
+    </div>
+
+    <div class="coluna box">
+      <h2>Em revisão <span class="contagem">1</span></h2>
+      <div class="largar">Largar aqui <span class="n">3</span></div>
+      <div class="cartao box">
+        <span class="pega">⠿</span>
+        <div class="titulo">Validar acessibilidade</div>
+        <div class="linha"><span>Ana Exemplo</span></div>
+        <div class="meta"><span class="tag">Média</span><span class="tag">12/11/2026</span></div>
+      </div>
+    </div>
+
+    <div class="coluna box">
+      <h2>Concluída <span class="contagem">3</span></h2>
+      <div class="cartao box">
+        <span class="pega">⠿</span>
+        <div class="titulo">Reunião de arranque</div>
+        <div class="linha"><span>Bruno Exemplo</span></div>
+      </div>
+      <div class="cartao box">
+        <span class="pega">⠿</span>
+        <div class="titulo">Levantamento de conteúdos</div>
+        <div class="linha"><span>Carla Exemplo</span></div>
+        <div class="meta"><span class="tag">Média</span></div>
+      </div>
+      <div class="cartao box">
+        <span class="pega">⠿</span>
+        <div class="titulo">Definir paleta de cores</div>
+        <div class="linha"><span class="sem-resp">Sem responsável</span></div>
+        <div class="meta"><span class="tag">Baixa</span><span class="tag">20/10/2026</span></div>
+      </div>
+    </div>
+  </section>
+
+  <h2 class="faixa-titulo">Detalhe da tarefa e estados do quadro</h2>
+  <section class="faixa">
+    <div class="mini box">
+      <h3>Detalhe (ao clicar num cartão) <span class="n">4</span></h3>
+      <div class="campo"><strong>Criar maquete da página inicial</strong></div>
+      <div class="campo"><span>Descrição</span><span class="select">Versão em papel e digital</span></div>
+      <div class="campo"><span>Estado</span><span class="select">Em curso <span>▾</span></span></div>
+      <div class="campo"><span>Responsável</span><span class="select">Ana Exemplo <span>▾</span></span></div>
+      <div class="campo"><span>Prioridade</span><span class="select">Alta <span>▾</span></span></div>
+      <div class="campo"><span>Prazo</span><span class="select">05/11/2026 <span>▦</span></span></div>
+      <div class="separadores"><strong>Comentários</strong><span>Histórico</span></div>
+      <div class="campo"><span class="btn primary">Guardar</span><span><span class="btn gestor">Eliminar</span> <span class="n">6</span></span></div>
+    </div>
+    <div class="mini box">
+      <h3>A carregar</h3>
+      <div class="esqueleto" style="width:60%"></div>
+      <div class="esqueleto"></div>
+      <div class="esqueleto" style="width:80%"></div>
+      <div class="esqueleto" style="width:40%"></div>
+      <div class="centro">A carregar o quadro…</div>
+    </div>
+    <div class="mini box">
+      <h3>Vazio <span class="n">5</span></h3>
+      <div class="centro">
+        Este projeto ainda não tem tarefas.<br><br>
+        <span class="btn primary">+ Nova tarefa</span><br><br>
+        <small>0% concluído</small>
+      </div>
+    </div>
+    <div class="mini box">
+      <h3>Erro</h3>
+      <div class="centro">
+        ⚠<br>Não foi possível carregar o quadro.<br><br>
+        <span class="btn">Tentar novamente</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="notas">
+    <p><span class="n">1</span> Percentagem = tarefas "Concluída" ÷ total × 100, arredondada para baixo (3/8 = 37,5% → 37%). Projeto sem tarefas = 0% (US10, PR09). A contagem "3 de 8" é uma proposta de UI (informação derivada).</p>
+    <p><span class="n">2</span> Botões a tracejado: visíveis apenas para o Gestor (US04, US08, US09). As permissões são também verificadas no servidor (S03).</p>
+    <p><span class="n">3</span> Mudar estado arrastando o cartão (pega ⠿) para outra coluna; qualquer estado para qualquer outro (RN13, US06).</p>
+    <p><span class="n">4</span> Alternativa acessível por teclado: abrir o cartão e mudar o estado no seletor. Comentários e histórico no detalhe (US12, US13).</p>
+    <p><span class="n">5</span> Num quadro com tarefas, uma coluna sem tarefas fica simplesmente vazia.</p>
+    <p><span class="n">6</span> Eliminar (só Gestor) pede confirmação antes de eliminar (US09 crit. 1).</p>
+    <p>Cartão: título, responsável (ou "Sem responsável") e, quando existam, prioridade e prazo (US07 crit. 3, PR06). Prazos passados não têm destaque (fora do MVP).</p>
+    <p>Projeto arquivado: o mesmo ecrã só de leitura, sem botões de alteração e sem arrastar; o Gestor vê apenas <strong>Reativar</strong> (RN15, US08).</p>
+    <p>Interface só para computador, Firefox, a partir de 1280 px (RNF01, RNF02); textos em português de Portugal (RNF03).</p>
+  </section>
+
+  <div class="simulados">Wireframe de baixa fidelidade · Vista do Gestor · <strong>Dados simulados</strong></div>
+</main>
+
+</body>
+</html>

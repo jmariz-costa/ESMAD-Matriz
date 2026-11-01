@@ -43,13 +43,21 @@ O detalhe está em [docs/requirements.md](docs/requirements.md).
 | [docs/requirements.md](docs/requirements.md)   | Visão, objetivos, tipos de utilizadores, regras de negócio, requisitos, âmbito do MVP          |
 | [docs/user-stories.md](docs/user-stories.md)   | User Stories do MVP, prioridades, critérios de aceitação e casos excecionais                  |
 | [docs/constraints.md](docs/constraints.md)     | Restrições, pressupostos, segurança e privacidade, decisões pendentes, limitações de âmbito   |
+| [docs/architecture.md](docs/architecture.md)   | Arquitetura escolhida (monólito modular), justificação, componentes e módulos                 |
+| [docs/database.md](docs/database.md)           | Modelo de dados, diagrama ER em Mermaid e regras de integridade                               |
+| [openapi.yaml](openapi.yaml)                   | Contrato REST simplificado (OpenAPI 3.1): criar e editar tarefa                               |
+| [docs/ui/](docs/ui/)                           | Wireframe do quadro Kanban (PNG e HTML de origem)                                              |
 | [AGENTS.md](AGENTS.md)                         | Instruções para agentes de IA que trabalhem neste repositório                                 |
 
 ## Estado atual
 
-**Fase de especificação** (Ficha PL 01). Ainda não existe código.
+**Fase de conceção** (Ficha PL 02). Ainda não existe código.
 
-- Requisitos, User Stories e critérios de aceitação do MVP definidos.
-- Tecnologias, arquitetura e base de dados ainda por decidir (ver decisões
-  pendentes em [docs/constraints.md](docs/constraints.md)).
-- Próxima fase: conceção, arquitetura e prototipagem (Aula 2).
+- Specification Pack (Ficha PL 01): requisitos, User Stories e critérios de
+  aceitação.
+- Architecture Pack (Ficha PL 02): monólito modular, modelo de dados e
+  diagrama ER, contrato OpenAPI (criar e editar tarefa), wireframe do quadro
+  Kanban.
+- Tecnologias, base de dados e autenticação ainda por decidir (ver
+  [docs/constraints.md](docs/constraints.md)).
+- Próxima fase: desenvolvimento full-stack (Aula 3).

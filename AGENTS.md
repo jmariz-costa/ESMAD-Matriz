@@ -6,8 +6,8 @@ repositório da Matriz.
 ## Projeto
 
 A Matriz é uma aplicação web interna de gestão de projetos e tarefas. O
-projeto está em **fase de especificação**: ainda não existe código e as
-tecnologias ainda não foram escolhidas.
+projeto está em **fase de conceção**: ainda não existe código. A arquitetura
+está decidida (monólito modular), mas as tecnologias ainda não foram escolhidas.
 
 ## 1. Consultar a documentação antes de agir
 
@@ -17,6 +17,10 @@ Antes de qualquer tarefa, ler os documentos relevantes:
 - [docs/requirements.md](docs/requirements.md) — requisitos e regras de negócio confirmados.
 - [docs/user-stories.md](docs/user-stories.md) — User Stories e critérios de aceitação.
 - [docs/constraints.md](docs/constraints.md) — restrições, pressupostos, segurança e decisões pendentes.
+- [docs/architecture.md](docs/architecture.md) — arquitetura, componentes e módulos.
+- [docs/database.md](docs/database.md) — modelo de dados, diagrama ER e regras de integridade.
+- [openapi.yaml](openapi.yaml) — contrato REST (OpenAPI 3.1).
+- [docs/ui/](docs/ui/) — wireframe da interface.
 
 Estes documentos são a fonte de verdade do projeto.
 
@@ -31,7 +35,7 @@ Estes documentos são a fonte de verdade do projeto.
 
 - Não acrescentar funcionalidades, regras ou comportamentos que não estejam documentados.
 - Não tomar decisões que estejam listadas como pendentes em `constraints.md`
-  (ex.: tecnologias, base de dados, arquitetura). Propor opções e esperar aprovação.
+  (ex.: tecnologias, base de dados, autenticação). Propor opções e esperar aprovação.
 - Não tratar pressupostos como requisitos confirmados.
 - Se faltar informação, perguntar em vez de assumir.
 

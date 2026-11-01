@@ -1,0 +1,359 @@
+openapi: 3.1.0
+info:
+  title: Matriz API
+  version: 0.1.0
+  contact:
+    name: Equipa Matriz
+    email: matriz@empresa.pt
+  description: |
+    Contrato REST simplificado do MVP da Matriz (Ficha PL 02).
+    Documenta duas operações: criar tarefa (US05) e editar tarefa / mudar
+    estado (US05, US06).
+
+    **Autenticação:** todas as operações exigem sessão iniciada; sem sessão
+    devolvem 401. O mecanismo de autenticação e de sessão está por decidir
+    (D06, ver docs/constraints.md), por isso não é declarado nenhum
+    securityScheme nesta fase.
+
+    **Permissões:** são verificadas no servidor (S03). Só os membros do
+    projeto podem criar e editar tarefas (RN09, RN20); o Administrador não
+    participa em projetos (RN19).
+
+    **Pendentes:** controlo de edição simultânea (D08), tipo concreto dos
+    identificadores (D02) e tamanhos máximos dos textos (não definidos nos
+    requisitos).
+
+    **Contacto:** o email indicado é provisório; o domínio de email da empresa
+    ainda não foi indicado pelo cliente (IF01).
+
+    **Omissões intencionais:** não é declarado securityScheme (depende da
+    D06); não são indicados licença nem termos de serviço, por se tratar de
+    uma API interna de uma única empresa (RN01), sem licença definida.
+
+tags:
+  - name: Tarefas
+    description: Criação e edição de tarefas de um projeto.
+
+paths:
+  /projetos/{projetoId}/tarefas:
+    post:
+      tags: [Tarefas]
+      operationId: criarTarefa
+      summary: Criar uma tarefa num projeto
+      description: |
+        Cria uma tarefa no projeto indicado (US05). A tarefa começa sempre no
+        estado `A_FAZER` (PR05), por isso o pedido não aceita `estado`.
+        Só o título é obrigatório (RN10). A criação fica registada no
+        histórico da tarefa (RI12).
+      parameters:
+        - $ref: '#/components/parameters/ProjetoId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CriarTarefaPedido'
+            example:
+              titulo: Preparar apresentação ao cliente
+              descricao: Slides com o estado do projeto.
+              prazo: '2026-11-15'
+              prioridade: ALTA
+              responsavelId: u-102
+      responses:
+        '201':
+          description: Tarefa criada.
+          headers:
+            Location:
+              description: URL da tarefa criada.
+              schema:
+                type: string
+              example: /tarefas/t-501
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TarefaResposta'
+              example:
+                id: t-501
+                projetoId: p-12
+                titulo: Preparar apresentação ao cliente
+                descricao: Slides com o estado do projeto.
+                prazo: '2026-11-15'
+                prioridade: ALTA
+                estado: A_FAZER
+                responsavel:
+                  id: u-102
+                  nome: Ana Exemplo
+        '400':
+          $ref: '#/components/responses/Validacao'
+        '401':
+          $ref: '#/components/responses/NaoAutenticado'
+        '403':
+          $ref: '#/components/responses/SemPermissao'
+        '404':
+          $ref: '#/components/responses/NaoEncontrado'
+        '409':
+          $ref: '#/components/responses/ProjetoArquivado'
+
+  /tarefas/{tarefaId}:
+    patch:
+      tags: [Tarefas]
+      operationId: editarTarefa
+      summary: Editar uma tarefa ou mudar o seu estado
+      description: |
+        Altera um ou mais campos de uma tarefa (US05) e/ou o seu estado
+        (US06). Só os campos enviados são alterados. Enviar `null` limpa um
+        campo opcional (ex.: `responsavelId: null` deixa a tarefa sem
+        responsável). O título não pode ser limpo.
+
+        Qualquer estado pode passar para qualquer outro, incluindo
+        `CONCLUIDA` (RN13, RN14). Cada campo alterado fica registado no
+        histórico, com quem, quando, o valor anterior e o novo (RI12).
+      parameters:
+        - $ref: '#/components/parameters/TarefaId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EditarTarefaPedido'
+            examples:
+              mudarEstado:
+                summary: Mudar o estado (US06)
+                value:
+                  estado: EM_REVISAO
+              tirarResponsavel:
+                summary: Deixar a tarefa sem responsável
+                value:
+                  responsavelId: null
+      responses:
+        '200':
+          description: Tarefa alterada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TarefaResposta'
+              example:
+                id: t-501
+                projetoId: p-12
+                titulo: Preparar apresentação ao cliente
+                descricao: Slides com o estado do projeto.
+                prazo: '2026-11-15'
+                prioridade: ALTA
+                estado: EM_REVISAO
+                responsavel:
+                  id: u-102
+                  nome: Ana Exemplo
+        '400':
+          $ref: '#/components/responses/Validacao'
+        '401':
+          $ref: '#/components/responses/NaoAutenticado'
+        '403':
+          $ref: '#/components/responses/SemPermissao'
+        '404':
+          $ref: '#/components/responses/NaoEncontrado'
+        '409':
+          $ref: '#/components/responses/ProjetoArquivado'
+
+components:
+  parameters:
+    ProjetoId:
+      name: projetoId
+      in: path
+      required: true
+      description: Identificador do projeto.
+      schema:
+        type: string
+    TarefaId:
+      name: tarefaId
+      in: path
+      required: true
+      description: Identificador da tarefa.
+      schema:
+        type: string
+
+  schemas:
+    Estado:
+      type: string
+      description: |
+        Estado da tarefa (RN13). Os valores são códigos; o texto mostrado
+        na interface (ex.: "Em revisão") é traduzido pelo frontend (PR18).
+      enum: [A_FAZER, EM_CURSO, EM_REVISAO, CONCLUIDA]
+
+    Prioridade:
+      type: string
+      description: Prioridade da tarefa (RN10).
+      enum: [BAIXA, MEDIA, ALTA]
+
+    CriarTarefaPedido:
+      type: object
+      description: |
+        Dados para criar uma tarefa. Só o título é obrigatório (RN10); o
+        estado não é enviado, porque a tarefa começa em `A_FAZER` (PR05).
+      additionalProperties: false
+      required: [titulo]
+      properties:
+        titulo:
+          type: string
+          minLength: 1
+          description: Obrigatório e não vazio (RN10, US05 crit. 3).
+        descricao:
+          type: [string, 'null']
+        prazo:
+          type: [string, 'null']
+          format: date
+          description: Qualquer data válida, incluindo passadas (RN12).
+        prioridade:
+          oneOf:
+            - $ref: '#/components/schemas/Prioridade'
+            - type: 'null'
+        responsavelId:
+          type: [string, 'null']
+          description: |
+            Tem de ser um membro do projeto com conta ativa (US05 crit. 4,
+            RI02). No máximo um responsável (RN11).
+
+    EditarTarefaPedido:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      description: Pelo menos um campo. Os campos omitidos não são alterados.
+      properties:
+        titulo:
+          type: string
+          minLength: 1
+          description: Não pode ser vazio nem null (RN10).
+        descricao:
+          type: [string, 'null']
+        prazo:
+          type: [string, 'null']
+          format: date
+          description: Qualquer data válida, incluindo passadas (RN12).
+        prioridade:
+          oneOf:
+            - $ref: '#/components/schemas/Prioridade'
+            - type: 'null'
+        responsavelId:
+          type: [string, 'null']
+          description: Tem de ser um membro do projeto com conta ativa (RI02).
+        estado:
+          $ref: '#/components/schemas/Estado'
+
+    ResponsavelResumo:
+      type: object
+      description: |
+        Resumo do responsável de uma tarefa: apenas o identificador e o nome,
+        sem expor outros dados da conta (S07).
+      required: [id, nome]
+      properties:
+        id:
+          type: string
+        nome:
+          type: string
+
+    TarefaResposta:
+      type: object
+      description: |
+        Representação de uma tarefa devolvida pela API, depois de criada ou
+        alterada. Os campos opcionais sem valor vêm a null.
+      required: [id, projetoId, titulo, descricao, prazo, prioridade, estado, responsavel]
+      properties:
+        id:
+          type: string
+        projetoId:
+          type: string
+        titulo:
+          type: string
+        descricao:
+          type: [string, 'null']
+        prazo:
+          type: [string, 'null']
+          format: date
+        prioridade:
+          oneOf:
+            - $ref: '#/components/schemas/Prioridade'
+            - type: 'null'
+        estado:
+          $ref: '#/components/schemas/Estado'
+        responsavel:
+          description: Null quando a tarefa não tem responsável (mostrado como "Sem responsável", US07 crit. 3).
+          oneOf:
+            - $ref: '#/components/schemas/ResponsavelResumo'
+            - type: 'null'
+
+    Erro:
+      type: object
+      description: Formato único de erro, comum a todas as operações.
+      required: [codigo, mensagem]
+      properties:
+        codigo:
+          type: string
+          enum: [VALIDACAO, NAO_AUTENTICADO, SEM_PERMISSAO, NAO_ENCONTRADO, PROJETO_ARQUIVADO]
+        mensagem:
+          type: string
+          description: Mensagem legível, em português de Portugal.
+        detalhes:
+          type: array
+          description: Problemas por campo (usado sobretudo em VALIDACAO).
+          items:
+            type: object
+            required: [campo, mensagem]
+            properties:
+              campo:
+                type: string
+              mensagem:
+                type: string
+
+  responses:
+    Validacao:
+      description: |
+        Pedido inválido: título vazio, valor fora dos enumerados, data
+        inválida, pedido de edição sem campos, ou responsável que não é
+        membro ativo do projeto.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Erro'
+          example:
+            codigo: VALIDACAO
+            mensagem: O pedido tem dados inválidos.
+            detalhes:
+              - campo: titulo
+                mensagem: O título é obrigatório.
+    NaoAutenticado:
+      description: Sem sessão iniciada (mecanismo por decidir, D06).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Erro'
+          example:
+            codigo: NAO_AUTENTICADO
+            mensagem: É necessário iniciar sessão.
+    SemPermissao:
+      description: |
+        Quem pediu não é membro do projeto (RN20, US07 crit. 4) ou é
+        Administrador (RN19).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Erro'
+          example:
+            codigo: SEM_PERMISSAO
+            mensagem: Não tem permissão para esta ação.
+    NaoEncontrado:
+      description: O projeto ou a tarefa não existe.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Erro'
+          example:
+            codigo: NAO_ENCONTRADO
+            mensagem: O recurso pedido não existe.
+    ProjetoArquivado:
+      description: O projeto está arquivado e é só de leitura (RN15, CE4).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Erro'
+          example:
+            codigo: PROJETO_ARQUIVADO
+            mensagem: O projeto está arquivado e não pode ser alterado.
