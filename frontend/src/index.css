@@ -1,0 +1,17 @@
+/* Estilos base da Matriz. Os componentes e as cores são definidos a partir do I1. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, 'DejaVu Sans', Arial, sans-serif;
+  color: #222;
+  background: #fff;
+}
+
+.provisorio {
+  padding: 2rem;
+}

@@ -1,2 +1,14 @@
 # Definições do editor (JetBrains)
 .idea/
+
+# Outros editores e sistema operativo
+.vscode/
+.DS_Store
+
+# Configuração local com segredos, em qualquer pasta (S08); os exemplos são versionados
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log

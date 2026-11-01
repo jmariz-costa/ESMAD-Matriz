@@ -49,9 +49,64 @@ O detalhe está em [docs/requirements.md](docs/requirements.md).
 | [docs/ui/](docs/ui/)                           | Wireframe do quadro Kanban (PNG e HTML de origem)                                              |
 | [AGENTS.md](AGENTS.md)                         | Instruções para agentes de IA que trabalhem neste repositório                                 |
 
+## Executar localmente
+
+### Requisitos
+
+- JDK 21 ou superior (o Maven não é necessário: o projeto usa o Maven wrapper `./mvnw`)
+- Node.js 20.19 ou superior (ou 22.12+) e npm
+- Docker com Docker Compose
+
+### Primeira configuração
+
+```bash
+cp backend/.env.example backend/.env    # depois, alterar as palavras-passe
+cd frontend && npm install && cd ..
+```
+
+O ficheiro `backend/.env` guarda a configuração local (base de dados, conta de
+Administrador e dados de demonstração) e nunca é enviado para o Git.
+
+### Arrancar
+
+```bash
+docker compose up -d                    # PostgreSQL (dados no volume matriz-dados)
+cd backend && ./mvnw quarkus:dev        # Backend em http://localhost:8081 (API em /api)
+cd frontend && npm run dev              # Frontend em http://localhost:5173
+```
+
+No primeiro arranque do Backend, o Flyway cria o esquema da base de dados e são
+criados a conta de Administrador e os dados de demonstração. Reiniciar o Backend
+não apaga nem duplica dados.
+
+- Estado do Backend e da ligação à base de dados: http://localhost:8081/q/health/ready
+- Para parar a base de dados: `docker compose stop` (os dados mantêm-se).
+
+### Contas de demonstração
+
+Contas fictícias, todas com a palavra-passe definida em `MATRIZ_DEMO_PASSWORD`
+no `backend/.env`:
+
+| Conta               | Projetos                                                        |
+|---------------------|-----------------------------------------------------------------|
+| `ana@empresa.pt`    | Gestora de "Website institucional"; membro de "Portal do Cliente" |
+| `bruno@empresa.pt`  | Gestor de "Portal do Cliente"; membro de "Website institucional"  |
+| `carla@empresa.pt`  | Membro de "Website institucional"                                |
+| `daniel@empresa.pt` | Sem projetos                                                     |
+
+A conta de Administrador usa `MATRIZ_ADMIN_EMAIL` e `MATRIZ_ADMIN_PASSWORD`.
+
+### Testes
+
+```bash
+cd backend && ./mvnw test               # precisa do Docker: cria um PostgreSQL temporário
+cd frontend && npm test
+```
+
 ## Estado atual
 
-**Fase de conceção** (Ficha PL 02). Ainda não existe código.
+**Em implementação** (Ficha PL 03). O plano e o estado de cada incremento estão
+em [docs/implementation-plan.md](docs/implementation-plan.md).
 
 - Specification Pack (Ficha PL 01): requisitos, User Stories e critérios de
   aceitação.

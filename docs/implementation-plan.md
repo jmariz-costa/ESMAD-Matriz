@@ -67,11 +67,11 @@ ESMAD-Matriz/
 │       ├── tarefas/         tarefas, responsáveis
 │       ├── comentarios/
 │       └── historico/
-│   └── src/main/resources/db/migration/   migrations Flyway
+│   ├── src/main/resources/db/migration/   migrations Flyway
+│   └── .env.example         valores fictícios (o .env real não vai para o Git)
 ├── frontend/                React + TypeScript (Vite)
 │   └── src/ api/ (cliente central), componentes/, ecras/
 ├── docker-compose.yml       PostgreSQL com volume persistente
-├── .env.example             valores fictícios
 └── docs/
 ```
 
@@ -83,7 +83,7 @@ Em todos os incrementos: pedir primeiro a análise e o plano do incremento,
 implementar depois de validado, executar as verificações, rever o diff e
 atualizar este plano antes de passar ao seguinte.
 
-### I0 — Preparar a aplicação e a persistência ⬜
+### I0 — Preparar a aplicação e a persistência ✅
 
 **Ficha:** Exercício 2. **Depende de:** nada.
 
@@ -107,6 +107,28 @@ atualizar este plano antes de passar ao seguinte.
 
 **Verificação:** arranque manual, health check, consulta às tabelas e ao seed,
 reinício do Backend; comandos registados no README.
+
+**Resultado (2026-11-01)**
+- Quarkus 3.40.1.1 (LTS), Java 21; Vite 8, React 19, TypeScript, React Router,
+  Vitest; PostgreSQL 17.
+- Migration `V1__esquema_inicial.sql` aplicada; 9 tabelas criadas.
+- Seed (`DadosDemonstracao`): 4 Membros, 2 projetos, 10 tarefas com
+  responsáveis e histórico, 1 comentário. Administrador criado a partir do
+  `.env` (`AdministradorInicial`). Palavras-passe guardadas em bcrypt.
+- Segundo arranque: nada é criado nem apagado (totais iguais).
+- `/q/health/ready` = UP com o JAR e com `./mvnw quarkus:dev`.
+- O proxy do Vite reencaminha `/api` para o Backend (pedido a um caminho
+  inexistente devolve o 404 do Quarkus).
+- Testes: `./mvnw test` (1 teste, arranque com PostgreSQL do Dev Services) e
+  `npm test` (1 teste) passam; `npm run build` e `npm run lint` sem erros.
+
+**Desvios ao plano**
+- O `.env.example` (e o `.env`) ficam em `backend/`, e não na raiz: um único
+  ficheiro serve o Docker Compose e o Quarkus.
+- O Backend usa a porta 8081, porque a 8080 estava ocupada nesta máquina.
+- O seed escreve diretamente em SQL as tabelas de vários módulos: é código de
+  arranque, fora da regra "só através do serviço do outro módulo" (ADR 0001),
+  porque ainda não existem os serviços.
 
 ### I1 — Autenticação ⬜
 
@@ -259,7 +281,8 @@ endpoints ao OpenAPI quando for implementada.
 
 ## 6. Pontos em aberto
 
-| Ponto | Quando decidir |
-|-------|----------------|
-| Como fornecer a palavra-passe das contas de demonstração sem guardar segredos no repositório (S08, AGENTS.md §7). | I0 |
-| Nome base dos packages Java. | I0 |
+Nenhum de momento.
+
+Resolvidos no I0: a palavra-passe das contas de demonstração vem de
+`MATRIZ_DEMO_PASSWORD` no `backend/.env` (seed em Java, só se não existirem
+Membros); o package base é `pt.esmad.matriz`.
