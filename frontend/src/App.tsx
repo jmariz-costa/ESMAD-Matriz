@@ -1,10 +1,13 @@
-// Ecrã provisório do I0: confirma que o Frontend arranca.
-// Os ecrãs da Matriz são acrescentados a partir do I1 (ver docs/implementation-plan.md).
+import { BrowserRouter } from 'react-router'
+import { RotasMatriz } from './RotasMatriz'
+import { FornecedorSessao } from './sessao/FornecedorSessao'
+
 export default function App() {
   return (
-    <main className="provisorio">
-      <h1>Matriz</h1>
-      <p>Aplicação em preparação.</p>
-    </main>
+    <BrowserRouter>
+      <FornecedorSessao>
+        <RotasMatriz />
+      </FornecedorSessao>
+    </BrowserRouter>
   )
 }

@@ -130,7 +130,7 @@ reinício do Backend; comandos registados no README.
   arranque, fora da regra "só através do serviço do outro módulo" (ADR 0001),
   porque ainda não existem os serviços.
 
-### I1 — Autenticação ⬜
+### I1 — Autenticação ✅
 
 **Ficha:** Exercício 3. **US:** US02. **Decisões:** D06, D09, S01, PR03.
 
@@ -150,14 +150,52 @@ min sem atividade; palavra-passe nunca guardada em claro.
 falhas, pedido sem sessão, logout invalida a sessão); teste de componente do
 formulário; verificação manual no browser.
 
-### I2 — Gestão de projetos e painel ⬜
+**Resultado (2026-11-05)**
+- Backend (módulo `contas`): entidades `Utilizador` (limite de tentativas,
+  D09) e `Sessao` (30 min de inatividade, D06); `AutenticacaoServico`;
+  `POST /auth/login`, `GET /auth/me`, `POST /auth/logout`. Token aleatório de
+  256 bits no cookie `matriz_sessao` (HttpOnly, SameSite=Strict, Path=/api);
+  a base de dados guarda só o hash SHA-256. Login sem distinguir maiúsculas no
+  email; qualquer falha devolve a mesma resposta (PR03), incluindo conta
+  inexistente (verificada contra um hash fictício) ou não ativa.
+- Backend (`comum`): formato único de erro (`comum/erros`), incluindo JSON mal
+  formado e campos desconhecidos (400 `VALIDACAO`); filtro de sessão fechado
+  por omissão, só os endpoints `@Publico` dispensam sessão; identidade do
+  pedido em `UtilizadorAtual`, para os outros módulos.
+- Frontend: cliente HTTP central (`api/cliente.ts`), contexto de sessão, rota
+  protegida com regresso ao ecrã de origem, ecrã de início de sessão (ecrã 1),
+  cabeçalho com Sair e página inicial provisória (Membro: "Olá, …";
+  Administrador: gestão de contas numa fase seguinte).
+- README: secção "Autenticação e sessão" com o ciclo da sessão e exemplos
+  `curl`, verificados contra o Backend em modo dev.
+- Testes: `./mvnw test` (29: login, bloqueio após 5 falhas, conta desativada,
+  validação, pedido sem sessão, logout, expiração e renovação, regras D06/D09
+  sem base de dados) e `npm test` (17: cliente HTTP, formulário, rotas
+  protegidas, sair, sessão terminada); `tsc` e `npm run lint` sem erros.
+- Verificação manual no browser: feita (2026-11-05), com as contas de
+  demonstração e a do Administrador.
+
+**Desvios ao plano**
+- O 403 para o Administrador nas operações de projetos passa para o I2, onde
+  surgem as primeiras rotas de projetos. O mesmo acontece com a verificação
+  com dois utilizadores diferentes (Ficha, Ex. 3, ponto 5).
+- O filtro de sessão fica em `contas` (precisa do serviço de autenticação) e
+  a identidade do pedido em `comum`, para que os restantes módulos não
+  dependam de `contas` (ADR 0001, regra 5).
+- Cookie `Secure` configurável por `MATRIZ_COOKIE_SEGURO` (por omissão
+  `false`, para funcionar em `http://localhost`).
+- Navegação do cabeçalho só com "Início"; as restantes entradas são
+  acrescentadas quando os ecrãs existirem.
+
+### I2 — Gestão de projetos e painel ✅
 
 **Ficha:** Exercício 4. **US:** US03, US16, US17 (pesquisa e paginação), US18, US10.
 
 - Backend: `GET/POST /projetos`, `GET/PATCH/DELETE /projetos/{id}`; Gestor
   obtido da sessão e adicionado como membro (RI01); listagem limitada aos
   projetos do utilizador; pesquisa sem distinguir maiúsculas; paginação;
-  contagens por estado; eliminação em cascata; validação RN23.
+  contagens por estado; eliminação em cascata; validação RN23; 403 para o
+  Administrador em todas as operações de projetos (RN19, transitado do I1).
 - Frontend: painel inicial e ecrã de projetos (wireframe-ecras, ecrãs 2 e 3);
   formulário de criar/editar; confirmação antes de eliminar; percentagem de
   conclusão calculada a partir das contagens (PR09).
@@ -168,9 +206,46 @@ projeto, vê-lo na listagem e voltar a consultá-lo após recarregar a página e
 reiniciar o Backend.
 
 **Verificação:** testes de integração (validação do nome, criar e consultar
-com persistência, outro utilizador recebe 403, só o Gestor edita e elimina,
-cascata sem órfãos, paginação e total); verificação manual do percurso
-completo.
+com persistência, outro utilizador recebe 403, o Administrador recebe 403,
+só o Gestor edita e elimina, cascata sem órfãos, paginação e total);
+verificação manual do percurso completo.
+
+**Resultado (2026-11-05)**
+- Backend (módulo `projetos`): agregado `Projeto` com os membros (RN23 sem
+  contar espaços nas pontas, contando caracteres e não unidades UTF-16; RI01;
+  `garantirAlteravel` para RI10); `ProjetosServico` com as permissões (403
+  para o Administrador e para quem não é membro, 403 para quem não é Gestor
+  ao editar e eliminar, 404 para id inexistente ou inválido);
+  `GET/POST /projetos`, `GET/PATCH/DELETE /projetos/{id}`. Listagem dos
+  projetos não arquivados do membro, ordenados pelo nome, com pesquisa por
+  parte do nome (`%` e `_` tratados como texto) e paginação; contagens e
+  Gestores obtidos numa consulta para toda a página. O `PATCH` distingue o
+  campo omitido de `descricao: null`.
+- Backend (outros módulos): `ContasServico` (nome do Gestor) e módulo
+  `tarefas` mínimo com `ContagemTarefasServico` (só as contagens por estado);
+  em `comum`, paginação (`PedidoPagina`, `Pagina`), erros por campo
+  (`Validacao`), regras de texto e conversão de identificadores.
+- Frontend: painel (ecrã 2), ecrã de projetos (ecrã 3) com pesquisa enquanto
+  se escreve e pesquisa e página guardadas no URL, detalhe provisório do
+  projeto, formulário de criar e editar, confirmação antes de eliminar,
+  percentagem de conclusão (US10). Navegação passa a ter "Projetos".
+- Percurso da ficha verificado contra o Backend real: login, criar, ver na
+  listagem, reiniciar o Backend e voltar a consultar com a mesma sessão; a
+  página do projeto abre por endereço direto (recarregar).
+- Testes: `./mvnw test` (66; 37 novos: agregado, criar e consultar,
+  listagem, editar e eliminar com cascata sem órfãos) e `npm test` (42; 21
+  novos: percentagem, painel, ecrã de projetos, formulário, detalhe); `tsc`,
+  `npm run lint` e `npm run build` sem erros.
+- Verificação manual no browser: feita (2026-11-05).
+
+**Desvios ao plano**
+- O detalhe do projeto (`/projetos/:id`) é provisório: mostra os dados e as
+  contagens; o quadro Kanban é acrescentado no I4.
+- O painel mostra os primeiros 20 projetos e, se houver mais, a ligação
+  "Ver todos os projetos (N)" para o ecrã de projetos.
+- A confirmação de eliminação não inclui ainda a sugestão de arquivar do
+  wireframe, porque arquivar é da Fase 2 (US08); volta com a US08.
+- Um pedido mal formado dá 400 antes de se verificarem as permissões.
 
 ### I3 — Membros do projeto ⬜
 
@@ -281,7 +356,9 @@ endpoints ao OpenAPI quando for implementada.
 
 ## 6. Pontos em aberto
 
-Nenhum de momento.
+- A pesquisa de projetos distingue acentos ("gestao" não encontra "Gestão");
+  a US17 só exige ignorar maiúsculas. Ignorar acentos exige a extensão
+  `unaccent` do PostgreSQL.
 
 Resolvidos no I0: a palavra-passe das contas de demonstração vem de
 `MATRIZ_DEMO_PASSWORD` no `backend/.env` (seed em Java, só se não existirem

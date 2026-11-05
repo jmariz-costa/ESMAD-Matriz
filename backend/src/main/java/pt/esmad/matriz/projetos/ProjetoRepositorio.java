@@ -1,0 +1,54 @@
+package pt.esmad.matriz.projetos;
+
+import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
+import jakarta.enterprise.context.ApplicationScoped;
+import pt.esmad.matriz.comum.paginacao.PedidoPagina;
+
+import java.util.List;
+import java.util.Locale;
+import java.util.UUID;
+
+@ApplicationScoped
+public class ProjetoRepositorio implements PanacheRepositoryBase<Projeto, UUID> {
+
+    private static final String DO_MEMBRO = """
+            :membro member of p.membros
+            and p.arquivado = false
+            and (:padrao is null or lower(p.nome) like :padrao escape '\\')
+            """;
+
+    /**
+     * Projetos não arquivados de que o utilizador é membro (RN20), ordenados pelo nome,
+     * com pesquisa opcional sem distinguir maiúsculas (US17).
+     */
+    public List<Projeto> doMembro(UUID membro, String pesquisa, PedidoPagina pagina) {
+        return getEntityManager()
+                .createQuery("select p from Projeto p where " + DO_MEMBRO
+                        + " order by lower(p.nome), p.id", Projeto.class)
+                .setParameter("membro", membro)
+                .setParameter("padrao", padrao(pesquisa))
+                .setFirstResult(pagina.inicio())
+                .setMaxResults(pagina.tamanho())
+                .getResultList();
+    }
+
+    public long contarDoMembro(UUID membro, String pesquisa) {
+        return getEntityManager()
+                .createQuery("select count(p) from Projeto p where " + DO_MEMBRO, Long.class)
+                .setParameter("membro", membro)
+                .setParameter("padrao", padrao(pesquisa))
+                .getSingleResult();
+    }
+
+    /** "%texto%", com os caracteres especiais do LIKE (% _ \\) tratados como texto. */
+    private static String padrao(String pesquisa) {
+        if (pesquisa == null) {
+            return null;
+        }
+        String escapado = pesquisa.toLowerCase(Locale.ROOT)
+                .replace("\\", "\\\\")
+                .replace("%", "\\%")
+                .replace("_", "\\_");
+        return "%" + escapado + "%";
+    }
+}

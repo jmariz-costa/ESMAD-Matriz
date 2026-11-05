@@ -23,7 +23,8 @@ cliente foi:
 
 ## Funcionalidades previstas para o MVP
 
-- Registo com email da empresa (com confirmação por email), entrada e saída.
+- Entrada e saída da conta. O registo com email da empresa (com confirmação
+  por email) foi adiado: as contas de demonstração são criadas por seed (L07).
 - Criação de projetos; quem cria é o Gestor e gere os membros.
 - Tarefas com descrição, prazo, prioridade e um responsável.
 - Quatro estados de tarefa: A fazer, Em curso, Em revisão, Concluída.
@@ -45,8 +46,10 @@ O detalhe está em [docs/requirements.md](docs/requirements.md).
 | [docs/constraints.md](docs/constraints.md)     | Restrições, pressupostos, segurança e privacidade, decisões pendentes, limitações de âmbito   |
 | [docs/architecture.md](docs/architecture.md)   | Arquitetura escolhida (monólito modular), justificação, componentes e módulos                 |
 | [docs/database.md](docs/database.md)           | Modelo de dados, diagrama ER em Mermaid e regras de integridade                               |
-| [openapi.yaml](openapi.yaml)                   | Contrato REST simplificado (OpenAPI 3.1): criar e editar tarefa                               |
-| [docs/ui/](docs/ui/)                           | Wireframe do quadro Kanban (PNG e HTML de origem)                                              |
+| [openapi.yaml](openapi.yaml)                   | Contrato REST (OpenAPI 3.1) da Fase 1: autenticação, projetos, membros, tarefas, comentários  |
+| [docs/ui/](docs/ui/)                           | Wireframes do quadro Kanban e dos restantes ecrãs (PNG e HTML de origem)                      |
+| [docs/implementation-plan.md](docs/implementation-plan.md) | Plano de implementação: incrementos I0–I8 da Fase 1, Fase 2 e estado de cada um   |
+| [docs/decisions/](docs/decisions/)             | Architecture Decision Records (ADRs), com índice no README da pasta                           |
 | [AGENTS.md](AGENTS.md)                         | Instruções para agentes de IA que trabalhem neste repositório                                 |
 
 ## Executar localmente
@@ -103,6 +106,40 @@ cd backend && ./mvnw test               # precisa do Docker: cria um PostgreSQL 
 cd frontend && npm test
 ```
 
+## Autenticação e sessão
+
+A API usa uma sessão guardada na base de dados e identificada por um cookie
+(D06 em [docs/constraints.md](docs/constraints.md)). O detalhe de cada
+operação está no [openapi.yaml](openapi.yaml).
+
+1. **Entrar:** `POST /api/auth/login` com `email` e `palavraPasse`. Se
+   estiverem corretos, o Backend cria uma sessão e devolve o cookie
+   `matriz_sessao` (HttpOnly, SameSite=Strict, Path=/api). O token é
+   aleatório e a base de dados guarda apenas o seu hash.
+2. **Pedidos seguintes:** o browser envia o cookie automaticamente e o Backend
+   identifica o utilizador pela sessão. Quem cria um projeto ou escreve um
+   comentário é sempre obtido daqui, nunca dos dados do pedido.
+3. **Expiração:** cada pedido renova o prazo. Ao fim de 30 minutos sem pedidos,
+   a sessão expira e o pedido seguinte recebe 401 `NAO_AUTENTICADO`.
+4. **Sair:** `POST /api/auth/logout` apaga a sessão e o cookie.
+5. **Consultar:** `GET /api/auth/me` devolve o utilizador da sessão atual.
+
+**Regras de segurança:** palavras-passe guardadas só como hash bcrypt (S01).
+Qualquer falha de login dá a mesma mensagem (PR03). 5 falhas seguidas bloqueiam
+esse email durante 15 minutos (D09). Uma conta desativada perde o acesso, mesmo
+com uma sessão aberta. Com HTTPS, deve definir-se `MATRIZ_COOKIE_SEGURO=true`
+no `backend/.env`.
+
+**Experimentar com curl** (com o Backend a correr):
+
+```bash
+curl -i -c cookies.txt -H 'Content-Type: application/json' \
+  -d '{"email":"ana@empresa.pt","palavraPasse":"<MATRIZ_DEMO_PASSWORD>"}' \
+  http://localhost:8081/api/auth/login
+curl -b cookies.txt http://localhost:8081/api/auth/me
+curl -b cookies.txt -X POST http://localhost:8081/api/auth/logout
+```
+
 ## Estado atual
 
 **Em implementação** (Ficha PL 03). O plano e o estado de cada incremento estão
@@ -111,8 +148,10 @@ em [docs/implementation-plan.md](docs/implementation-plan.md).
 - Specification Pack (Ficha PL 01): requisitos, User Stories e critérios de
   aceitação.
 - Architecture Pack (Ficha PL 02): monólito modular, modelo de dados e
-  diagrama ER, contrato OpenAPI (criar e editar tarefa), wireframe do quadro
-  Kanban.
-- Tecnologias, base de dados e autenticação ainda por decidir (ver
-  [docs/constraints.md](docs/constraints.md)).
-- Próxima fase: desenvolvimento full-stack (Aula 3).
+  diagrama ER, contrato OpenAPI e wireframe do quadro Kanban.
+- Ficha PL 03: decisões técnicas tomadas (Java 21 + Quarkus, React +
+  TypeScript, PostgreSQL, sessão com cookie; ver
+  [docs/constraints.md](docs/constraints.md) §4), contrato OpenAPI alargado a
+  toda a Fase 1, aplicação e base de dados preparadas (I0), autenticação (I1)
+  e gestão de projetos com painel inicial (I2). Próximo: membros do projeto
+  (I3).
