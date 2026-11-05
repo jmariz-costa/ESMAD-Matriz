@@ -10,6 +10,7 @@ describe('Detalhe do projeto (US18 crit. 2)', () => {
   it('mostra os dados do projeto', async () => {
     simularApi({
       ...SESSAO,
+      'GET /api/projetos/p1/membros': { estado: 200, corpo: [] },
       'GET /api/projetos/p1': {
         estado: 200,
         corpo: projeto({ id: 'p1', nome: 'Portal do Cliente', descricao: 'Área reservada.', souGestor: false,
@@ -42,6 +43,7 @@ describe('Detalhe do projeto (US18 crit. 2)', () => {
     simularApi({
       ...SESSAO,
       'GET /api/projetos/p1': { estado: 200, corpo: projeto({ id: 'p1', nome: 'Portal do Cliente' }) },
+      'GET /api/projetos/p1/membros': { estado: 200, corpo: [] },
       'DELETE /api/projetos/p1': { estado: 204 },
       [LISTAR_PROJETOS]: paginaDe([]),
     })

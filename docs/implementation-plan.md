@@ -247,7 +247,7 @@ verificação manual do percurso completo.
   wireframe, porque arquivar é da Fase 2 (US08); volta com a US08.
 - Um pedido mal formado dá 400 antes de se verificarem as permissões.
 
-### I3 — Membros do projeto ⬜
+### I3 — Membros do projeto ✅
 
 **US:** US04 (base das regras de acesso e da elegibilidade).
 
@@ -261,6 +261,46 @@ verificação manual do percurso completo.
 
 **Verificação:** testes de integração (adicionar, duplicado, remover Gestor,
 membro removido deixa de aceder); verificação manual com dois utilizadores.
+
+**Resultado (2026-11-05)**
+- Backend (módulo `projetos`): regras no agregado `Projeto`
+  (`adicionarMembro`: 409 `JA_EXISTE`; `removerMembro`: 409
+  `GESTOR_NAO_REMOVIVEL`, 404 se não for membro; ambos recusam projetos
+  arquivados com 409); `AcessoProjeto` concentra a ordem das verificações de
+  acesso (Administrador 403 → inexistente 404 → não membro 403 → não Gestor
+  403), usada também pelo `ProjetosServico`; `MembrosServico` e
+  `MembrosRecurso` (`GET`/`POST /projetos/{id}/membros`,
+  `DELETE /projetos/{id}/membros/{utilizadorId}`).
+- Backend (outros módulos): `AtribuicoesServico` no módulo `tarefas` retira a
+  pessoa das tarefas não concluídas do projeto, na mesma transação da remoção
+  (RN08, RI04); `ContasServico.eMembroAtivo` (RI16) e `GET /utilizadores`
+  (Membros ativos, pesquisa no nome ou no email, só id, nome e email, S07);
+  pesquisa `LIKE` passou para `comum` (`Texto.padraoPesquisa`).
+- Frontend: secção "Membros (N)" no detalhe do projeto, visível para todos
+  os membros, com as etiquetas "Gestor" e "Conta desativada"; o Gestor tem
+  "+ Adicionar membro" (pesquisa enquanto se escreve, esconde quem já é
+  membro, janela fica aberta para várias adições) e "Remover" com
+  confirmação; nada disto aparece em projetos arquivados.
+- Percurso com dois utilizadores verificado contra o Backend real (Ana
+  adiciona o Daniel, que passa de 403 a ver o projeto; duplicado dá 409; o
+  Daniel não remove a Ana; depois de removido volta a 403).
+- Testes: `./mvnw test` (84; 18 novos) e `npm test` (48; 6 novos); `tsc`,
+  `npm run lint` e `npm run build` sem erros.
+- Verificação manual no browser: feita (2026-11-05).
+
+**Desvios ao plano**
+- A lista de membros é visível para todos os membros do projeto (só
+  leitura); adicionar e remover continuam só do Gestor. O contrato já
+  permitia a qualquer membro listar.
+- Remover um membro pede confirmação na interface.
+- `GET /utilizadores` está disponível para qualquer Membro (o Administrador
+  recebe 403): o pedido não indica um projeto, por isso não é possível
+  exigir que seja Gestor.
+- Retirar as atribuições ao remover um membro não gera entrada no histórico
+  nem altera a `versao` das tarefas: o histórico é da Fase 2 (US13) e a
+  versão é tratada no I4/I5.
+- A janela de adicionar mostra até 10 resultados, sem paginação: para
+  encontrar outras pessoas, pesquisa-se.
 
 ### I4 — Gestão de tarefas e quadro Kanban ⬜
 

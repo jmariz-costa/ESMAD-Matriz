@@ -80,4 +80,33 @@ class ProjetoTest {
                 () -> Projeto.criar("x", "d".repeat(1001), GESTOR));
         assertEquals(2, erro.detalhes().size());
     }
+
+    @Test
+    void adicionarMembroRepetidoDevolve409() {
+        Projeto projeto = Projeto.criar("Projeto", null, GESTOR);
+        UUID outro = UUID.randomUUID();
+        projeto.adicionarMembro(outro);
+        assertTrue(projeto.eMembro(outro));
+        ErroAplicacao erro = assertThrows(ErroAplicacao.class, () -> projeto.adicionarMembro(outro));
+        assertEquals(409, erro.estadoHttp());
+        assertEquals(pt.esmad.matriz.comum.erros.CodigoErro.JA_EXISTE, erro.codigo());
+    }
+
+    @Test
+    void oGestorNaoPodeSerRemovido() {
+        Projeto projeto = Projeto.criar("Projeto", null, GESTOR);
+        ErroAplicacao erro = assertThrows(ErroAplicacao.class, () -> projeto.removerMembro(GESTOR));
+        assertEquals(pt.esmad.matriz.comum.erros.CodigoErro.GESTOR_NAO_REMOVIVEL, erro.codigo());
+        assertTrue(projeto.eMembro(GESTOR));
+    }
+
+    @Test
+    void removerQuemNaoEMembroDevolve404() {
+        Projeto projeto = Projeto.criar("Projeto", null, GESTOR);
+        UUID outro = UUID.randomUUID();
+        assertEquals(404, assertThrows(ErroAplicacao.class, () -> projeto.removerMembro(outro)).estadoHttp());
+        projeto.adicionarMembro(outro);
+        projeto.removerMembro(outro);
+        assertFalse(projeto.eMembro(outro));
+    }
 }

@@ -40,6 +40,16 @@ public class ErroAplicacao extends RuntimeException {
         return new ErroAplicacao(409, CodigoErro.PROJETO_ARQUIVADO, "O projeto está arquivado e não pode ser alterado.");
     }
 
+    /** Associação repetida (US04 crit. 3, CE8). */
+    public static ErroAplicacao jaExiste(String mensagem) {
+        return new ErroAplicacao(409, CodigoErro.JA_EXISTE, mensagem);
+    }
+
+    /** O Gestor não pode ser removido do seu projeto (US04 crit. 5, RI01). */
+    public static ErroAplicacao gestorNaoRemovivel() {
+        return new ErroAplicacao(409, CodigoErro.GESTOR_NAO_REMOVIVEL, "O Gestor não pode ser removido do projeto.");
+    }
+
     public int estadoHttp() {
         return estadoHttp;
     }

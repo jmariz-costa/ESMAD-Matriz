@@ -84,6 +84,25 @@ public class Projeto {
         descricao = novaDescricao;
     }
 
+    /** Só o Gestor chama (RN07); o serviço garante antes que a pessoa é um Membro ativo (RI16). */
+    public void adicionarMembro(UUID utilizadorId) {
+        garantirAlteravel();
+        if (!membros.add(utilizadorId)) {
+            throw ErroAplicacao.jaExiste("Esta pessoa já é membro do projeto.");
+        }
+    }
+
+    /** O Gestor não pode ser removido (RI01, US04 crit. 5). */
+    public void removerMembro(UUID utilizadorId) {
+        garantirAlteravel();
+        if (eGestor(utilizadorId)) {
+            throw ErroAplicacao.gestorNaoRemovivel();
+        }
+        if (!membros.remove(utilizadorId)) {
+            throw ErroAplicacao.naoEncontrado();
+        }
+    }
+
     /** Recusa alterações num projeto arquivado (RN15, RI10). */
     public void garantirAlteravel() {
         if (arquivado) {

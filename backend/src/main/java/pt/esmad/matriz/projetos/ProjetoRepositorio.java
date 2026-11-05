@@ -3,9 +3,9 @@ package pt.esmad.matriz.projetos;
 import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
 import jakarta.enterprise.context.ApplicationScoped;
 import pt.esmad.matriz.comum.paginacao.PedidoPagina;
+import pt.esmad.matriz.comum.texto.Texto;
 
 import java.util.List;
-import java.util.Locale;
 import java.util.UUID;
 
 @ApplicationScoped
@@ -26,7 +26,7 @@ public class ProjetoRepositorio implements PanacheRepositoryBase<Projeto, UUID> 
                 .createQuery("select p from Projeto p where " + DO_MEMBRO
                         + " order by lower(p.nome), p.id", Projeto.class)
                 .setParameter("membro", membro)
-                .setParameter("padrao", padrao(pesquisa))
+                .setParameter("padrao", Texto.padraoPesquisa(pesquisa))
                 .setFirstResult(pagina.inicio())
                 .setMaxResults(pagina.tamanho())
                 .getResultList();
@@ -36,19 +36,7 @@ public class ProjetoRepositorio implements PanacheRepositoryBase<Projeto, UUID> 
         return getEntityManager()
                 .createQuery("select count(p) from Projeto p where " + DO_MEMBRO, Long.class)
                 .setParameter("membro", membro)
-                .setParameter("padrao", padrao(pesquisa))
+                .setParameter("padrao", Texto.padraoPesquisa(pesquisa))
                 .getSingleResult();
-    }
-
-    /** "%texto%", com os caracteres especiais do LIKE (% _ \\) tratados como texto. */
-    private static String padrao(String pesquisa) {
-        if (pesquisa == null) {
-            return null;
-        }
-        String escapado = pesquisa.toLowerCase(Locale.ROOT)
-                .replace("\\", "\\\\")
-                .replace("%", "\\%")
-                .replace("_", "\\_");
-        return "%" + escapado + "%";
     }
 }

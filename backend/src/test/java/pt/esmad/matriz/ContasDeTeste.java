@@ -41,23 +41,35 @@ public class ContasDeTeste {
         return criar("Administrador", "ADMINISTRADOR");
     }
 
-    private Conta criar(String nome, String tipo) {
+    /** Conta sem sessão iniciada (por exemplo, desativada ou por confirmar, que não podem entrar). */
+    public UUID semSessao(String nome, String tipo, String estado) {
         UUID id = UUID.randomUUID();
-        String email = "conta-" + id + "@empresa.pt";
+        inserir(id, nome, "conta-" + id + "@empresa.pt", tipo, estado);
+        return id;
+    }
+
+    private void inserir(UUID id, String nome, String email, String tipo, String estado) {
         try (Connection ligacao = dataSource.getConnection();
              PreparedStatement insert = ligacao.prepareStatement("""
                      INSERT INTO utilizador (id, nome, email, password_hash, tipo, estado)
-                     VALUES (?, ?, ?, ?, ?, 'ATIVO')
+                     VALUES (?, ?, ?, ?, ?, ?)
                      """)) {
             insert.setObject(1, id);
             insert.setString(2, nome);
             insert.setString(3, email);
             insert.setString(4, HASH);
             insert.setString(5, tipo);
+            insert.setString(6, estado);
             insert.executeUpdate();
         } catch (SQLException e) {
             throw new IllegalStateException(e);
         }
+    }
+
+    private Conta criar(String nome, String tipo) {
+        UUID id = UUID.randomUUID();
+        String email = "conta-" + id + "@empresa.pt";
+        inserir(id, nome, email, tipo, "ATIVO");
         String token = given().contentType(ContentType.JSON)
                 .body(Map.of("email", email, "palavraPasse", PALAVRA_PASSE))
                 .when().post("/api/auth/login")

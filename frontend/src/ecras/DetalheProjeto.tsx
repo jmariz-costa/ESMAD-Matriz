@@ -5,6 +5,7 @@ import { useDados } from '../comum/useDados'
 import { ConfirmarEliminacao } from '../projetos/ConfirmarEliminacao'
 import { ContagensProjeto } from '../projetos/ContagensProjeto'
 import { FormularioProjeto } from '../projetos/FormularioProjeto'
+import { MembrosProjeto } from '../projetos/MembrosProjeto'
 import { percentagemConclusao, textoTarefas, totalTarefas } from '../projetos/percentagem'
 
 function mensagemDeErro(estado: number): string {
@@ -60,6 +61,7 @@ export function DetalheProjeto() {
       <p>Gestor: {projeto.gestor.nome}</p>
       <p><small>{percentagemConclusao(projeto.contagens)}% concluído · {textoTarefas(total)}</small></p>
       <ContagensProjeto contagens={projeto.contagens} />
+      <MembrosProjeto projeto={projeto} />
       <p className="vazio">As tarefas do projeto vão aparecer aqui.</p>
 
       {dialogo === 'editar' && (

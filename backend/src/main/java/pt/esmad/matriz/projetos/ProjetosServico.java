@@ -4,7 +4,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
 import pt.esmad.matriz.comum.autenticacao.Identidade;
 import pt.esmad.matriz.comum.autenticacao.UtilizadorAtual;
-import pt.esmad.matriz.comum.erros.ErroAplicacao;
 import pt.esmad.matriz.comum.paginacao.Pagina;
 import pt.esmad.matriz.comum.paginacao.PedidoPagina;
 import pt.esmad.matriz.comum.texto.Texto;
@@ -28,13 +27,15 @@ public class ProjetosServico {
     private final ContasServico contas;
     private final ContagemTarefasServico contagens;
     private final UtilizadorAtual utilizadorAtual;
+    private final AcessoProjeto acesso;
 
-    public ProjetosServico(ProjetoRepositorio projetos, ContasServico contas,
-                           ContagemTarefasServico contagens, UtilizadorAtual utilizadorAtual) {
+    ProjetosServico(ProjetoRepositorio projetos, ContasServico contas, ContagemTarefasServico contagens,
+                    UtilizadorAtual utilizadorAtual, AcessoProjeto acesso) {
         this.projetos = projetos;
         this.contas = contas;
         this.contagens = contagens;
         this.utilizadorAtual = utilizadorAtual;
+        this.acesso = acesso;
     }
 
     /** Um projeto com os dados que a API devolve sobre ele. */
@@ -74,17 +75,16 @@ public class ProjetosServico {
     /** Só para membros do projeto (RN20); o projeto pode estar arquivado. */
     @Transactional
     public ProjetoDetalhe consultar(UUID projetoId) {
-        Identidade quem = utilizadorAtual.exigirMembro();
-        return detalhe(carregarComoMembro(projetoId, quem), quem);
+        AcessoProjeto.ProjetoAcessivel a = acesso.comoMembro(projetoId);
+        return detalhe(a.projeto(), a.quem());
     }
 
     /** Só o Gestor (RN22); um projeto arquivado não pode ser editado (RI10). */
     @Transactional
     public ProjetoDetalhe editar(UUID projetoId, AlteracoesProjeto alteracoes) {
-        Identidade quem = utilizadorAtual.exigirMembro();
-        Projeto projeto = carregarComoGestor(projetoId, quem);
-        projeto.editar(alteracoes);
-        return detalhe(projeto, quem);
+        AcessoProjeto.ProjetoAcessivel a = acesso.comoGestor(projetoId);
+        a.projeto().editar(alteracoes);
+        return detalhe(a.projeto(), a.quem());
     }
 
     /**
@@ -93,24 +93,7 @@ public class ProjetosServico {
      */
     @Transactional
     public void eliminar(UUID projetoId) {
-        Identidade quem = utilizadorAtual.exigirMembro();
-        projetos.delete(carregarComoGestor(projetoId, quem));
-    }
-
-    private Projeto carregarComoGestor(UUID projetoId, Identidade quem) {
-        Projeto projeto = carregarComoMembro(projetoId, quem);
-        if (!projeto.eGestor(quem.id())) {
-            throw ErroAplicacao.semPermissao();
-        }
-        return projeto;
-    }
-
-    private Projeto carregarComoMembro(UUID projetoId, Identidade quem) {
-        Projeto projeto = projetos.findByIdOptional(projetoId).orElseThrow(ErroAplicacao::naoEncontrado);
-        if (!projeto.eMembro(quem.id())) {
-            throw ErroAplicacao.semPermissao();
-        }
-        return projeto;
+        projetos.delete(acesso.comoGestor(projetoId).projeto());
     }
 
     private ProjetoDetalhe detalhe(Projeto projeto, Identidade quem) {

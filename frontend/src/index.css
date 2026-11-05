@@ -381,3 +381,44 @@ label {
   gap: 8px;
   margin-top: 16px;
 }
+
+/* Membros */
+.membros {
+  margin: 24px 0;
+}
+
+.membros h2 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.lista-pessoas {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+
+.lista-pessoas li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid #ccc;
+}
+
+.lista-pessoas li > span {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.dialogo .lista-pessoas {
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.dialogo .aviso {
+  margin-top: 12px;
+}
