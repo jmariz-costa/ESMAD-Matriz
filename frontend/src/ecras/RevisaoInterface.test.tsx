@@ -122,3 +122,51 @@ describe('Sincronização do quadro (Exercício 7)', () => {
     await waitFor(() => expect(screen.queryByRole('button', { name: 'Já eliminada' })).not.toBeInTheDocument())
   })
 })
+
+describe('Erros da API (Exercício 8, caso 09)', () => {
+  it('um erro ao criar, guardar ou eliminar não mostra mensagem de sucesso e mantém o formulário', async () => {
+    const t1 = tarefa({ id: 't1', titulo: 'Rever' })
+    const erro = (codigo: string, mensagem: string): RespostaFalsa => ({ estado: 409, corpo: { codigo, mensagem } })
+    simularApi({
+      ...base(),
+      ...quadro('p1', [t1]),
+      'POST /api/projetos/p1/tarefas': erro('PROJETO_ARQUIVADO', 'O projeto está arquivado e não pode ser alterado.'),
+      'GET /api/tarefas/t1': { estado: 200, corpo: t1 },
+      'PATCH /api/tarefas/t1': erro('VERSAO_DESATUALIZADA', 'A tarefa foi alterada por outra pessoa. Recarregue-a antes de guardar.'),
+      'DELETE /api/tarefas/t1': erro('PROJETO_ARQUIVADO', 'O projeto está arquivado e não pode ser alterado.'),
+      'DELETE /api/projetos/p1': { estado: 500 },
+    })
+    renderizarAplicacao('/projetos/p1')
+    const dialogo = () => screen.getByRole('dialog')
+
+    // Criar
+    await userEvent.click(await screen.findByRole('button', { name: '+ Nova tarefa' }))
+    await userEvent.type(within(dialogo()).getByLabelText('Título *'), 'Nova tarefa')
+    await userEvent.click(within(dialogo()).getByRole('button', { name: 'Criar' }))
+    expect(await within(dialogo()).findByRole('alert')).toHaveTextContent('O projeto está arquivado')
+    expect(within(dialogo()).getByLabelText('Título *')).toHaveValue('Nova tarefa')
+    await userEvent.click(within(dialogo()).getByRole('button', { name: 'Cancelar' }))
+
+    // Guardar
+    await userEvent.click(screen.getByRole('button', { name: 'Rever' }))
+    const titulo = await within(dialogo()).findByLabelText('Título *')
+    await userEvent.type(titulo, ' tudo')
+    await userEvent.click(within(dialogo()).getByRole('button', { name: 'Guardar' }))
+    expect(await within(dialogo()).findByRole('alert')).toHaveTextContent('Recarregue-a')
+    expect(titulo).toHaveValue('Rever tudo')
+
+    // Eliminar a tarefa
+    await userEvent.click(within(dialogo()).getByRole('button', { name: 'Eliminar' }))
+    await userEvent.click(within(dialogo()).getByRole('button', { name: 'Eliminar definitivamente' }))
+    await waitFor(() => expect(within(dialogo()).getAllByRole('alert').at(-1)).toHaveTextContent('O projeto está arquivado'))
+    await userEvent.click(within(dialogo()).getByRole('button', { name: 'Cancelar' }))
+
+    // Eliminar o projeto
+    await userEvent.click(screen.getByRole('button', { name: 'Eliminar' }))
+    await userEvent.click(within(dialogo()).getByRole('button', { name: 'Eliminar definitivamente' }))
+    expect(await within(dialogo()).findByRole('alert')).toHaveTextContent('Ocorreu um erro inesperado')
+    expect(screen.getByRole('heading', { name: 'Portal' })).toBeInTheDocument()
+
+    expect(notificacao()).toBeEmptyDOMElement()
+  })
+})

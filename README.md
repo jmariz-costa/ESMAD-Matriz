@@ -155,5 +155,6 @@ em [docs/implementation-plan.md](docs/implementation-plan.md).
   [docs/constraints.md](docs/constraints.md) §4), contrato OpenAPI alargado a
   toda a Fase 1, aplicação e base de dados preparadas (I0), autenticação (I1),
   gestão de projetos com painel inicial (I2), membros do projeto (I3),
-  tarefas com quadro Kanban (I4), responsáveis e comentários (I5) e revisão
-  da interface (I6). Próximo: verificação do MVP (I7).
+  tarefas com quadro Kanban (I4), responsáveis e comentários (I5), revisão
+  da interface (I6) e verificação do MVP (I7, registada em
+  [docs/verification.md](docs/verification.md)). Próximo: revisão e entrega (I8).

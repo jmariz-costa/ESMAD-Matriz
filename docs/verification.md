@@ -7,7 +7,75 @@ Registo das verificações do MVP (Ficha PL 03). Distingue:
 - **verificações manuais** — feitas por uma pessoa na aplicação a correr, com
   o Backend e a base de dados reais.
 
-Os casos 01 a 09 do Exercício 8 entram no I7.
+Secções: [casos de verificação 01 a 09](#casos-de-verificação-do-mvp-i7-exercício-8)
+(I7), [testes automatizados obrigatórios](#testes-automatizados-obrigatórios),
+[comandos executados](#comandos-executados-e-resultados),
+[percurso da interface](#percurso-manual-no-firefox-i6-exercício-7) (I6),
+[registo de problemas](#registo-de-problemas) e
+[limitações](#limitações-e-o-que-não-foi-executado).
+
+## Casos de verificação do MVP (I7, Exercício 8)
+
+Executados a 2026-11-12. Na coluna "Evidência", os testes automatizados são
+indicados como `Classe.método` (Backend em `backend/src/test/java/pt/esmad/matriz/`)
+ou pelo ficheiro e nome do teste (Frontend em `frontend/src/`); os passos P01 a
+P11 são os do [percurso da interface](#percurso-manual-no-firefox-i6-exercício-7).
+
+| Caso | Cenário | Resultado esperado | Resultado observado | Evidência |
+|------|---------|--------------------|---------------------|-----------|
+| 01 | Acesso à aplicação | Credenciais válidas entram; inválidas recebem sempre a mesma mensagem; pedidos sem sessão recebem 401. | ✅ Login com credenciais válidas cria a sessão; palavra-passe errada, email inexistente e conta desativada dão a mesma resposta; 5 falhas bloqueiam; sem cookie ou com token inventado, 401 `NAO_AUTENTICADO` em todos os recursos. | `LoginTest.credenciaisCorretasIniciamSessao`, `.palavraPasseErradaERecusada`, `.emailInexistenteTemAMesmaResposta`, `.cincoFalhasBloqueiamMesmoComAPalavraPasseCerta`; `SessaoApiTest.semCookieDevolve401`, `.tokenInventadoDevolve401`, `.sessaoExpiraAoFimDeTrintaMinutosSemAtividade`; `AutorizacaoApiTest.semSessaoTudoDevolve401`; P01. |
+| 02 | Gestão de projetos | Criar, pesquisar, editar e eliminar funciona; editar e eliminar só pelo Gestor. | ✅ Quem cria fica Gestor (o Gestor enviado pelo cliente é ignorado); pesquisa sem distinguir maiúsculas, com paginação e só nos projetos de que é membro; outro membro recebe 403 ao editar ou eliminar; eliminar apaga em cascata. | `ProjetosApiTest.naoAceitaOGestorEnviadoPeloCliente`, `.outroUtilizadorNaoConsultaOProjeto`; `ListarProjetosApiTest.pesquisaPeloNomeSemDistinguirMaiusculas`, `.paginacao`, `.soMostraOsProjetosDeQueSouMembro`; `EditarEliminarProjetoApiTest.soOGestorEdita`, `.soOGestorElimina`, `.gestorEliminaEmCascataSemDeixarOrfaos`; P02, P03. |
+| 03 | Persistência de tarefas | A tarefa aparece sem recarregar e mantém-se depois de reiniciar o Backend. | ✅ Depois de criar, o cartão aparece em "A fazer" sem recarregar. Criada pela API, a tarefa "Persistência I7" continuou disponível depois de parar e voltar a arrancar o Backend, com os mesmos dados e na coluna "A fazer" (ver [comandos](#caso-03-persistência-depois-de-reiniciar-o-backend)). | `DialogosTarefa.test.tsx` "cria a tarefa e ela aparece em "A fazer" sem recarregar a página"; `TarefasApiTest.membroConsultaATarefaComOsResponsaveisOrdenadosPeloNome`; verificação executada pelo agente com `curl` e reinício do Backend; P04. |
+| 04 | Validação de dados | Campos obrigatórios vazios ou só com espaços e valores inválidos são recusados com 400 e o campo indicado. | ✅ Título em falta, só com espaços ou fora de 3–150; descrição com mais de 2000; prazo e prioridade inválidos; estado na criação; versão em falta; comentário vazio ou só com espaços; login sem campos. No Frontend, o título só com espaços é recusado antes de enviar. | `TarefasApiTest.recusaTituloEmFaltaSoComEspacosOuForaDosLimites`, `.recusaPrazoPrioridadeECamposInvalidos`; `EditarEliminarTarefaApiTest.recusaPedidosInvalidosSemAlterarATarefa`; `ComentariosApiTest.recusaComentarioVazioSoComEspacosOuComMaisDe2000Caracteres`; `ProjetosApiTest.validaONomeEADescricao`; `LoginTest.camposEmFaltaDevolvemValidacao`; `TarefaTest`, `ComentarioTest`; P04, P05. |
+| 05 | Estado e prioridade | Mudar o estado ou a prioridade atualiza a tarefa, os filtros e as contagens de forma coerente. | ✅ Qualquer estado passa a qualquer outro, com o histórico; a tarefa passa a aparecer no filtro do novo estado e as contagens do projeto mudam; os filtros de estado e prioridade combinam-se, incluindo "Sem prioridade"; uma versão antiga é recusada com 409. | `EditarEliminarTarefaApiTest.qualquerEstadoPassaAQualquerOutroEOHistoricoRegistaOAnteriorEONovo`, `.versaoAntigaERecusadaENadaMuda`; `TarefasApiTest.filtrosDeEstadoEPrioridadeCombinam`; `QuadroKanban.test.tsx` "arrastar um cartão para outra coluna muda o estado e atualiza o quadro e as contagens"; P04, P05, P06. |
+| 06 | Responsáveis | Associar e remover funciona; a mesma associação não fica duplicada. | ✅ Vários responsáveis por tarefa; repetir dá 409 `JA_EXISTE` e fica uma só linha na base de dados; remover tira só essa atribuição; só membros ativos do projeto (400); tudo continua lá ao reabrir. | `ResponsaveisApiTest.qualquerMembroAtribuiVariosResponsaveisQueFicamOrdenadosPeloNome`, `.aMesmaPessoaNaoFicaDuasVezes`, `.removerTiraSoEssaAtribuicao`, `.soMembrosDoProjetoComContaAtiva`, `.asAtribuicoesAparecemAoReabrirATarefaENaListagem`; `ResponsaveisComentarios.test.tsx`; P05, P08. |
+| 07 | Comentários | O texto, o autor da sessão e a data ficam guardados e visíveis. | ✅ O autor é o da sessão e a data a do servidor; um pedido com `autor` ou `criadoEm` é recusado; listados do mais antigo para o mais recente, com o autor e a data na interface; continuam lá ao reabrir. | `ComentariosApiTest.comentarioFicaComOAutorDaSessaoEAData`, `.oPedidoNaoPodeDefinirOAutorNemAData`, `.listaDoMaisAntigoParaOMaisRecenteComPaginacao`, `.osComentariosContinuamDisponiveisAoReabrirATarefa`; `ResponsaveisComentarios.test.tsx`; P05. |
+| 08 | Autorização na API | Outro utilizador não acede nem altera recursos sem permissão, mesmo mudando os identificadores no pedido. | ✅ Um membro do projeto A, com os identificadores do projeto B, recebe 403 nas 15 operações sobre o projeto, os membros, as tarefas, os responsáveis e os comentários do B, e o B fica igual; o B não aparece nas suas listagens; misturar identificadores de projetos diferentes é recusado (400 ou 404); o Administrador recebe 403. Não foi encontrado nenhum problema. | `AutorizacaoApiTest.aAnaNaoAcedeNemAlteraNadaDoProjetoBComOsIdentificadoresDele`, `.oProjetoBNaoApareceNasListagensDaAna`, `.misturarIdentificadoresDeProjetosDiferentesERecusado`, `.oAdministradorNaoAcedeAosProjetosNemAsTarefas`; P07. |
+| 09 | Eliminação e erros | A eliminação respeita as dependências; erros da API não mostram mensagens de sucesso nem perdem os dados do formulário. | ✅ Eliminar uma tarefa apaga as atribuições, os comentários e o histórico e deixa o registo em `tarefa_eliminada`; eliminar um projeto apaga tudo o que contém; só o Gestor elimina. Na interface, um erro ao criar, guardar ou eliminar mostra o erro, mantém o que foi escrito e não mostra nenhuma mensagem de sucesso. | `EditarEliminarTarefaApiTest.gestorEliminaATarefaComTudoOQueELaContemEFicaORegisto`, `.soOGestorElimina`; `EditarEliminarProjetoApiTest.gestorEliminaEmCascataSemDeixarOrfaos`; `RevisaoInterface.test.tsx` "um erro ao criar, guardar ou eliminar não mostra mensagem de sucesso e mantém o formulário"; `DialogosTarefa.test.tsx` "se a API devolver erro, o formulário mantém os dados escritos"; P03, P07, P09. |
+
+## Testes automatizados obrigatórios
+
+Os três tipos pedidos no Exercício 8 (todos em `backend/src/test/java/pt/esmad/matriz/`):
+
+| Tipo | Teste | O que confirma |
+|------|-------|----------------|
+| Regra de validação | `tarefas/TarefasApiTest.recusaTituloEmFaltaSoComEspacosOuForaDosLimites` | Título em falta, só com espaços, com 2 ou com 151 caracteres dá 400 `VALIDACAO` no campo `titulo`; 150 caracteres com espaços nas pontas é aceite. |
+| Cenário de autorização | `AutorizacaoApiTest.aAnaNaoAcedeNemAlteraNadaDoProjetoBComOsIdentificadoresDele` | 15 operações com os identificadores de um projeto alheio dão 403, e a base de dados confirma que nada mudou. |
+| Criação com consulta posterior | `tarefas/ResponsaveisApiTest.asAtribuicoesAparecemAoReabrirATarefaENaListagem` e `comentarios/ComentariosApiTest.osComentariosContinuamDisponiveisAoReabrirATarefa` | O que foi criado volta a aparecer quando a tarefa é consultada num pedido separado (e na listagem). `TarefasApiTest.criacaoFicaNoHistoricoComQuemTemASessaoComoAutor` consulta diretamente a base de dados depois de criar. |
+
+## Comandos executados e resultados
+
+**Testes automatizados** (2026-11-12):
+
+| Comando | Resultado |
+|---------|-----------|
+| `cd backend && ./mvnw test` | 143 testes, 0 falhas, 0 erros (cria um PostgreSQL temporário com o Docker) |
+| `cd frontend && npm test` | 85 testes em 13 ficheiros, todos passaram |
+| `cd frontend && npx tsc -b` | Sem erros |
+| `cd frontend && npm run lint` | Sem avisos |
+| `cd frontend && npm run build` | Build concluído |
+
+### Caso 03: persistência depois de reiniciar o Backend
+
+Executado pelo agente, com `docker compose up -d` e `./mvnw quarkus:dev`, a
+pedir diretamente ao Backend (porta 8081) com a sessão da Ana:
+
+```text
+$ POST /api/projetos/{website}/tarefas {"titulo":"Persistência I7","prioridade":"ALTA","prazo":"2026-12-01"}
+{"id":"7e442951-…","titulo":"Persistência I7","prazo":"2026-12-01","prioridade":"ALTA","estado":"A_FAZER","responsaveis":[],"versao":0}  → 201
+
+# Backend parado: porta 8081 livre; um pedido sem resposta (curl: código 000)
+# Backend arrancado de novo
+
+$ GET /api/tarefas/7e442951-… (depois de reiniciar)
+{"id":"7e442951-…","titulo":"Persistência I7","prazo":"2026-12-01","prioridade":"ALTA","estado":"A_FAZER","responsaveis":[],"versao":0}  → 200
+$ GET /api/projetos/{website}/tarefas?estado=A_FAZER
+  total 3 ['Definir mapa do site', 'Persistência I7', 'Escolher fotografias']
+```
+
+A sessão também se manteve, porque está guardada na base de dados (D06). A
+tarefa foi eliminada no fim, com o respetivo registo de eliminação.
+
 
 ## Percurso manual no Firefox (I6, Exercício 7)
 
@@ -43,17 +111,44 @@ a uma. Os dados criados no percurso foram eliminados no fim.
 | P10 | Submissões repetidas | Em "+ Nova tarefa", carregar duas vezes seguidas em "Criar". | Só é criada uma tarefa. | ✅ Duplo clique: 1 pedido de criação e 1 cartão. |
 | P11 | Larguras menores | No modo de design adaptável do Firefox (Ctrl+Shift+M): 800 px e 500 px de largura, no painel, nos projetos, no quadro e no detalhe da tarefa. | A 800 px, o quadro com 2 colunas; a 500 px, 1 coluna, a tabela de projetos com scroll horizontal, o cabeçalho em duas linhas e os diálogos dentro do ecrã. | ✅ A 800 px, 2 colunas; a 500 px, 1 coluna, tabela com scroll horizontal, cabeçalho em duas linhas, diálogo com 484 px dentro do ecrã, sem scroll horizontal na página. Depois da correção do problema 1. |
 
-**Problemas encontrados**
-
-1. **Tabela de projetos desalinhada em larguras menores** (P11). A 500 px, as
-   linhas da coluna "Ações" não acompanhavam a altura das outras células.
-   Causa: `display: flex` na própria célula (`.tabela .acoes`, desde o I2), que
-   deixa de se comportar como célula da tabela. Correção: a célula volta a ser
-   uma célula normal, sem quebra de linha, com margem entre os botões. O P11
-   foi repetido com a captura de ecrã e ficou alinhado.
+**Problemas encontrados:** a tabela de projetos desalinhada a 500 px (P11);
+ver [B03 no registo de problemas](#registo-de-problemas).
 
 **Notas**
 
 - O campo de data mostra o formato do idioma do browser (no Firefox usado, em
   inglês, MM/DD/AAAA); num Firefox em português aparece DD/MM/AAAA. O valor
   enviado à API é sempre AAAA-MM-DD.
+
+## Registo de problemas
+
+Cada problema foi reproduzido, investigado até à causa e corrigido de forma
+limitada, com um teste de regressão sempre que é possível automatizar.
+
+| # | Problema | Reprodução e evidência | Causa | Correção | Teste de regressão |
+|---|----------|------------------------|-------|----------|--------------------|
+| B01 | Remover um membro não atualizava o quadro (I6, F2). | Atribuir o Bruno a uma tarefa por concluir e removê-lo do projeto: o cartão continuava a mostrá-lo até se recarregar a página, embora o Backend já o tivesse retirado (I5). | A secção de membros e o quadro carregavam os dados de forma independente: remover um membro só recarregava a lista de membros. | `MembrosProjeto` avisa o detalhe do projeto (`aoAlterarTarefas`), que faz o quadro voltar a carregar (`sinal` em `QuadroKanban` e `useQuadro`). | `RevisaoInterface.test.tsx` "remover um membro atualiza o quadro, que deixa de o mostrar como responsável (F2)"; falha sem a correção. |
+| B02 | Uma tarefa eliminada por outra pessoa continuava no quadro (I6, F3). | Com o quadro aberto, outra pessoa elimina a tarefa; ao abrir o cartão aparecia "Esta tarefa já não existe.", mas o cartão ficava no quadro. | O 404 só era mostrado no diálogo; o quadro não era avisado. | O detalhe da tarefa avisa o quadro quando recebe 404 ao abrir ou ao guardar. | `RevisaoInterface.test.tsx` "abrir uma tarefa que outra pessoa eliminou tira-a do quadro (F3)"; falha sem a correção. |
+| B03 | Tabela de projetos desalinhada a 500 px (I6, P11). | Captura de ecrã do P11 a 500 px: as linhas da coluna "Ações" não acompanhavam a altura das outras células quando o nome e o Gestor passavam a duas linhas. | `display: flex` na própria célula (`.tabela .acoes`, desde o I2), que deixa de se comportar como célula da tabela. | A célula volta a ser uma célula normal, sem quebra de linha, com margem entre os botões. | Sem teste automatizado (o jsdom não aplica CSS); o P11 foi repetido e a captura confirmou o alinhamento. |
+
+No I7 não foram encontrados problemas novos: o teste do caso 08 e o teste de
+erros do caso 09 passaram à primeira.
+
+## Limitações e o que não foi executado
+
+- **O percurso da interface (P01–P11) foi executado pelo agente de IA**, com o
+  Firefox 141 do Playwright sem janela, e não por uma pessoa. As capturas de
+  ecrã das larguras menores foram vistas, mas o restante aspeto visual não foi
+  revisto por uma pessoa nesse percurso.
+- **No P09, a falta de ligação ao Backend foi simulada** cortando os pedidos
+  `/api` no browser, e não parando o Backend.
+- **O caso 03 (reinício do Backend) não tem teste automatizado**: foi feito
+  com `curl` e o reinício do Backend, com o resultado registado acima.
+- **Gravações simultâneas**: o 409 de duas gravações exatamente ao mesmo tempo
+  (`@Version`) não tem teste automatizado; o caso da versão antiga tem.
+- **Layout adaptativo** sem teste automatizado (o jsdom não aplica CSS);
+  coberto pelo P11.
+- **Não executado**: testes noutros browsers além do Firefox (fora do âmbito,
+  RNF02); testes de carga e de desempenho; a aplicação servida em produção
+  (com HTTPS e `MATRIZ_COOKIE_SEGURO=true`), que fica para a preparação da
+  entrega (I8).

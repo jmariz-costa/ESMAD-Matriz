@@ -503,7 +503,7 @@ verification.md.
 - O layout adaptativo não tem testes automatizados (o jsdom não aplica CSS);
   fica coberto pelo P11.
 
-### I7 — Verificação do MVP ⬜
+### I7 — Verificação do MVP ✅
 
 **Ficha:** Exercício 8.
 
@@ -514,6 +514,32 @@ verification.md.
   verificações manuais.
 - Para cada bug: reproduzir, investigar a causa, corrigir de forma limitada e
   acrescentar um teste de regressão.
+
+**Resultado (2026-11-12)**
+- `docs/verification.md` com os casos 01 a 09: resultado esperado, observado
+  e evidência (testes pelo nome, passos do percurso do I6 e comandos), os três
+  testes obrigatórios identificados, os comandos executados com os
+  resultados, o registo de problemas e as limitações.
+- Novo `AutorizacaoApiTest` (caso 08): um membro do projeto A, com os
+  identificadores do projeto B, recebe 403 em 15 operações e o B fica igual;
+  misturar identificadores de projetos diferentes é recusado; o Administrador
+  recebe 403 e os pedidos sem sessão 401. Não revelou problemas.
+- Novo teste de Frontend (caso 09): um erro da API ao criar, guardar ou
+  eliminar não mostra mensagem de sucesso e mantém o formulário.
+- Caso 03: tarefa criada pela API continua disponível depois de reiniciar o
+  Backend (comandos e respostas registados).
+- Registo de problemas B01–B03 (os do I6) no formato do Exercício 8
+  (reprodução, causa, correção, teste de regressão). No I7 não surgiram
+  problemas novos.
+- Testes: `./mvnw test` (143; 5 novos) e `npm test` (85; 1 novo); `tsc`,
+  `npm run lint` e `npm run build` sem erros.
+
+**Desvios ao plano**
+- Não surgiram bugs novos no I7; o registo de problemas usa os três
+  encontrados no I6, que já tinham correção e, quando possível, teste de
+  regressão (o B03, de CSS, não tem teste automatizado).
+- O caso 03 (reinício do Backend) foi verificado pelo agente com `curl`, e
+  não com um teste automatizado.
 
 ### I8 — Revisão e entrega ⬜
 
