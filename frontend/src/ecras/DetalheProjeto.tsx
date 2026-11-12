@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { consultarProjeto } from '../api/projetos'
 import { useDados } from '../comum/useDados'
+import { useNotificar } from '../comum/notificacao'
 import { ConfirmarEliminacao } from '../projetos/ConfirmarEliminacao'
 import { ContagensProjeto } from '../projetos/ContagensProjeto'
 import { FormularioProjeto } from '../projetos/FormularioProjeto'
@@ -24,6 +25,9 @@ export function DetalheProjeto() {
   const navegar = useNavigate()
   const [dados, recarregar] = useDados(() => consultarProjeto(projetoId), projetoId)
   const [dialogo, setDialogo] = useState<'editar' | 'eliminar' | null>(null)
+  // Aumenta quando outra parte do ecrã muda as tarefas (ex.: remover um membro tira-o dos responsáveis)
+  const [sinalQuadro, setSinalQuadro] = useState(0)
+  const notificar = useNotificar()
 
   if (dados.estado === 'a-carregar') {
     return <p className="vazio">A carregar o projeto…</p>
@@ -62,16 +66,16 @@ export function DetalheProjeto() {
       <p>Gestor: {projeto.gestor.nome}</p>
       <p><small>{percentagemConclusao(projeto.contagens)}% concluído · {textoTarefas(total)}</small></p>
       <ContagensProjeto contagens={projeto.contagens} />
-      <QuadroKanban projeto={projeto} aoAlterar={recarregar} />
-      <MembrosProjeto projeto={projeto} />
+      <QuadroKanban projeto={projeto} aoAlterar={recarregar} sinal={sinalQuadro} />
+      <MembrosProjeto projeto={projeto} aoAlterarTarefas={() => setSinalQuadro((s) => s + 1)} />
 
       {dialogo === 'editar' && (
         <FormularioProjeto projeto={projeto} aoFechar={() => setDialogo(null)}
-          aoGuardar={() => { setDialogo(null); recarregar() }} />
+          aoGuardar={() => { setDialogo(null); recarregar(); notificar('Alterações guardadas.') }} />
       )}
       {dialogo === 'eliminar' && (
         <ConfirmarEliminacao projeto={projeto} aoFechar={() => setDialogo(null)}
-          aoEliminar={() => navegar('/projetos', { replace: true })} />
+          aoEliminar={() => { notificar('Projeto eliminado.'); navegar('/projetos', { replace: true }) }} />
       )}
     </section>
   )

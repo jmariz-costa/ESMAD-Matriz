@@ -40,14 +40,15 @@ function semRepetidas(tarefas: Tarefa[]): Tarefa[] {
  * e o quadro anterior continua visível até chegarem os dados novos. Mudar os filtros volta à
  * primeira página de cada coluna.
  */
-export function useQuadro(projetoId: string, estadoFiltro: Estado | null, prioridade: FiltroPrioridade | null) {
+export function useQuadro(projetoId: string, estadoFiltro: Estado | null, prioridade: FiltroPrioridade | null,
+                          sinal = 0) {
   const filtro = `${projetoId}|${estadoFiltro ?? ''}|${prioridade ?? ''}`
   const [versao, setVersao] = useState(0)
   const [resultado, setResultado] = useState<{ pedido: string; dados: Dados<Colunas> } | null>(null)
   const [aCarregarMais, setACarregarMais] = useState<Estado | null>(null)
   const [erroVerMais, setErroVerMais] = useState<ErroApi | null>(null)
   const paginas = useRef<{ filtro: string; porEstado: Partial<Record<Estado, number>> }>({ filtro, porEstado: {} })
-  const pedido = `${filtro}#${versao}`
+  const pedido = `${filtro}#${versao}#${sinal}`
 
   useEffect(() => {
     let ativo = true

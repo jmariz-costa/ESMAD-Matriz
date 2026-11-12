@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 import { listarProjetos, type Projeto } from '../api/projetos'
 import { useDados } from '../comum/useDados'
+import { useNotificar } from '../comum/notificacao'
 import { ContagensProjeto } from '../projetos/ContagensProjeto'
 import { FormularioProjeto } from '../projetos/FormularioProjeto'
 import { percentagemConclusao, textoTarefas, totalTarefas } from '../projetos/percentagem'
@@ -27,6 +28,7 @@ export function Painel() {
   const utilizador = useUtilizador()
   const [dados, recarregar] = useDados(() => listarProjetos(), 'painel')
   const [aCriar, setACriar] = useState(false)
+  const notificar = useNotificar()
 
   const botaoNovo = (
     <button type="button" className="btn principal" onClick={() => setACriar(true)}>+ Novo projeto</button>
@@ -74,6 +76,7 @@ export function Painel() {
           aoGuardar={() => {
             setACriar(false)
             recarregar()
+            notificar('Projeto criado.')
           }}
         />
       )}

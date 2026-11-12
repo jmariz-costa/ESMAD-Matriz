@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { listarProjetos, TAMANHO_PAGINA, type Projeto } from '../api/projetos'
 import { useDados } from '../comum/useDados'
+import { useNotificar } from '../comum/notificacao'
 import { ConfirmarEliminacao } from '../projetos/ConfirmarEliminacao'
 import { FormularioProjeto } from '../projetos/FormularioProjeto'
 import { percentagemConclusao, totalTarefas } from '../projetos/percentagem'
@@ -30,6 +31,7 @@ export function Projetos() {
   const pagina = paginaDoUrl(parametros.get('pagina'))
   const [texto, setTexto] = useState(q)
   const [dialogo, setDialogo] = useState<Dialogo | null>(null)
+  const notificar = useNotificar()
   const [dados, recarregar] = useDados(() => listarProjetos({ q: q.trim(), pagina }), `${q}|${pagina}`)
 
   // Pesquisa enquanto se escreve, 300 ms depois da última tecla; volta à página 1
@@ -52,6 +54,7 @@ export function Projetos() {
 
   function depoisDeEliminar() {
     setDialogo(null)
+    notificar('Projeto eliminado.')
     // Se a página ficou vazia, volta à anterior
     if (dados.estado === 'pronto' && dados.dados.itens.length === 1 && pagina > 1) {
       irParaPagina(pagina - 1)
@@ -94,6 +97,7 @@ export function Projetos() {
       {dados.estado === 'pronto' && (
         <>
           {dados.dados.itens.length > 0 && (
+            <div className="tabela-rolagem">
             <table className="tabela caixa">
               <thead>
                 <tr>
@@ -125,6 +129,7 @@ export function Projetos() {
                 ))}
               </tbody>
             </table>
+            </div>
           )}
 
           <div className="paginacao">
@@ -143,11 +148,12 @@ export function Projetos() {
       )}
 
       {dialogo?.tipo === 'criar' && (
-        <FormularioProjeto aoFechar={() => setDialogo(null)} aoGuardar={() => { setDialogo(null); recarregar() }} />
+        <FormularioProjeto aoFechar={() => setDialogo(null)}
+          aoGuardar={() => { setDialogo(null); recarregar(); notificar('Projeto criado.') }} />
       )}
       {dialogo?.tipo === 'editar' && (
         <FormularioProjeto projeto={dialogo.projeto} aoFechar={() => setDialogo(null)}
-          aoGuardar={() => { setDialogo(null); recarregar() }} />
+          aoGuardar={() => { setDialogo(null); recarregar(); notificar('Alterações guardadas.') }} />
       )}
       {dialogo?.tipo === 'eliminar' && (
         <ConfirmarEliminacao projeto={dialogo.projeto} aoFechar={() => setDialogo(null)} aoEliminar={depoisDeEliminar} />

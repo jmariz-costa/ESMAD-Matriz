@@ -1,6 +1,7 @@
 import { useState, type DragEvent } from 'react'
 import { useSearchParams } from 'react-router'
 import { comoErroApi } from '../api/cliente'
+import { useNotificar } from '../comum/notificacao'
 import type { Estado, Projeto } from '../api/projetos'
 import { editarTarefa, type FiltroPrioridade, type Tarefa } from '../api/tarefas'
 import { ESTADOS } from '../projetos/estados'
@@ -15,6 +16,8 @@ interface Props {
   projeto: Projeto
   /** Depois de cada alteração, para atualizar as contagens e a percentagem do projeto. */
   aoAlterar: () => void
+  /** Muda quando outra parte do ecrã alterou as tarefas; o quadro volta a carregar. */
+  sinal?: number
 }
 
 const MENSAGEM_VERSAO = 'A tarefa foi alterada por outra pessoa entretanto. O quadro foi atualizado; tente novamente.'
@@ -33,11 +36,11 @@ function lerPrioridade(valor: string | null): FiltroPrioridade | null {
  * mudar o estado arrastando um cartão para outra coluna (US06, nota 3). Num projeto arquivado
  * o quadro é só de leitura.
  */
-export function QuadroKanban({ projeto, aoAlterar }: Props) {
+export function QuadroKanban({ projeto, aoAlterar, sinal = 0 }: Props) {
   const [parametros, setParametros] = useSearchParams()
   const estadoFiltro = lerEstado(parametros.get('estado'))
   const prioridade = lerPrioridade(parametros.get('prioridade'))
-  const { dados, recarregar, verMais, aCarregarMais, erroVerMais } = useQuadro(projeto.id, estadoFiltro, prioridade)
+  const { dados, recarregar, verMais, aCarregarMais, erroVerMais } = useQuadro(projeto.id, estadoFiltro, prioridade, sinal)
 
   const [aArrastar, setAArrastar] = useState<Tarefa | null>(null)
   const [alvo, setAlvo] = useState<Estado | null>(null)
@@ -46,6 +49,7 @@ export function QuadroKanban({ projeto, aoAlterar }: Props) {
   const [aCriar, setACriar] = useState(false)
   const [aberta, setAberta] = useState<string | null>(null)
   const podeAlterar = !projeto.arquivado
+  const notificar = useNotificar()
 
   function filtrar(nome: 'estado' | 'prioridade', valor: string) {
     setParametros((atuais) => {
@@ -74,6 +78,7 @@ export function QuadroKanban({ projeto, aoAlterar }: Props) {
     setAviso(null)
     try {
       await editarTarefa(tarefa.id, { versao: tarefa.versao, estado })
+      notificar(`«${tarefa.titulo}» passou para ${ESTADOS.find((e) => e.codigo === estado)?.nome}.`)
     } catch (e) {
       const erro = comoErroApi(e)
       setAviso(erro.codigo === 'VERSAO_DESATUALIZADA' ? MENSAGEM_VERSAO : erro.message)
@@ -196,7 +201,7 @@ export function QuadroKanban({ projeto, aoAlterar }: Props) {
 
       {aCriar && (
         <NovaTarefa projetoId={projeto.id} aoFechar={() => setACriar(false)}
-          aoCriar={() => { setACriar(false); atualizar() }} />
+          aoCriar={() => { setACriar(false); atualizar(); notificar('Tarefa criada.') }} />
       )}
       {aberta && (
         <DetalheTarefa tarefaId={aberta} podeEliminar={projeto.souGestor} soLeitura={projeto.arquivado}

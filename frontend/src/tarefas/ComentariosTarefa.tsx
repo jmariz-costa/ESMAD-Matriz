@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { comoErroApi, type ErroApi } from '../api/cliente'
+import { useNotificar } from '../comum/notificacao'
 import { comentarTarefa, listarComentarios, type Comentario } from '../api/comentarios'
 import { formatarDataHora } from './textos'
 
@@ -38,6 +39,7 @@ export function ComentariosTarefa({ tarefaId, soLeitura }: Props) {
   const [erroTexto, setErroTexto] = useState<string | null>(null)
   const [aviso, setAviso] = useState<string | null>(null)
   const [aPublicar, setAPublicar] = useState(false)
+  const notificar = useNotificar()
 
   useEffect(() => {
     let ativo = true
@@ -86,6 +88,7 @@ export function ComentariosTarefa({ tarefaId, soLeitura }: Props) {
     try {
       const novo = await comentarTarefa(tarefaId, texto.trim())
       setTexto('')
+      notificar('Comentário publicado.')
       // O novo é o mais recente: só aparece já se todos os anteriores estiverem carregados
       setLista((atual) => atual && {
         ...atual,

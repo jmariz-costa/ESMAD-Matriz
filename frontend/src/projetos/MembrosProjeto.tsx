@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { listarMembros, type Membro } from '../api/membros'
 import type { Projeto } from '../api/projetos'
 import { useDados } from '../comum/useDados'
+import { useNotificar } from '../comum/notificacao'
 import { AdicionarMembro } from './AdicionarMembro'
 import { ConfirmarRemocaoMembro } from './ConfirmarRemocaoMembro'
 
@@ -9,7 +10,14 @@ import { ConfirmarRemocaoMembro } from './ConfirmarRemocaoMembro'
  * Membros do projeto (US04). Todos os membros veem a lista; só o Gestor adiciona e
  * remove, e nunca num projeto arquivado (RN07, RI10). O servidor verifica sempre (S03).
  */
-export function MembrosProjeto({ projeto }: { projeto: Projeto }) {
+interface Props {
+  projeto: Projeto
+  /** Remover um membro tira-o dos responsáveis das tarefas não concluídas (RN08): o quadro tem de atualizar. */
+  aoAlterarTarefas: () => void
+}
+
+export function MembrosProjeto({ projeto, aoAlterarTarefas }: Props) {
+  const notificar = useNotificar()
   const [dados, recarregar] = useDados(() => listarMembros(projeto.id), projeto.id)
   const [aAdicionar, setAAdicionar] = useState(false)
   const [aRemover, setARemover] = useState<Membro | null>(null)
@@ -67,8 +75,10 @@ export function MembrosProjeto({ projeto }: { projeto: Projeto }) {
         <ConfirmarRemocaoMembro projetoId={projeto.id} membro={aRemover}
           aoFechar={() => setARemover(null)}
           aoRemover={() => {
+            notificar(`${aRemover.nome} foi removido do projeto.`)
             setARemover(null)
             recarregar()
+            aoAlterarTarefas()
           }} />
       )}
     </section>

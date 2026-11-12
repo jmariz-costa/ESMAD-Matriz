@@ -1,8 +1,9 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { comoErroApi } from '../api/cliente'
 import { consultarTarefa, editarTarefa, eliminarTarefa, type Tarefa } from '../api/tarefas'
 import { Dialogo } from '../componentes/Dialogo'
 import { useDados } from '../comum/useDados'
+import { useNotificar } from '../comum/notificacao'
 import { CamposTarefa } from './CamposTarefa'
 import { ComentariosTarefa } from './ComentariosTarefa'
 import { ResponsaveisTarefa } from './ResponsaveisTarefa'
@@ -32,6 +33,18 @@ const MENSAGEM_VERSAO =
  */
 export function DetalheTarefa({ tarefaId, podeEliminar, soLeitura, aoFechar, aoAlterar }: Props) {
   const [dados, recarregar] = useDados(() => consultarTarefa(tarefaId), tarefaId)
+  const naoExiste = dados.estado === 'erro' && dados.erro.estado === 404
+
+  // Outra pessoa eliminou a tarefa: o cartão também tem de sair do quadro
+  const alterar = useRef(aoAlterar)
+  useEffect(() => {
+    alterar.current = aoAlterar
+  })
+  useEffect(() => {
+    if (naoExiste) {
+      alterar.current()
+    }
+  }, [naoExiste])
 
   return (
     <Dialogo titulo="Tarefa" aoFechar={aoFechar} largo>
@@ -73,6 +86,7 @@ function EditarTarefa({ tarefa, podeEliminar, soLeitura, aoFechar, aoAlterar }: 
   const [versaoAntiga, setVersaoAntiga] = useState(false)
   const [aGuardar, setAGuardar] = useState(false)
   const [aConfirmar, setAConfirmar] = useState(false)
+  const notificar = useNotificar()
 
   function mudar(campo: CampoTarefa, valor: string) {
     setValores((atuais) => ({ ...atuais, [campo]: valor }))
@@ -95,11 +109,18 @@ function EditarTarefa({ tarefa, podeEliminar, soLeitura, aoFechar, aoAlterar }: 
     setAGuardar(true)
     try {
       await editarTarefa(base.id, alteracoes)
+      notificar('Alterações guardadas.')
       aoAlterar()
       aoFechar()
     } catch (e) {
       // O que foi escrito mantém-se (US05 crit. 3 e 8)
       const erro = comoErroApi(e)
+      if (erro.estado === 404) {
+        setAviso('Esta tarefa já não existe: foi eliminada por outra pessoa.')
+        setAGuardar(false)
+        aoAlterar()
+        return
+      }
       const doServidor = errosDoServidor(erro)
       setErros(doServidor)
       setVersaoAntiga(erro.codigo === 'VERSAO_DESATUALIZADA')
@@ -145,6 +166,7 @@ function EditarTarefa({ tarefa, podeEliminar, soLeitura, aoFechar, aoAlterar }: 
     setAGuardar(true)
     try {
       await eliminarTarefa(base.id)
+      notificar('Tarefa eliminada.')
       aoAlterar()
       aoFechar()
     } catch (e) {

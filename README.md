@@ -49,6 +49,7 @@ O detalhe está em [docs/requirements.md](docs/requirements.md).
 | [openapi.yaml](openapi.yaml)                   | Contrato REST (OpenAPI 3.1) da Fase 1: autenticação, projetos, membros, tarefas, comentários  |
 | [docs/ui/](docs/ui/)                           | Wireframes do quadro Kanban e dos restantes ecrãs (PNG e HTML de origem)                      |
 | [docs/implementation-plan.md](docs/implementation-plan.md) | Plano de implementação: incrementos I0–I8 da Fase 1, Fase 2 e estado de cada um   |
+| [docs/verification.md](docs/verification.md)   | Registo das verificações do MVP: percurso da interface (I6) e casos de verificação (I7)       |
 | [docs/decisions/](docs/decisions/)             | Architecture Decision Records (ADRs), com índice no README da pasta                           |
 | [AGENTS.md](AGENTS.md)                         | Instruções para agentes de IA que trabalhem neste repositório                                 |
 
@@ -154,5 +155,5 @@ em [docs/implementation-plan.md](docs/implementation-plan.md).
   [docs/constraints.md](docs/constraints.md) §4), contrato OpenAPI alargado a
   toda a Fase 1, aplicação e base de dados preparadas (I0), autenticação (I1),
   gestão de projetos com painel inicial (I2), membros do projeto (I3),
-  tarefas com quadro Kanban (I4) e responsáveis e comentários (I5).
-  Próximo: revisão da interface (I6).
+  tarefas com quadro Kanban (I4), responsáveis e comentários (I5) e revisão
+  da interface (I6). Próximo: verificação do MVP (I7).

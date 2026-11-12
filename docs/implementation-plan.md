@@ -453,7 +453,7 @@ verificação manual.
 - A data dos comentários é guardada ao microssegundo (a precisão do
   PostgreSQL) e mostrada na hora local do browser.
 
-### I6 — Revisão da interface ⬜
+### I6 — Revisão da interface ✅
 
 **Ficha:** Exercício 7.
 
@@ -464,6 +464,44 @@ verificação manual.
 
 **Verificação:** percurso manual completo no Firefox, registado em
 verification.md.
+
+**Resultado (2026-11-12)**
+- Revisão dos 5 ecrãs do Exercício 7 contra os critérios da ficha: já
+  cumpriam o endereço do Backend centralizado (`vite.config.ts`, `/api`), os
+  estados de carregamento, vazio e erro, os dados preservados em erro, os
+  botões inativos durante os pedidos, os totais de todo o conjunto e a
+  ausência de mocks.
+- Mensagem de sucesso uniforme (`FornecedorNotificacao`, `useNotificar`), no
+  canto do ecrã durante 4 segundos e anunciada aos leitores de ecrã, depois de
+  criar, guardar ou eliminar projetos e tarefas, mudar o estado, remover um
+  membro e publicar um comentário.
+- Layout adaptativo: abaixo de 900 px o quadro passa a 2 colunas; abaixo de
+  600 px, a 1 coluna, com a tabela de projetos em scroll horizontal, o
+  cabeçalho e as barras a quebrar linha e os diálogos ajustados ao ecrã.
+- Corrigido: remover um membro passa a atualizar o quadro (os cartões deixavam
+  de estar certos até recarregar a página); abrir ou guardar uma tarefa que
+  outra pessoa eliminou tira o cartão do quadro; a coluna "Ações" da tabela de
+  projetos ficava desalinhada em larguras menores (`display: flex` na célula).
+- `docs/verification.md` criado, com o percurso P01–P11 e o resultado de cada
+  passo.
+- Testes: `npm test` (84; 5 novos, dos quais os da sincronização falham sem a
+  correção); `tsc`, `npm run lint` e `npm run build` sem erros. Backend sem
+  alterações (138).
+
+**Desvios ao plano**
+- O percurso no Firefox foi feito pelo agente de IA, a pedido do responsável
+  do projeto, com o Firefox 141 do Playwright sem janela (script fora do
+  repositório), e não manualmente; está registado como verificação
+  automatizada pelo agente. As capturas de ecrã das larguras menores foram
+  vistas uma a uma.
+- No P09, a falta de ligação ao Backend foi simulada cortando os pedidos
+  `/api` no browser, em vez de parar o Backend.
+- O P08 foi feito num projeto temporário, para não retirar o Bruno das
+  tarefas dos dados de demonstração.
+- Atribuir e remover responsáveis não mostra mensagem de sucesso: o
+  resultado aparece logo no próprio diálogo.
+- O layout adaptativo não tem testes automatizados (o jsdom não aplica CSS);
+  fica coberto pelo P11.
 
 ### I7 — Verificação do MVP ⬜
 
