@@ -7,6 +7,7 @@ import { ContagensProjeto } from '../projetos/ContagensProjeto'
 import { FormularioProjeto } from '../projetos/FormularioProjeto'
 import { MembrosProjeto } from '../projetos/MembrosProjeto'
 import { percentagemConclusao, textoTarefas, totalTarefas } from '../projetos/percentagem'
+import { QuadroKanban } from '../tarefas/QuadroKanban'
 
 function mensagemDeErro(estado: number): string {
   if (estado === 404) return 'Este projeto não existe.'
@@ -15,8 +16,8 @@ function mensagemDeErro(estado: number): string {
 }
 
 /**
- * Detalhe de um projeto (US18 crit. 2). Provisório no I2: o quadro Kanban
- * das tarefas (wireframe.html) é acrescentado no I4.
+ * Detalhe de um projeto (US18 crit. 2) com o quadro Kanban das tarefas (US07, wireframe.html).
+ * Depois de cada alteração no quadro, o projeto é recarregado para atualizar as contagens.
  */
 export function DetalheProjeto() {
   const { projetoId = '' } = useParams()
@@ -61,8 +62,8 @@ export function DetalheProjeto() {
       <p>Gestor: {projeto.gestor.nome}</p>
       <p><small>{percentagemConclusao(projeto.contagens)}% concluído · {textoTarefas(total)}</small></p>
       <ContagensProjeto contagens={projeto.contagens} />
+      <QuadroKanban projeto={projeto} aoAlterar={recarregar} />
       <MembrosProjeto projeto={projeto} />
-      <p className="vazio">As tarefas do projeto vão aparecer aqui.</p>
 
       {dialogo === 'editar' && (
         <FormularioProjeto projeto={projeto} aoFechar={() => setDialogo(null)}

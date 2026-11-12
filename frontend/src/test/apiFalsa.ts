@@ -1,6 +1,7 @@
 // Substitui o fetch nos testes por respostas definidas por rota ("MÉTODO /api/caminho").
 import { vi } from 'vitest'
-import type { Projeto } from '../api/projetos'
+import type { Estado, Projeto } from '../api/projetos'
+import type { Tarefa } from '../api/tarefas'
 
 export interface RespostaFalsa {
   estado: number
@@ -70,4 +71,35 @@ export function projeto(dados: Partial<Projeto> = {}): Projeto {
 
 export function paginaDe(itens: Projeto[], total = itens.length, pagina = 1): RespostaFalsa {
   return { estado: 200, corpo: { itens, total, pagina, tamanho: 20 } }
+}
+
+export function tarefa(dados: Partial<Tarefa> = {}): Tarefa {
+  return {
+    id: 't-' + Math.random().toString(36).slice(2),
+    projetoId: 'p1',
+    titulo: 'Definir mapa do site',
+    descricao: null,
+    prazo: null,
+    prioridade: null,
+    estado: 'A_FAZER',
+    responsaveis: [],
+    versao: 0,
+    ...dados,
+  }
+}
+
+const ESTADOS_QUADRO: Estado[] = ['A_FAZER', 'EM_CURSO', 'EM_REVISAO', 'CONCLUIDA']
+
+/** GET de uma página de uma coluna do quadro, como o quadro a pede. */
+export function rotaColuna(projetoId: string, estado: Estado, pagina = 1, prioridade?: string): string {
+  const filtro = prioridade ? `&prioridade=${prioridade}` : ''
+  return `GET /api/projetos/${projetoId}/tarefas?estado=${estado}${filtro}&pagina=${pagina}&tamanho=20`
+}
+
+/** As 4 colunas do quadro, com as tarefas indicadas na primeira página de cada uma. */
+export function quadro(projetoId: string, tarefas: Tarefa[] = [], prioridade?: string): Record<string, RespostaFalsa> {
+  return Object.fromEntries(ESTADOS_QUADRO.map((estado) => {
+    const itens = tarefas.filter((t) => t.estado === estado)
+    return [rotaColuna(projetoId, estado, 1, prioridade), { estado: 200, corpo: { itens, total: itens.length, pagina: 1, tamanho: 20 } }]
+  }))
 }

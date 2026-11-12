@@ -302,7 +302,7 @@ membro removido deixa de aceder); verificação manual com dois utilizadores.
 - A janela de adicionar mostra até 10 resultados, sem paginação: para
   encontrar outras pessoas, pesquisa-se.
 
-### I4 — Gestão de tarefas e quadro Kanban ⬜
+### I4 — Gestão de tarefas e quadro Kanban ✅
 
 **Ficha:** Exercício 5. **US:** US05, US06, US07, US09 (crit. 1 a 3), US17 (filtros).
 
@@ -323,6 +323,67 @@ crit. 1 a 3; US17 crit. 3; textos só com espaços rejeitados.
 filtros combinados, versão desatualizada, eliminar só pelo Gestor, tarefa
 persiste após reiniciar); testes de componente (formulário mantém os dados
 quando a API devolve erro); verificação manual do quadro.
+
+**Resultado (2026-11-12)**
+- Backend (módulo `tarefas`): agregado `Tarefa` com as atribuições
+  (`criar`: estado `A_FAZER`, versão 0, título 3–150 e descrição até 2000 sem
+  contar os espaços nas pontas; `editar`: só os campos enviados, `null` limpa
+  os opcionais, devolve os campos que mudaram e recusa uma versão antiga com
+  409 `VERSAO_DESATUALIZADA`); a `versao` usa `@Version` do JPA, que também
+  impede que duas gravações simultâneas se sobreponham; `TarefaEliminada`
+  (RI09); `TarefasServico`, `TarefasProjetoRecurso`
+  (`GET`/`POST /projetos/{id}/tarefas`, filtros `estado` e `prioridade`
+  combináveis, incluindo `SEM_PRIORIDADE`, paginação, ordenação por prazo com
+  as tarefas sem prazo no fim e depois pelo título) e `TarefasRecurso`
+  (`GET`/`PATCH`/`DELETE /tarefas/{id}`). Os corpos são lidos campo a campo
+  (`PedidoTarefa`), para indicar o campo com problemas.
+- Backend (outros módulos): novo módulo `historico` (ADR 0001), com
+  `HistoricoServico` a registar a criação e uma entrada por campo alterado
+  (valor anterior e novo, autor da sessão); `AcessoProjetosServico` no módulo
+  `projetos`, por onde Tarefas pergunta o acesso ao projeto (membro, membro
+  para alterar, Gestor para alterar); `ErroAplicacao.versaoDesatualizada`.
+- Frontend: o detalhe do projeto passa a ter o quadro Kanban (wireframe.html):
+  4 colunas pela ordem dos estados, com o total de cada uma, até 20 cartões e
+  "Ver mais (N)"; cartão com título, responsáveis ou "Sem responsável",
+  prioridade e prazo; filtros de estado e prioridade no endereço, com
+  "Limpar filtros" (filtrar por estado mostra só essa coluna); mudar o estado
+  arrastando o cartão (arrastar nativo do browser) ou no seletor do detalhe;
+  "+ Nova tarefa" e detalhe da tarefa em diálogos; "Eliminar" só para o
+  Gestor, com confirmação; depois de cada operação o quadro e as contagens do
+  projeto são atualizados sem recarregar a página. Num projeto arquivado o
+  quadro e o detalhe são só de leitura.
+- Verificação contra o Backend real (pedidos pelo proxy do Vite): quadro dos
+  dados de demonstração, filtros, criar, título só com espaços (400), mudar o
+  estado como Membro, versão antiga (409), contagens, eliminar como Membro
+  (403) e como Gestor (204 e registo em `tarefa_eliminada`); uma tarefa criada
+  continua disponível depois de reiniciar o Backend.
+- Testes: `./mvnw test` (120; 36 novos) e `npm test` (68; 20 novos); `tsc`,
+  `npm run lint` e `npm run build` sem erros.
+- Verificação manual no browser: feita (2026-11-12).
+
+**Desvios ao plano**
+- "Tarefa persiste após reiniciar" foi verificado à mão (reiniciando o
+  Backend), e não com um teste automático; os testes de integração consultam
+  a tarefa num pedido separado.
+- A gravação simultânea de duas pessoas (o `@Version` dá 409) não tem teste
+  automático; o caso da versão antiga tem.
+- Um PATCH sem alterações reais devolve 200 sem aumentar a versão nem criar
+  entradas no histórico.
+- No histórico, os valores ficam como códigos (`EM_CURSO`, `ALTA`) e as datas
+  como AAAA-MM-DD; a tradução fica para quando o histórico for mostrado
+  (Fase 2, US13).
+- Depois de um 409 de versão, "Recarregar tarefa" mantém os campos que o
+  utilizador mudou e mostra os valores mais recentes nos outros (US05
+  crit. 8). Até recarregar, "Guardar" fica inativo.
+- Os filtros do quadro ficam no endereço (`?estado=…&prioridade=…`). Depois
+  de cada operação, cada coluna volta a pedir as páginas que já tinha
+  carregado; mudar um filtro volta à primeira página.
+- A confirmação de eliminar aparece dentro do diálogo do detalhe; o
+  "+ Nova tarefa" está só na barra dos filtros (não também na mensagem de
+  projeto vazio).
+- Responsáveis: o quadro e o detalhe mostram-nos, mas atribuir e remover é do
+  I5. Continua por tratar no I5 que retirar as atribuições ao remover um
+  membro (I3) aumente a `versao` das tarefas.
 
 ### I5 — Responsáveis e comentários ⬜
 

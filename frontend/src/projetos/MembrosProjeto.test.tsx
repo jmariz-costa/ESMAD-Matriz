@@ -2,7 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import type { Membro } from '../api/membros'
-import { ANA, projeto, simularApi } from '../test/apiFalsa'
+import { ANA, projeto, quadro, simularApi } from '../test/apiFalsa'
 import { renderizarAplicacao } from '../test/renderizar'
 
 const SESSAO = { 'GET /api/auth/me': { estado: 200, corpo: ANA } }
@@ -30,6 +30,7 @@ describe('Membros do projeto (US04)', () => {
   it('qualquer membro vê a lista, sem opções de gestão', async () => {
     simularApi({
       ...SESSAO,
+      ...quadro('p1'),
       'GET /api/projetos/p1': { estado: 200, corpo: projeto({ id: 'p1', souGestor: false }) },
       'GET /api/projetos/p1/membros': { estado: 200, corpo: [anaGestora, bruno, carla] },
     })
@@ -45,6 +46,7 @@ describe('Membros do projeto (US04)', () => {
   it('o Gestor pode remover os outros membros, mas não a si próprio', async () => {
     simularApi({
       ...SESSAO,
+      ...quadro('p1'),
       'GET /api/projetos/p1': { estado: 200, corpo: projeto({ id: 'p1' }) },
       'GET /api/projetos/p1/membros': { estado: 200, corpo: [anaGestora, bruno] },
     })
@@ -58,6 +60,7 @@ describe('Membros do projeto (US04)', () => {
   it('num projeto arquivado ninguém adiciona nem remove', async () => {
     simularApi({
       ...SESSAO,
+      ...quadro('p1'),
       'GET /api/projetos/p1': { estado: 200, corpo: projeto({ id: 'p1', arquivado: true }) },
       'GET /api/projetos/p1/membros': { estado: 200, corpo: [anaGestora, bruno] },
     })
@@ -71,6 +74,7 @@ describe('Membros do projeto (US04)', () => {
     let removido = false
     const fetchFalso = simularApi({
       ...SESSAO,
+      ...quadro('p1'),
       'GET /api/projetos/p1': { estado: 200, corpo: projeto({ id: 'p1' }) },
       'GET /api/projetos/p1/membros': () => ({ estado: 200, corpo: removido ? [anaGestora] : [anaGestora, bruno] }),
       'DELETE /api/projetos/p1/membros/b': () => {
@@ -98,6 +102,7 @@ describe('Membros do projeto (US04)', () => {
     let adicionado = false
     const fetchFalso = simularApi({
       ...SESSAO,
+      ...quadro('p1'),
       'GET /api/projetos/p1': { estado: 200, corpo: projeto({ id: 'p1' }) },
       'GET /api/projetos/p1/membros': () => ({ estado: 200, corpo: adicionado ? [anaGestora, bruno] : [anaGestora] }),
       'GET /api/utilizadores?pagina=1&tamanho=10': paginaUtilizadores([anaGestora, bruno, { id: 'd', nome: 'Daniel Exemplo', email: 'daniel@empresa.pt' }]),
@@ -128,6 +133,7 @@ describe('Membros do projeto (US04)', () => {
   it('mostra o erro do servidor ao adicionar', async () => {
     simularApi({
       ...SESSAO,
+      ...quadro('p1'),
       'GET /api/projetos/p1': { estado: 200, corpo: projeto({ id: 'p1' }) },
       'GET /api/projetos/p1/membros': { estado: 200, corpo: [anaGestora] },
       'GET /api/utilizadores?pagina=1&tamanho=10': paginaUtilizadores([bruno]),

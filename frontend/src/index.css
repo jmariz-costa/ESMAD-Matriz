@@ -422,3 +422,199 @@ label {
 .dialogo .aviso {
   margin-top: 12px;
 }
+
+/* Quadro Kanban (wireframe.html) */
+.quadro-projeto {
+  margin: 20px 0;
+}
+
+.barra-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 8px 10px;
+  background: var(--fundo-suave);
+}
+
+.barra-filtros .filtro {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-weight: normal;
+  font-size: 14px;
+}
+
+.barra-filtros .filtro .campo {
+  width: auto;
+  padding: 3px 6px;
+}
+
+.quadro-projeto > .aviso {
+  margin-bottom: 12px;
+}
+
+.quadro {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.coluna {
+  background: var(--fundo-suave);
+  padding: 10px;
+  min-height: 360px;
+  border: 2px solid transparent;
+  border-radius: 4px;
+}
+
+.coluna.alvo {
+  border-color: #888;
+}
+
+.coluna h2 {
+  margin: 0 0 10px;
+  font-size: 15px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.contagem {
+  font-weight: normal;
+  color: var(--texto-suave);
+}
+
+.cartoes-coluna {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.cartao {
+  position: relative;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+.cartao[draggable='true'] {
+  cursor: grab;
+}
+
+.cartao.a-arrastar {
+  opacity: 0.55;
+  border-style: dashed;
+}
+
+.titulo-cartao {
+  font-weight: bold;
+  margin-bottom: 6px;
+  padding-right: 16px;
+  overflow-wrap: anywhere;
+}
+
+.pega {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  color: #999;
+}
+
+.responsaveis {
+  font-size: 13px;
+}
+
+.sem-resp {
+  color: #777;
+  font-style: italic;
+}
+
+.meta {
+  margin-top: 6px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 12px;
+}
+
+.etiqueta {
+  border: 1px solid #777;
+  border-radius: 3px;
+  padding: 0 6px;
+  background: #f2f2f2;
+}
+
+.largar {
+  border: 2px dashed #888;
+  border-radius: 4px;
+  height: 70px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #777;
+  font-size: 13px;
+}
+
+.ver-mais {
+  width: 100%;
+  padding: 6px;
+  border: 2px dashed #aaa;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--texto-suave);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.ver-mais:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.titulo-cartao {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+}
+
+.titulo-cartao:focus-visible {
+  outline: 3px solid var(--texto);
+  outline-offset: 2px;
+}
+
+.cartao {
+  cursor: pointer;
+}
+
+/* Formulário da tarefa */
+.campos-lado {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0 12px;
+}
+
+.botoes .esquerda {
+  margin-right: auto;
+}
+
+.confirmar {
+  margin-top: 16px;
+  padding: 10px 12px;
+}
+
+.confirmar p {
+  margin: 0;
+}
+
+.aviso .btn {
+  margin-top: 8px;
+}

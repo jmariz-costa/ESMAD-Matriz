@@ -152,6 +152,6 @@ em [docs/implementation-plan.md](docs/implementation-plan.md).
 - Ficha PL 03: decisões técnicas tomadas (Java 21 + Quarkus, React +
   TypeScript, PostgreSQL, sessão com cookie; ver
   [docs/constraints.md](docs/constraints.md) §4), contrato OpenAPI alargado a
-  toda a Fase 1, aplicação e base de dados preparadas (I0), autenticação (I1)
-  gestão de projetos com painel inicial (I2) e membros do projeto (I3).
-  Próximo: tarefas e quadro Kanban (I4).
+  toda a Fase 1, aplicação e base de dados preparadas (I0), autenticação (I1),
+  gestão de projetos com painel inicial (I2), membros do projeto (I3) e
+  tarefas com quadro Kanban (I4). Próximo: responsáveis e comentários (I5).

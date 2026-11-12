@@ -1,7 +1,7 @@
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
-import { ANA, LISTAR_PROJETOS, paginaDe, projeto, simularApi } from '../test/apiFalsa'
+import { ANA, LISTAR_PROJETOS, paginaDe, projeto, quadro, simularApi } from '../test/apiFalsa'
 import { renderizarAplicacao } from '../test/renderizar'
 
 const SESSAO = { 'GET /api/auth/me': { estado: 200, corpo: ANA } }
@@ -10,6 +10,7 @@ describe('Detalhe do projeto (US18 crit. 2)', () => {
   it('mostra os dados do projeto', async () => {
     simularApi({
       ...SESSAO,
+      ...quadro('p1'),
       'GET /api/projetos/p1/membros': { estado: 200, corpo: [] },
       'GET /api/projetos/p1': {
         estado: 200,
@@ -42,6 +43,7 @@ describe('Detalhe do projeto (US18 crit. 2)', () => {
   it('o Gestor elimina e volta à lista de projetos', async () => {
     simularApi({
       ...SESSAO,
+      ...quadro('p1'),
       'GET /api/projetos/p1': { estado: 200, corpo: projeto({ id: 'p1', nome: 'Portal do Cliente' }) },
       'GET /api/projetos/p1/membros': { estado: 200, corpo: [] },
       'DELETE /api/projetos/p1': { estado: 204 },
