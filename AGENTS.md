@@ -36,6 +36,9 @@ cd frontend && npx tsc -b && npm run lint && npm run build
 
 - Com o Backend de desenvolvimento a correr, usar
   `./mvnw test -Dquarkus.http.test-port=0` (a porta 8081 está ocupada).
+- Testes E2E: `cd frontend && npm run e2e`, com a aplicação a correr e
+  `MATRIZ_DEMO_PASSWORD` definida no ambiente; nunca a escrever num ficheiro
+  (secção 7). Ver o README, "Testes E2E".
 - `docker compose down -v` apaga todos os dados locais: só com aprovação
   (secção 6).
 

@@ -5,6 +5,8 @@ incrementos pequenos, cada um com componentes, critérios de aceitação e forma
 de verificação. O estado de cada incremento é atualizado ao longo da
 implementação.
 
+A secção 7 regista a Ficha PL 04 (Quality Assurance).
+
 Documentos de referência: [requirements.md](requirements.md),
 [user-stories.md](user-stories.md), [constraints.md](constraints.md),
 [architecture.md](architecture.md), [database.md](database.md),
@@ -627,3 +629,36 @@ endpoints ao OpenAPI quando for implementada.
 Resolvidos no I0: a palavra-passe das contas de demonstração vem de
 `MATRIZ_DEMO_PASSWORD` no `backend/.env` (seed em Java, só se não existirem
 Membros); o package base é `pt.esmad.matriz`.
+
+## 7. Ficha PL 04 — Quality Assurance ✅
+
+Não é um incremento funcional: valida a Fase 1 com testes, Code Review e Security Review. O detalhe está em [test-plan.md](test-plan.md) e em [quality-security-review.md](quality-security-review.md).
+
+**Decisões do utilizador (2026-11-12)**
+- **1a:** E2E com o Playwright no repositório (`@playwright/test` 1.55.1 no Frontend, Firefox), contra a aplicação a correr. Dados isolados por um projeto de nome único, eliminado no fim.
+- **2a:** Code Review limitado ao diff do I8 (`0b61871..1658863`).
+- **3a:** análise estática só com o que já está configurado (oxlint e `npm audit`).
+- Na revisão, a decisão foi corrigir S1 (1a) e Q1/S2 (2a).
+- A divergência entre a US07, crit. 1, e o estado "Vazio" do wireframe fica só registada (O1).
+
+**Resultado (2026-11-12)**
+- **Ex. 1:** `test-plan.md`, com 18 cenários (T01–T18), sete pressupostos verificados contra os requisitos e o contrato (P1–P7), e cada cenário ligado aos seus testes.
+- **Ex. 2:** `TarefaTest.limitesDoTituloSemContarOsEspacosNasPontas`, parametrizado com 2, 3, 150 e 151 caracteres.
+- **Ex. 3:** `CriarConsultarTarefaApiTest`: criar → consultar → confirmar com SQL na tabela `tarefa`; título inválido não grava nada; id inexistente → 404.
+- **Ex. 4:** `frontend/e2e/criar-tarefa.spec.ts`, com o percurso entrar → abrir o projeto → criar a tarefa → ver o cartão em "A fazer". Passou 3 vezes seguidas, depois de uma falha que era do teste (F1).
+- **Ex. 5:**
+  - IDOR verificado contra o Backend real com a Ana e o Bruno: 13 pedidos → 403, sem alterações. Não vulnerável.
+  - Dois problemas confirmados e corrigidos:
+    - **S1**, o PostgreSQL publicado em todas as interfaces, com as palavras-passe de exemplo no `.env` local. A porta passou a `127.0.0.1`.
+    - **Q1/S2**, textos invisíveis aceites pela API. `Texto.java` e `texto.ts` passaram a usar a mesma regra, e foram acrescentados testes de regressão escritos antes da correção.
+- Testes: `./mvnw test` com **169** (eram 147) e `npm test` com **102** (eram 88). O E2E tem 1 teste. `tsc -b`, oxlint e `npm audit` sem erros nem vulnerabilidades.
+
+**Desvios ao plano**
+- A primeira escolha do Playwright, a 1.55.0, para aproveitar o Firefox já descarregado, tinha uma vulnerabilidade alta (GHSA-7mvr-c777-76hp). Passou-se para a 1.55.1 (F2).
+- O E2E corre contra a base de dados local de desenvolvimento, e não contra uma base só para testes.
+- A correção do Q1 não foi repetida no Backend em `quarkus:dev`: está coberta pelos testes de integração, que usam o PostgreSQL dos Dev Services.
+
+**Pendentes**
+- O utilizador tem de mudar as três palavras-passe do seu `backend/.env` (S1); a da base de dados exige um `ALTER USER` no volume que já existe.
+- Q2 (o teste de gravações simultâneas não força a sobreposição), Q4 (parâmetros de URL desconhecidos ignorados) e O1 (texto da US07). Ficam registados, sem correção.
+- Não executados: análise estática do Backend, auditoria das dependências do Maven, E2E noutros browsers, testes de carga e de produção.

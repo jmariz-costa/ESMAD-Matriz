@@ -54,6 +54,8 @@ consulta do histórico e o Administrador ficam para a Fase 2 (ver
 | [docs/ui/](docs/ui/)                           | Wireframes do quadro Kanban e dos restantes ecrãs (PNG e HTML de origem)                      |
 | [docs/implementation-plan.md](docs/implementation-plan.md) | Plano de implementação: incrementos I0–I8 da Fase 1, Fase 2 e estado de cada um   |
 | [docs/verification.md](docs/verification.md)   | Registo das verificações do MVP: percurso da interface (I6) e casos de verificação (I7)       |
+| [docs/test-plan.md](docs/test-plan.md)         | Plano de testes (Ficha PL 04): cenários de tarefas e permissões, níveis, testes e resultados  |
+| [docs/quality-security-review.md](docs/quality-security-review.md) | Code Review e Security Review (Ficha PL 04): findings, evidências e decisões |
 | [docs/decisions/](docs/decisions/)             | Architecture Decision Records (ADRs), com índice no README da pasta                           |
 | [AGENTS.md](AGENTS.md)                         | Instruções para agentes de IA que trabalhem neste repositório                                 |
 
@@ -73,7 +75,10 @@ cd frontend && npm install && cd ..
 ```
 
 O ficheiro `backend/.env` guarda a configuração local e nunca é enviado para o
-Git. É lido pelo contentor PostgreSQL e pelo Backend:
+Git. É lido pelo contentor PostgreSQL e pelo Backend. **Mude as três
+palavras-passe antes do primeiro arranque**: os valores do `.env.example` são
+públicos. A base de dados só aceita ligações deste computador (`127.0.0.1:5432`,
+ver `docker-compose.yml`).
 
 | Variável                | Para que serve                                                                 |
 |-------------------------|--------------------------------------------------------------------------------|
@@ -144,6 +149,33 @@ Com o Backend de desenvolvimento a correr na porta 8081, os testes do Backend
 precisam de outra porta: `./mvnw test -Dquarkus.http.test-port=0`. O registo
 das verificações do MVP está em [docs/verification.md](docs/verification.md).
 
+**Testes E2E** (Playwright, Firefox). Correm contra a aplicação a correr: a
+base de dados, o Backend e o Frontend têm de estar ligados (ver "Arrancar").
+Cada execução cria um projeto com nome único na conta da Ana e elimina-o no
+fim.
+
+```bash
+cd frontend && npx playwright install firefox   # só da primeira vez: descarrega o Firefox do Playwright
+cd frontend && MATRIZ_DEMO_PASSWORD=<valor do backend/.env> npm run e2e
+```
+
+- `MATRIZ_DEMO_PASSWORD` é a palavra-passe das contas de demonstração, a
+  mesma do `backend/.env`. Não é guardada em nenhum ficheiro do Frontend.
+- `MATRIZ_E2E_URL` (opcional) muda o endereço testado; por omissão é
+  `http://localhost:5173`.
+- Em sistemas que o Playwright 1.55 ainda não reconhece (por exemplo, Ubuntu
+  26.04), acrescentar `PLAYWRIGHT_HOST_PLATFORM_OVERRIDE=ubuntu24.04-x64`.
+- Para ver o browser: `npm run e2e -- --headed`; passo a passo:
+  `npm run e2e -- --debug`. Em caso de falha, o trace e o screenshot ficam em
+  `frontend/test-results/` e o relatório em `frontend/playwright-report/`
+  (`npx playwright show-report`).
+
+**Análise estática e dependências:** `cd frontend && npm run lint` (oxlint) e
+`cd frontend && npm audit`. O Backend não tem análise estática configurada.
+O plano de testes está em [docs/test-plan.md](docs/test-plan.md) e a revisão
+de qualidade e segurança em
+[docs/quality-security-review.md](docs/quality-security-review.md).
+
 ## Autenticação e sessão
 
 A API usa uma sessão guardada na base de dados e identificada por um cookie
@@ -195,5 +227,12 @@ verificações em [docs/verification.md](docs/verification.md).
   gestão de projetos com painel inicial (I2), membros do projeto (I3),
   tarefas com quadro Kanban (I4), responsáveis e comentários (I5), revisão
   da interface (I6), verificação do MVP (I7) e revisão e entrega (I8).
-  Próximo: Fase 2 (arquivo, "As minhas tarefas", histórico consultável,
-  edição de comentários e Administrador).
+- Ficha PL 04 (Quality Assurance): plano de testes, testes unitário, de
+  integração e E2E (Playwright), Code Review do I8 e Security Review (IDOR
+  verificado com duas contas de demonstração), com duas correções e os
+  respetivos testes de regressão (ver
+  [docs/test-plan.md](docs/test-plan.md) e
+  [docs/quality-security-review.md](docs/quality-security-review.md)).
+
+Próximo: Fase 2 (arquivo, "As minhas tarefas", histórico consultável,
+edição de comentários e Administrador).
