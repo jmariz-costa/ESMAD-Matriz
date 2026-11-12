@@ -541,7 +541,7 @@ verification.md.
 - O caso 03 (reinício do Backend) foi verificado pelo agente com `curl`, e
   não com um teste automatizado.
 
-### I8 — Revisão e entrega ⬜
+### I8 — Revisão e entrega ✅
 
 **Ficha:** Exercício 9.
 
@@ -567,6 +567,41 @@ verification.md.
 - **Comportamento preservado:** os 85 testes do Frontend que já existiam
   passam sem alterações; acrescentados 3 testes unitários de
   `comum/texto.ts`. Feita num commit separado, sem outras mudanças.
+
+**Resultado (2026-11-12)**
+- **Revisão do diff** (`69dad84..HEAD`), com sondas para confirmar as
+  hipóteses: permissões, concorrência e restos de código sem problemas. Três
+  achados: R1 — um número era aceite onde o contrato pede texto (corrigido
+  com `comum/json/ConfiguracaoJson.java` e o teste `TiposJsonApiTest`, que
+  falha sem a correção); R2 — a gravação simultânea não tinha teste
+  permanente (novo `GravacoesSimultaneasApiTest`); R3 — os erros 500 não
+  seguem o formato único (limitação conhecida, registada no contrato e em
+  `verification.md`). Commit `3a44ffb`.
+- **Refatoração** em commit separado (`bd65eca`), descrita acima.
+- **Documentos:** OpenAPI comparado com o código (21 operações iguais dos dois
+  lados, códigos de erro iguais) e acertado no texto (versão e histórico ao
+  atribuir, remover responsáveis e membros; filtros vazios; texto JSON; erros
+  500), versão 0.3.0; `architecture.md` e `database.md` coerentes com a
+  implementação; `AGENTS.md` com a secção "Comandos"; README com a
+  configuração do `backend/.env`, o esquema (Flyway), o seed, como recomeçar
+  e os comandos de verificação.
+- **Utilização da IA:** três exemplos em `verification.md` (arrastar nativo,
+  percurso do I6 pelo agente e repetido manualmente pelo programador, e uma
+  sugestão corrigida sobre o autor dos comentários).
+- **Cópia limpa:** a aplicação arranca e os testes passam numa cópia nova,
+  seguindo só o README (resultado em `verification.md`).
+- Testes: `./mvnw test` (147; 4 novos) e `npm test` (88; 3 novos); `tsc`,
+  `npm run lint` e `npm run build` sem erros.
+
+**Desvios ao plano**
+- A revisão do diff foi feita pelo agente; as decisões sobre cada achado
+  foram do programador (corrigir R1, testar R2, registar R3 como limitação).
+- O OpenAPI não foi validado com um linter (só a leitura do YAML); a
+  comparação com o código foi feita por script (métodos, caminhos e códigos
+  de erro) e por revisão do texto.
+- A cópia limpa usou o `docker-compose.yml` do repositório com o contentor de
+  desenvolvimento renomeado temporariamente, porque o nome do contentor e a
+  porta são fixos.
 
 ## 5. Fase 2 — restantes User Stories do MVP
 

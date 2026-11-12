@@ -6,13 +6,38 @@ repositório da Matriz.
 ## Projeto
 
 A Matriz é uma aplicação web interna de gestão de projetos e tarefas. O
-projeto está **em implementação** (Ficha PL 03): monólito modular com Backend
+projeto tem a **Fase 1 implementada** (Ficha PL 03): monólito modular com Backend
 em Java 21 + Quarkus (`backend/`), Frontend em React + TypeScript (`frontend/`)
 e PostgreSQL em Docker. O estado de cada incremento está em
 [docs/implementation-plan.md](docs/implementation-plan.md).
 
-Comandos para executar e testar: ver a secção "Executar localmente" do
-[README.md](README.md).
+O registo das verificações está em [docs/verification.md](docs/verification.md).
+
+## Comandos
+
+Detalhe e configuração na secção "Executar localmente" do [README.md](README.md).
+Antes de executar, é preciso `backend/.env` (copiado de `backend/.env.example`).
+
+**Executar:**
+
+```bash
+docker compose up -d                    # PostgreSQL em Docker (volume matriz-dados)
+cd backend && ./mvnw quarkus:dev        # Backend: http://localhost:8081, API em /api
+cd frontend && npm install && npm run dev   # Frontend: http://localhost:5173
+```
+
+**Verificar** (correr antes de dar um incremento por concluído):
+
+```bash
+cd backend && ./mvnw test               # JUnit + RestAssured; precisa do Docker
+cd frontend && npm test                 # Vitest + Testing Library
+cd frontend && npx tsc -b && npm run lint && npm run build
+```
+
+- Com o Backend de desenvolvimento a correr, usar
+  `./mvnw test -Dquarkus.http.test-port=0` (a porta 8081 está ocupada).
+- `docker compose down -v` apaga todos os dados locais: só com aprovação
+  (secção 6).
 
 ## 1. Consultar a documentação antes de agir
 

@@ -82,9 +82,9 @@ Toda a comunicação entre o browser e o servidor é feita por HTTPS (S02).
 |-----------------|--------------------------------------------------------------------------------------------------------------------|------------------------|
 | **Contas**      | Registo com email da empresa e confirmação por link (adiados), login e logout, sessões, limite de tentativas, desativar e reativar contas de Membro | RF01, RF02, RF14       |
 | **Projetos**    | Criar, editar, eliminar e pesquisar projetos, gerir membros e o Gestor, arquivar e reativar, calcular a percentagem de conclusão e as contagens do painel | RF03, RF04, RF08, RF10, RF16–RF18 |
-| **Tarefas**     | Criar, editar e eliminar tarefas, mudar estados, atribuir e remover responsáveis, filtrar, quadro Kanban, lista "As minhas tarefas" | RF05–RF07, RF09, RF11, RF17 |
+| **Tarefas**     | Criar, editar e eliminar tarefas (com o registo das tarefas eliminadas), mudar estados, atribuir e remover responsáveis, controlo de versão, filtrar, quadro Kanban, lista "As minhas tarefas" | RF05–RF07, RF09, RF11, RF17 |
 | **Comentários** | Comentar tarefas; só o autor edita ou apaga o seu comentário (PR11)                                                | RF12                   |
-| **Histórico**   | Registar as alterações de cada tarefa e o registo das tarefas eliminadas                                           | RF13, RF09             |
+| **Histórico**   | Registar a criação e as alterações de cada tarefa (a consulta é da Fase 2)                                         | RF13                   |
 
 ### Interações entre módulos
 
@@ -95,12 +95,13 @@ As principais interações são:
 |---------------------------------------|------------------------------------------|-----------------|
 | Desativar uma conta de Gestor         | Contas → Projetos (nomear novo Gestor)   | RN17, PR14      |
 | Desativar qualquer conta              | Contas → Tarefas (retirar as atribuições dessa pessoa); termina as sessões dessa pessoa | RN18, PR16 |
-| Remover um membro de um projeto       | Projetos → Tarefas (retirar as atribuições dessa pessoa) | RN08    |
+| Remover um membro de um projeto       | Projetos → Tarefas (retirar as atribuições dessa pessoa nas tarefas não concluídas) → Histórico | RN08, RI12 |
 | Criar ou alterar uma tarefa           | Tarefas → Histórico                      | RF13            |
-| Eliminar uma tarefa                   | Tarefas → Comentários e Histórico (apagar e deixar registo da eliminação) | RF09, PR08 |
-| Eliminar um projeto                   | Projetos → Tarefas, Comentários e Histórico (apagar em cascata) | RN22, RI17 |
+| Eliminar uma tarefa                   | Tarefas (deixa o registo da eliminação); as atribuições, os comentários e o histórico são apagados em cascata pela base de dados | RF09, PR08, RI17 |
+| Eliminar um projeto                   | Projetos (as tarefas, os comentários e o histórico são apagados em cascata pela base de dados) | RN22, RI17 |
 | Calcular a percentagem e as contagens | Projetos → Tarefas (contar estados)      | RF10, RF18, PR09 |
-| Verificar se alguém é membro / Gestor | Tarefas, Comentários → Projetos          | S03, S04, RN20  |
+| Verificar se alguém é membro / Gestor | Tarefas → Projetos; Comentários → Tarefas → Projetos | S03, S04, RN20  |
+| Atribuir um responsável               | Tarefas → Projetos (é membro ativo do projeto?) → Histórico | RI02, RI12 |
 
 ## 7. Tecnologias
 
@@ -127,8 +128,8 @@ delimitado) com as suas próprias camadas:
 - **serviço** — caso de uso: transação, verificação de permissões e
   comunicação com outros módulos;
 - **domínio e persistência** — entidades JPA com comportamento, que protegem
-  as suas invariantes (agregados `Projeto` e `Tarefa`), e repositórios
-  Panache.
+  as suas invariantes (agregados `Projeto`, `Tarefa` e `Comentario`), e
+  repositórios Panache.
 
 Um package comum guarda o que é partilhado: o formato único de erro, a
 autenticação (leitura do cookie e identificação do utilizador) e a

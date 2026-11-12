@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Matriz API
-  version: 0.2.0
+  version: 0.3.0
   contact:
     name: Equipa Matriz
     email: matriz@empresa.pt
@@ -40,12 +40,18 @@ info:
 
     **Textos:** os espaços no início e no fim são retirados antes de validar
     os limites (RN23); um texto opcional que fique vazio é guardado como
-    null.
+    null. Os campos de texto só aceitam texto JSON: um número ou um booleano
+    (ex.: `"nome": 12345`) devolve 400 `VALIDACAO`. Campos desconhecidos no
+    corpo também devolvem 400.
 
     **Paginação:** as listagens devolvem `{ itens, total, pagina, tamanho }`.
     `pagina` começa em 1; `tamanho` é 20 por omissão e no máximo 100. `total`
     é o número de resultados de toda a listagem (com os filtros aplicados), e
     não só da página.
+
+    **Erros inesperados:** um erro interno do servidor (500) não está descrito
+    neste contrato e não segue o formato `Erro`; o cliente deve tratá-lo como
+    erro genérico (limitação conhecida, docs/verification.md).
 
     **Contacto:** o email indicado é provisório; o domínio de email da empresa
     ainda não foi indicado pelo cliente (IF01).
@@ -361,8 +367,10 @@ paths:
       summary: Remover um membro do projeto
       description: |
         Só o Gestor (RN07). A pessoa removida deixa de ser responsável pelas
-        tarefas não concluídas do projeto (RN08, RI04). O Gestor não pode ser
-        removido: 409 `GESTOR_NAO_REMOVIVEL` (US04 crit. 5).
+        tarefas não concluídas do projeto (RN08, RI04); em cada uma dessas
+        tarefas a versão aumenta (D08) e a remoção fica no histórico, com o
+        Gestor como autor (RI12). O Gestor não pode ser removido: 409
+        `GESTOR_NAO_REMOVIVEL` (US04 crit. 5).
       responses:
         '204':
           description: Membro removido.
@@ -423,11 +431,14 @@ paths:
       parameters:
         - name: estado
           in: query
+          description: Omitido ou vazio = todos os estados.
           schema:
             $ref: '#/components/schemas/Estado'
         - name: prioridade
           in: query
-          description: Use `SEM_PRIORIDADE` para as tarefas sem prioridade.
+          description: |
+            Use `SEM_PRIORIDADE` para as tarefas sem prioridade. Omitido ou
+            vazio = todas as prioridades.
           schema:
             $ref: '#/components/schemas/FiltroPrioridade'
         - $ref: '#/components/parameters/Pagina'
@@ -593,7 +604,9 @@ paths:
         Qualquer membro do projeto. O utilizador tem de ser membro do projeto
         com conta ativa (RI02); caso contrário, 400. Se já for responsável
         desta tarefa, 409 `JA_EXISTE` (RN11, CE8). Fica registado no histórico
-        (RI12). Devolve a tarefa atualizada.
+        (RI12) e a versão da tarefa aumenta (D08); se outro pedido alterar a
+        tarefa ao mesmo tempo, 409 `VERSAO_DESATUALIZADA`. Devolve a tarefa
+        atualizada.
       requestBody:
         required: true
         content:
@@ -629,7 +642,9 @@ paths:
       description: |
         Qualquer membro do projeto. Remove apenas esta atribuição; os outros
         responsáveis mantêm-se (US05 crit. 7). Fica registado no histórico
-        (RI12). 404 se a pessoa não for responsável desta tarefa.
+        (RI12) e a versão da tarefa aumenta (D08). 404 se a pessoa não for
+        responsável desta tarefa; 409 se o projeto estiver arquivado ou se
+        outro pedido alterar a tarefa ao mesmo tempo.
       responses:
         '204':
           description: Atribuição removida.
@@ -640,7 +655,7 @@ paths:
         '404':
           $ref: '#/components/responses/NaoEncontrado'
         '409':
-          $ref: '#/components/responses/ProjetoArquivado'
+          $ref: '#/components/responses/Conflito'
 
   /tarefas/{tarefaId}/comentarios:
     parameters:
@@ -1023,6 +1038,9 @@ components:
         versao:
           type: integer
           minimum: 0
+          description: |
+            Começa em 0 e aumenta em cada alteração gravada dos campos ou dos
+            responsáveis (D08). Comentar não altera a versão.
       example:
         id: 9a8b7c6d-5e4f-4a3b-2c1d-0e9f8a7b6c5d
         projetoId: 7c1e2d3f-4a5b-4c6d-8e9f-0a1b2c3d4e5f

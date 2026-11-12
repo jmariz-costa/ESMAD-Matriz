@@ -79,7 +79,7 @@ A chave composta impede que alguém fique duplicado no mesmo projeto
 | `prazo`          | data            | opc.; qualquer data, incluindo passadas                     | RN10, RN12    |
 | `prioridade`     | enumerado       | opc.; Baixa / Média / Alta                                  | RN10          |
 | `estado`         | enumerado       | obrig.; A fazer / Em curso / Em revisão / Concluída; começa em "A fazer" | RN13, PR05 |
-| `versao`         | inteiro         | obrig.; começa em 0 e aumenta a cada alteração              | D08           |
+| `versao`         | inteiro         | obrig.; começa em 0 e aumenta a cada alteração dos campos ou dos responsáveis (os comentários não a alteram) | D08 |
 
 Quem criou a tarefa e quando ficam na entrada de criação do histórico, pelo
 que não se repetem na Tarefa. Os responsáveis estão em AtribuicaoTarefa.

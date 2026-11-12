@@ -11,8 +11,9 @@ Secções: [casos de verificação 01 a 09](#casos-de-verificação-do-mvp-i7-ex
 (I7), [testes automatizados obrigatórios](#testes-automatizados-obrigatórios),
 [comandos executados](#comandos-executados-e-resultados),
 [percurso da interface](#percurso-manual-no-firefox-i6-exercício-7) (I6),
-[registo de problemas](#registo-de-problemas) e
-[limitações](#limitações-e-o-que-não-foi-executado).
+[registo de problemas](#registo-de-problemas),
+[limitações](#limitações-e-o-que-não-foi-executado) e
+[utilização da IA](#utilização-da-ia-i8-exercício-9) (I8).
 
 ## Casos de verificação do MVP (I7, Exercício 8)
 
@@ -49,8 +50,8 @@ Os três tipos pedidos no Exercício 8 (todos em `backend/src/test/java/pt/esmad
 
 | Comando | Resultado |
 |---------|-----------|
-| `cd backend && ./mvnw test` | 143 testes, 0 falhas, 0 erros (cria um PostgreSQL temporário com o Docker) |
-| `cd frontend && npm test` | 85 testes em 13 ficheiros, todos passaram |
+| `cd backend && ./mvnw test` | 143 testes, 0 falhas, 0 erros (cria um PostgreSQL temporário com o Docker); 147 depois da revisão do I8 |
+| `cd frontend && npm test` | 85 testes em 13 ficheiros, todos passaram; 88 em 14 ficheiros depois da refatoração do I8 |
 | `cd frontend && npx tsc -b` | Sem erros |
 | `cd frontend && npm run lint` | Sem avisos |
 | `cd frontend && npm run build` | Build concluído |
@@ -76,6 +77,27 @@ $ GET /api/projetos/{website}/tarefas?estado=A_FAZER
 A sessão também se manteve, porque está guardada na base de dados (D06). A
 tarefa foi eliminada no fim, com o respetivo registo de eliminação.
 
+### Arranque a partir de uma cópia limpa (I8)
+
+Executado pelo agente a 2026-11-12, numa cópia nova do repositório (com as
+alterações de documentação do I8 ainda por gravar aplicadas), seguindo só o
+README:
+
+| Passo do README | Resultado |
+|-----------------|-----------|
+| `cp backend/.env.example backend/.env`; `cd frontend && npm install` | A cópia não trazia `backend/.env` nem `node_modules`; instalação sem vulnerabilidades |
+| `docker compose up -d` | Contentor e volume próprios da cópia; ligação à base de dados UP em `/q/health/ready` |
+| `cd backend && ./mvnw quarkus:dev` | O Flyway aplicou `V1 esquema inicial`; o seed criou 5 utilizadores (4 Membros e o Administrador), 2 projetos (8 e 2 tarefas), 10 tarefas e 1 comentário |
+| Contas | Login da Ana com `MATRIZ_DEMO_PASSWORD` e do Administrador com `MATRIZ_ADMIN_PASSWORD` do exemplo: 200 |
+| `cd frontend && npm run dev` | No Firefox (Playwright): painel com 2 projetos, quadro com 4 colunas e 8 cartões, tarefa criada e comentada, ainda presente depois de recarregar a página |
+| `./mvnw test`, `npm test`, `npx tsc -b && npm run lint && npm run build` | Backend 147 testes e Frontend 88, sem falhas; tipos, lint e build sem erros |
+
+O `docker-compose.yml` usa um nome de contentor fixo (`matriz-postgres`) e a
+porta 5432, por isso só pode correr uma base de dados da Matriz de cada vez.
+Para o teste, o contentor de desenvolvimento foi renomeado temporariamente
+(com aprovação); no fim, o contentor e o volume da cópia foram apagados e os
+dados de desenvolvimento confirmados intactos.
+
 
 ## Percurso manual no Firefox (I6, Exercício 7)
 
@@ -95,8 +117,8 @@ de IA, a pedido do responsável do projeto, contra a aplicação a correr
 (Backend em modo de desenvolvimento, PostgreSQL em Docker, dados de
 demonstração). É uma verificação automatizada pelo agente, e não manual: o
 script ficou fora do repositório e as capturas de ecrã do P11 foram vistas uma
-a uma. Os dados criados no percurso foram eliminados no fim. O responsável do
-projeto repetiu depois os testes de forma manual no browser.
+a uma. Os dados criados no percurso foram eliminados no fim. Logo a seguir, o
+responsável do projeto repetiu os testes de forma manual no browser.
 
 | # | Ecrã | Passos | Resultado esperado | Observado |
 |---|------|--------|--------------------|-----------|
@@ -138,9 +160,9 @@ erros do caso 09 passaram à primeira.
 ## Limitações e o que não foi executado
 
 - **O percurso da interface (P01–P11) foi executado pelo agente de IA**, com o
-  Firefox 141 do Playwright sem janela. O responsável do projeto repetiu
-  depois os testes de forma manual no browser; os resultados registados na
-  tabela são os da execução do agente.
+  Firefox 141 do Playwright sem janela. Logo a seguir, o responsável do
+  projeto repetiu os testes de forma manual no browser; os resultados
+  registados na tabela são os da execução do agente.
 - **No P09, a falta de ligação ao Backend foi simulada** cortando os pedidos
   `/api` no browser, e não parando o Backend.
 - **O caso 03 (reinício do Backend) não tem teste automatizado**: foi feito
@@ -155,3 +177,67 @@ erros do caso 09 passaram à primeira.
   RNF02); testes de carga e de desempenho; a aplicação servida em produção
   (com HTTPS e `MATRIZ_COOKIE_SEGURO=true`), que fica para a preparação da
   entrega (I8).
+
+## Utilização da IA (I8, Exercício 9)
+
+Três exemplos da Ficha PL 03, em que a IA (Claude Code) propôs e o
+programador decidiu. Em cada incremento, a IA apresentou primeiro o
+mapeamento "o que a ficha pede → contrato" e as decisões em aberto, com uma
+opção recomendada; o programador escolheu antes de qualquer alteração.
+
+### 1. Mudar o estado arrastando o cartão (I4)
+
+- **Objetivo do pedido:** implementar no quadro Kanban a mudança de estado
+  por arrastar (US06, nota 3 do wireframe), mantendo uma alternativa por
+  teclado.
+- **Sugestão da IA:** duas opções — (a) o arrastar nativo do browser (HTML5),
+  sem dependências novas, recomendada; (b) a biblioteca `@dnd-kit`, mais
+  polida, mas uma dependência nova.
+- **Decisão do programador:** (a), arrastar nativo, com o seletor de estado no
+  detalhe da tarefa como alternativa por teclado.
+- **Verificação:** testes de componente em `QuadroKanban.test.tsx` (arrastar
+  envia `PATCH` com a versão e o novo estado, atualiza o quadro e as
+  contagens; largar na mesma coluna não faz pedidos; 409 de versão mostra o
+  aviso); arrastar real no Firefox no passo P04 do percurso; teste no browser
+  pelo programador.
+
+### 2. Percurso da interface no Firefox (I6)
+
+- **Objetivo do pedido:** fazer o percurso completo da interface no Firefox
+  (Exercício 7) e registá-lo neste documento.
+- **Sugestão da IA:** o plano previa um percurso manual feito pelo
+  programador. Quando este perguntou se a IA o podia fazer, a IA propôs três
+  opções — (a) Playwright com o Firefox, fora do repositório, recomendada;
+  (b) Chrome com a extensão Claude in Chrome; (c) manual — e avisou que, se
+  fosse ela a fazê-lo, ficaria registado como verificação do agente, e não
+  como manual.
+- **Decisão do programador:** (a), aprovando a instalação do Playwright e do
+  seu Firefox fora do repositório (`AGENTS.md`, secção 6). Logo a seguir à
+  execução do agente, o programador **repetiu os testes de forma manual** no
+  browser.
+- **Verificação:** os 11 passos (P01–P11) passaram; as capturas de ecrã das
+  larguras menores foram vistas uma a uma e revelaram a tabela de projetos
+  desalinhada a 500 px (B03), que foi corrigida e confirmada com nova
+  captura. O registo indica que a execução foi do agente e que o programador
+  a repetiu manualmente.
+
+### 3. Sugestão corrigida: o autor de um comentário (I5)
+
+- **Objetivo do pedido:** garantir que o autor e a data de um comentário são
+  definidos pelo Backend (US12 crit. 1; Exercício 6).
+- **Sugestão inicial e correção:** o plano, escrito com a IA no Exercício 1,
+  previa testar que "o autor do comentário é o da sessão mesmo que o pedido
+  traga outro" — ou seja, ignorar o `autor` enviado. Ao implementar, a IA
+  confirmou no contrato que o corpo não aceita campos desconhecidos
+  (`additionalProperties: false`) e corrigiu a abordagem: um pedido com
+  `autor` ou `criadoEm` é **recusado com 400**, e o autor é sempre o da
+  sessão. A diferença ficou registada nos desvios do I5.
+- **Decisão do programador:** aceitou a correção (seguir o contrato) ao rever
+  o fecho do I5.
+- **Verificação:** `ComentariosApiTest.oPedidoNaoPodeDefinirOAutorNemAData` e
+  `AutorizacaoApiTest.misturarIdentificadoresDeProjetosDiferentesERecusado`;
+  verificação com `curl` contra o Backend real (pedido com `autor` → 400).
+- **Outra sugestão corrigida:** a primeira versão do detalhe da tarefa, escrita
+  pela IA, fazia o pedido à API durante a renderização do componente; a
+  própria IA detetou o erro antes de correr os testes e passou a usar o
+  `useDados`, como nos outros ecrãs.

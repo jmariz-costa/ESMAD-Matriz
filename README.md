@@ -26,7 +26,7 @@ cliente foi:
 - Entrada e saída da conta. O registo com email da empresa (com confirmação
   por email) foi adiado: as contas de demonstração são criadas por seed (L07).
 - Criação de projetos; quem cria é o Gestor e gere os membros.
-- Tarefas com descrição, prazo, prioridade e um responsável.
+- Tarefas com descrição, prazo, prioridade e vários responsáveis.
 - Quatro estados de tarefa: A fazer, Em curso, Em revisão, Concluída.
 - Quadro Kanban.
 - Percentagem de conclusão de cada projeto.
@@ -35,7 +35,11 @@ cliente foi:
 - Arquivo e reativação de projetos.
 - Desativação e reativação de contas por um Administrador.
 
-O detalhe está em [docs/requirements.md](docs/requirements.md).
+O detalhe está em [docs/requirements.md](docs/requirements.md). Na Ficha PL 03
+foi implementada a Fase 1 (autenticação, projetos, membros, tarefas e quadro
+Kanban, responsáveis e comentários); o arquivo, "As minhas tarefas", a
+consulta do histórico e o Administrador ficam para a Fase 2 (ver
+[Estado atual](#estado-atual)).
 
 ## Organização da documentação
 
@@ -68,8 +72,20 @@ cp backend/.env.example backend/.env    # depois, alterar as palavras-passe
 cd frontend && npm install && cd ..
 ```
 
-O ficheiro `backend/.env` guarda a configuração local (base de dados, conta de
-Administrador e dados de demonstração) e nunca é enviado para o Git.
+O ficheiro `backend/.env` guarda a configuração local e nunca é enviado para o
+Git. É lido pelo contentor PostgreSQL e pelo Backend:
+
+| Variável                | Para que serve                                                                 |
+|-------------------------|--------------------------------------------------------------------------------|
+| `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` | Base de dados criada no contentor e usada pelo Backend (`localhost:5432`) |
+| `MATRIZ_ADMIN_NOME`, `MATRIZ_ADMIN_EMAIL`, `MATRIZ_ADMIN_PASSWORD` | Conta de Administrador, criada no arranque se ainda não existir (D07) |
+| `MATRIZ_SEED_DEMO`      | `true` cria os dados de demonstração no arranque, se ainda não existirem Membros |
+| `MATRIZ_DEMO_PASSWORD`  | Palavra-passe das contas de demonstração                                        |
+| `MATRIZ_COOKIE_SEGURO`  | `true` quando a aplicação é servida por HTTPS (cookie `Secure`, D06)           |
+
+O endereço do Backend usado pelo Frontend em desenvolvimento está num único
+sítio, `frontend/vite.config.ts` (variável opcional `MATRIZ_BACKEND_URL`, por
+omissão `http://localhost:8081`); o código usa sempre o caminho relativo `/api`.
 
 ### Arrancar
 
@@ -79,12 +95,28 @@ cd backend && ./mvnw quarkus:dev        # Backend em http://localhost:8081 (API 
 cd frontend && npm run dev              # Frontend em http://localhost:5173
 ```
 
-No primeiro arranque do Backend, o Flyway cria o esquema da base de dados e são
-criados a conta de Administrador e os dados de demonstração. Reiniciar o Backend
-não apaga nem duplica dados.
+Cada comando fica a correr; usar um terminal para o Backend e outro para o
+Frontend.
 
 - Estado do Backend e da ligação à base de dados: http://localhost:8081/q/health/ready
 - Para parar a base de dados: `docker compose stop` (os dados mantêm-se).
+
+### Esquema da base de dados e dados de demonstração
+
+- **Esquema:** criado e evoluído só por migrations Flyway, aplicadas
+  automaticamente no arranque do Backend
+  (`backend/src/main/resources/db/migration/`, hoje `V1__esquema_inicial.sql`).
+  O Hibernate não altera tabelas.
+- **Administrador:** criado no arranque a partir de `MATRIZ_ADMIN_*`, se ainda
+  não existir.
+- **Dados de demonstração (seed):** com `MATRIZ_SEED_DEMO=true`, o primeiro
+  arranque cria 4 contas de Membro, 2 projetos ("Website institucional" e
+  "Portal do Cliente"), 10 tarefas em vários estados, com responsáveis e
+  histórico, e 1 comentário. Só corre se ainda não existirem Membros, por isso
+  reiniciar o Backend não apaga nem duplica dados.
+- **Recomeçar do zero:** `docker compose down -v` apaga o volume com **todos**
+  os dados; no arranque seguinte, o esquema e os dados de demonstração são
+  criados de novo.
 
 ### Contas de demonstração
 
@@ -104,8 +136,13 @@ A conta de Administrador usa `MATRIZ_ADMIN_EMAIL` e `MATRIZ_ADMIN_PASSWORD`.
 
 ```bash
 cd backend && ./mvnw test               # precisa do Docker: cria um PostgreSQL temporário
-cd frontend && npm test
+cd frontend && npm test                 # Vitest + Testing Library
+cd frontend && npx tsc -b && npm run lint && npm run build   # tipos, lint e build
 ```
+
+Com o Backend de desenvolvimento a correr na porta 8081, os testes do Backend
+precisam de outra porta: `./mvnw test -Dquarkus.http.test-port=0`. O registo
+das verificações do MVP está em [docs/verification.md](docs/verification.md).
 
 ## Autenticação e sessão
 
@@ -143,8 +180,9 @@ curl -b cookies.txt -X POST http://localhost:8081/api/auth/logout
 
 ## Estado atual
 
-**Em implementação** (Ficha PL 03). O plano e o estado de cada incremento estão
-em [docs/implementation-plan.md](docs/implementation-plan.md).
+**Fase 1 implementada** (Ficha PL 03). O plano e o estado de cada incremento
+estão em [docs/implementation-plan.md](docs/implementation-plan.md) e as
+verificações em [docs/verification.md](docs/verification.md).
 
 - Specification Pack (Ficha PL 01): requisitos, User Stories e critérios de
   aceitação.
@@ -156,5 +194,6 @@ em [docs/implementation-plan.md](docs/implementation-plan.md).
   toda a Fase 1, aplicação e base de dados preparadas (I0), autenticação (I1),
   gestão de projetos com painel inicial (I2), membros do projeto (I3),
   tarefas com quadro Kanban (I4), responsáveis e comentários (I5), revisão
-  da interface (I6) e verificação do MVP (I7, registada em
-  [docs/verification.md](docs/verification.md)). Próximo: revisão e entrega (I8).
+  da interface (I6), verificação do MVP (I7) e revisão e entrega (I8).
+  Próximo: Fase 2 (arquivo, "As minhas tarefas", histórico consultável,
+  edição de comentários e Administrador).
