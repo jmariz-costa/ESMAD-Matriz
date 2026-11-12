@@ -4,13 +4,15 @@ interface Props {
   titulo: string
   aoFechar: () => void
   children: ReactNode
+  /** Mais largo, para conteúdos maiores (ex.: o detalhe da tarefa). */
+  largo?: boolean
 }
 
 /**
  * Janela modal: foca o primeiro campo ou botão ao abrir, fecha com Esc e devolve o foco
  * ao elemento que estava ativo antes de abrir.
  */
-export function Dialogo({ titulo, aoFechar, children }: Props) {
+export function Dialogo({ titulo, aoFechar, children, largo = false }: Props) {
   const idTitulo = useId()
   const caixa = useRef<HTMLDivElement>(null)
   const fechar = useRef(aoFechar)
@@ -36,7 +38,7 @@ export function Dialogo({ titulo, aoFechar, children }: Props) {
 
   return (
     <div className="fundo-dialogo">
-      <div ref={caixa} className="dialogo caixa" role="dialog" aria-modal="true" aria-labelledby={idTitulo}>
+      <div ref={caixa} className={largo ? 'dialogo caixa largo' : 'dialogo caixa'} role="dialog" aria-modal="true" aria-labelledby={idTitulo}>
         <h2 id={idTitulo}>{titulo}</h2>
         {children}
       </div>

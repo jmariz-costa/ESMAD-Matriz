@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import type { Contagens } from '../api/projetos'
 import type { Tarefa } from '../api/tarefas'
-import { ANA, projeto, quadro, rotaColuna, simularApi, tarefa, type RespostaFalsa } from '../test/apiFalsa'
+import { ANA, projeto, quadro, rotaColuna, rotaComentarios, simularApi, tarefa, type RespostaFalsa } from '../test/apiFalsa'
 import { renderizarAplicacao } from '../test/renderizar'
 
 const COM_TAREFAS: Contagens = { A_FAZER: 1, EM_CURSO: 0, EM_REVISAO: 0, CONCLUIDA: 0 }
@@ -13,6 +13,7 @@ function base(dados: Parameters<typeof projeto>[0] = {}): Record<string, Respost
     'GET /api/auth/me': { estado: 200, corpo: ANA },
     'GET /api/projetos/p1': { estado: 200, corpo: projeto({ id: 'p1', contagens: COM_TAREFAS, ...dados }) },
     'GET /api/projetos/p1/membros': { estado: 200, corpo: [] },
+    [rotaComentarios('t1')]: { estado: 200, corpo: { itens: [], total: 0, pagina: 1, tamanho: 20 } },
   }
 }
 

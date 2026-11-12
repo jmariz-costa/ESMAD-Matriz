@@ -55,13 +55,14 @@ public class MembrosServico {
 
     /**
      * Só o Gestor (RN07); o Gestor não pode ser removido (RI01). Quem sai deixa de ser
-     * responsável pelas tarefas não concluídas do projeto (RN08, RI04), na mesma transação.
+     * responsável pelas tarefas não concluídas do projeto (RN08, RI04), na mesma transação,
+     * com a versão dessas tarefas aumentada e a remoção registada no histórico.
      */
     @Transactional
     public void remover(UUID projetoId, UUID utilizadorId) {
-        Projeto projeto = acesso.comoGestor(projetoId).projeto();
-        projeto.removerMembro(utilizadorId);
-        atribuicoes.retirarDasTarefasNaoConcluidas(projetoId, utilizadorId);
+        AcessoProjeto.ProjetoAcessivel a = acesso.comoGestor(projetoId);
+        a.projeto().removerMembro(utilizadorId);
+        atribuicoes.retirarDasTarefasNaoConcluidas(projetoId, utilizadorId, a.quem().id());
     }
 
     private List<MembroResposta> membros(Projeto projeto) {

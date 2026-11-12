@@ -11,8 +11,6 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import pt.esmad.matriz.comum.Identificadores;
-import pt.esmad.matriz.comum.erros.Erro;
-import pt.esmad.matriz.comum.erros.ErroAplicacao;
 
 import java.util.List;
 import java.util.UUID;
@@ -42,7 +40,8 @@ public class MembrosRecurso {
     public Response adicionar(@PathParam("projetoId") String projetoId,
                               @NotNull(message = "O corpo do pedido é obrigatório.") UtilizadorIdPedido pedido) {
         UUID projeto = Identificadores.paraUuid(projetoId);
-        MembroResposta membro = servico.adicionar(projeto, utilizadorDoPedido(pedido.utilizadorId()));
+        MembroResposta membro = servico.adicionar(projeto,
+                Identificadores.doCorpo(pedido.utilizadorId(), "utilizadorId", "Indique a pessoa a adicionar."));
         return Response.status(Response.Status.CREATED).entity(membro).build();
     }
 
@@ -52,17 +51,5 @@ public class MembrosRecurso {
                             @PathParam("utilizadorId") String utilizadorId) {
         servico.remover(Identificadores.paraUuid(projetoId), Identificadores.paraUuid(utilizadorId));
         return Response.noContent().build();
-    }
-
-    /** No corpo, um id em falta ou inválido é um erro de validação (400), e não um 404. */
-    private static UUID utilizadorDoPedido(String valor) {
-        if (valor == null || valor.isBlank()) {
-            throw ErroAplicacao.validacao(List.of(new Erro.Detalhe("utilizadorId", "Indique a pessoa a adicionar.")));
-        }
-        try {
-            return UUID.fromString(valor.strip());
-        } catch (IllegalArgumentException e) {
-            throw ErroAplicacao.validacao(List.of(new Erro.Detalhe("utilizadorId", "O identificador não é válido.")));
-        }
     }
 }

@@ -6,6 +6,7 @@ import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.PATCH;
+import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
@@ -42,6 +43,29 @@ public class TarefasRecurso {
     @DELETE
     public Response eliminar(@PathParam("tarefaId") String tarefaId) {
         servico.eliminar(Identificadores.paraUuid(tarefaId));
+        return Response.noContent().build();
+    }
+
+    /** Corpo de POST .../responsaveis (openapi.yaml, UtilizadorIdPedido). */
+    public record UtilizadorIdPedido(String utilizadorId) {
+    }
+
+    @POST
+    @Path("/responsaveis")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response atribuir(@PathParam("tarefaId") String tarefaId,
+                             @NotNull(message = "O corpo do pedido é obrigatório.") UtilizadorIdPedido pedido) {
+        UUID id = Identificadores.paraUuid(tarefaId);
+        UUID utilizador = Identificadores.doCorpo(pedido.utilizadorId(), "utilizadorId", "Indique a pessoa a atribuir.");
+        TarefaResposta tarefa = TarefaResposta.de(servico.atribuir(id, utilizador));
+        return Response.status(Response.Status.CREATED).entity(tarefa).build();
+    }
+
+    @DELETE
+    @Path("/responsaveis/{utilizadorId}")
+    public Response removerResponsavel(@PathParam("tarefaId") String tarefaId,
+                                       @PathParam("utilizadorId") String utilizadorId) {
+        servico.removerResponsavel(Identificadores.paraUuid(tarefaId), Identificadores.paraUuid(utilizadorId));
         return Response.noContent().build();
     }
 }

@@ -69,3 +69,14 @@ export function editarTarefa(id: string, alteracoes: AlteracoesTarefa): Promise<
 export function eliminarTarefa(id: string): Promise<void> {
   return pedido(`/tarefas/${encodeURIComponent(id)}`, { metodo: 'DELETE' })
 }
+
+/** Qualquer membro; só membros do projeto com conta ativa (RI02). Devolve a tarefa atualizada. */
+export function atribuirResponsavel(tarefaId: string, utilizadorId: string): Promise<Tarefa> {
+  return pedido(`/tarefas/${encodeURIComponent(tarefaId)}/responsaveis`, { metodo: 'POST', corpo: { utilizadorId } })
+}
+
+/** Remove só esta atribuição (US05 crit. 7). */
+export function removerResponsavel(tarefaId: string, utilizadorId: string): Promise<void> {
+  return pedido(`/tarefas/${encodeURIComponent(tarefaId)}/responsaveis/${encodeURIComponent(utilizadorId)}`,
+    { metodo: 'DELETE' })
+}

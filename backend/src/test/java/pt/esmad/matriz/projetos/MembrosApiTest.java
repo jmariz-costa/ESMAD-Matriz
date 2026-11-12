@@ -175,6 +175,16 @@ class MembrosApiTest {
         assertEquals(1, atribuicoes(aFazer, carla.id()), "as atribuições dos outros mantêm-se");
         given().cookie(COOKIE, bruno.token()).when().get("/api/projetos/" + projeto).then().statusCode(403);
         listar(ana).then().body("nome", contains("Ana Exemplo", "Carla Exemplo"));
+
+        // As tarefas afetadas aumentam a versão (D08) e registam a remoção, com o Gestor como autor (RI12)
+        assertEquals(1, contas.contar("SELECT versao FROM tarefa WHERE id = ?", aFazer));
+        assertEquals(0, contas.contar("SELECT versao FROM tarefa WHERE id = ?", concluida));
+        assertEquals(2, contas.contar("""
+                SELECT count(*) FROM historico_tarefa
+                WHERE tarefa_id IN (?, ?) AND campo = 'responsavel'
+                  AND valor_anterior = 'Bruno Exemplo' AND valor_novo IS NULL AND autor_id = ?
+                """, aFazer, emRevisao, ana.id()));
+        assertEquals(0, contas.contar("SELECT count(*) FROM historico_tarefa WHERE tarefa_id = ?", concluida));
     }
 
     @Test

@@ -153,5 +153,6 @@ em [docs/implementation-plan.md](docs/implementation-plan.md).
   TypeScript, PostgreSQL, sessão com cookie; ver
   [docs/constraints.md](docs/constraints.md) §4), contrato OpenAPI alargado a
   toda a Fase 1, aplicação e base de dados preparadas (I0), autenticação (I1),
-  gestão de projetos com painel inicial (I2), membros do projeto (I3) e
-  tarefas com quadro Kanban (I4). Próximo: responsáveis e comentários (I5).
+  gestão de projetos com painel inicial (I2), membros do projeto (I3),
+  tarefas com quadro Kanban (I4) e responsáveis e comentários (I5).
+  Próximo: revisão da interface (I6).

@@ -5,6 +5,7 @@ import jakarta.persistence.OptimisticLockException;
 import jakarta.transaction.Transactional;
 import pt.esmad.matriz.comum.autenticacao.Identidade;
 import pt.esmad.matriz.comum.autenticacao.UtilizadorAtual;
+import pt.esmad.matriz.comum.erros.Erro;
 import pt.esmad.matriz.comum.erros.ErroAplicacao;
 import pt.esmad.matriz.comum.paginacao.Pagina;
 import pt.esmad.matriz.comum.paginacao.PedidoPagina;
@@ -127,6 +128,43 @@ public class TarefasServico {
         Identidade quem = projetos.comoGestorParaAlterar(tarefa.projetoId());
         eliminadas.persist(TarefaEliminada.de(tarefa, quem.id(), Instant.now()));
         tarefas.delete(tarefa);
+    }
+
+    /**
+     * Qualquer membro, num projeto não arquivado. Só membros do projeto com conta ativa (RI02,
+     * 400); a mesma pessoa não fica duas vezes (409 JA_EXISTE, CE8). Aumenta a versão da tarefa
+     * e fica no histórico com o nome da pessoa (RI12).
+     */
+    @Transactional
+    public TarefaDetalhe atribuir(UUID tarefaId, UUID utilizadorId) {
+        Tarefa tarefa = carregar(tarefaId);
+        Identidade quem = projetos.comoMembroParaAlterar(tarefa.projetoId());
+        if (!projetos.eMembroAtivo(tarefa.projetoId(), utilizadorId)) {
+            throw ErroAplicacao.validacao(List.of(new Erro.Detalhe("utilizadorId",
+                    "Só é possível atribuir membros do projeto com conta ativa.")));
+        }
+        tarefa.atribuir(utilizadorId);
+        gravarResponsavel(tarefa, quem, null, contas.pessoa(utilizadorId).nome());
+        return detalhe(tarefa);
+    }
+
+    /** Qualquer membro, num projeto não arquivado; os outros responsáveis mantêm-se (US05 crit. 7). */
+    @Transactional
+    public void removerResponsavel(UUID tarefaId, UUID utilizadorId) {
+        Tarefa tarefa = carregar(tarefaId);
+        Identidade quem = projetos.comoMembroParaAlterar(tarefa.projetoId());
+        tarefa.removerResponsavel(utilizadorId);
+        gravarResponsavel(tarefa, quem, contas.pessoa(utilizadorId).nome(), null);
+    }
+
+    private void gravarResponsavel(Tarefa tarefa, Identidade quem, String anterior, String novo) {
+        try {
+            tarefas.flush();
+        } catch (OptimisticLockException e) {
+            throw ErroAplicacao.versaoDesatualizada();
+        }
+        historico.registarAlteracoes(tarefa.id(), quem.id(),
+                List.of(new HistoricoServico.Alteracao("responsavel", anterior, novo)));
     }
 
     /**

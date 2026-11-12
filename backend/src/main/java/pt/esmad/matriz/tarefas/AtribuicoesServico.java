@@ -1,39 +1,46 @@
 package pt.esmad.matriz.tarefas;
 
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.persistence.EntityManager;
+import pt.esmad.matriz.contas.ContasServico;
+import pt.esmad.matriz.historico.HistoricoServico;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
- * Atribuições de responsáveis, pedidas pelo módulo Projetos (ADR 0001, regra 5).
- * O resto da gestão de responsáveis é criado no I5.
+ * Atribuições de responsáveis pedidas pelo módulo Projetos (ADR 0001, regra 5).
+ * A atribuição e a remoção feitas na tarefa estão no {@link TarefasServico}.
  */
 @ApplicationScoped
 public class AtribuicoesServico {
 
-    private final EntityManager entityManager;
+    private final TarefaRepositorio tarefas;
+    private final ContasServico contas;
+    private final HistoricoServico historico;
 
-    public AtribuicoesServico(EntityManager entityManager) {
-        this.entityManager = entityManager;
+    AtribuicoesServico(TarefaRepositorio tarefas, ContasServico contas, HistoricoServico historico) {
+        this.tarefas = tarefas;
+        this.contas = contas;
+        this.historico = historico;
     }
 
     /**
      * Quem é removido de um projeto deixa de ser responsável pelas tarefas não concluídas
-     * desse projeto (RN08, RI04). Nas tarefas concluídas continua a constar.
-     * Tem de ser chamado dentro da transação de quem remove o membro.
+     * desse projeto (RN08, RI04); nas tarefas concluídas continua a constar. Cada tarefa
+     * afetada aumenta a versão (D08) e regista a remoção no histórico, com quem removeu o
+     * membro como autor (RI12). Tem de ser chamado dentro da transação de quem remove o membro.
      */
-    public int retirarDasTarefasNaoConcluidas(UUID projetoId, UUID utilizadorId) {
-        return entityManager.createNativeQuery("""
-                DELETE FROM atribuicao_tarefa a
-                USING tarefa t
-                WHERE a.tarefa_id = t.id
-                  AND t.projeto_id = :projeto
-                  AND a.utilizador_id = :utilizador
-                  AND t.estado <> 'CONCLUIDA'
-                """)
-                .setParameter("projeto", projetoId)
-                .setParameter("utilizador", utilizadorId)
-                .executeUpdate();
+    public int retirarDasTarefasNaoConcluidas(UUID projetoId, UUID utilizadorId, UUID autorId) {
+        List<Tarefa> afetadas = tarefas.naoConcluidasComResponsavel(projetoId, utilizadorId);
+        if (afetadas.isEmpty()) {
+            return 0;
+        }
+        String nome = contas.pessoa(utilizadorId).nome();
+        for (Tarefa tarefa : afetadas) {
+            tarefa.removerResponsavel(utilizadorId);
+            historico.registarAlteracoes(tarefa.id(), autorId,
+                    List.of(new HistoricoServico.Alteracao("responsavel", nome, null)));
+        }
+        return afetadas.size();
     }
 }

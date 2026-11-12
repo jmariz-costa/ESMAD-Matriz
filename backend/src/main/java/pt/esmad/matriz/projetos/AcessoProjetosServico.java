@@ -2,6 +2,7 @@ package pt.esmad.matriz.projetos;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import pt.esmad.matriz.comum.autenticacao.Identidade;
+import pt.esmad.matriz.contas.ContasServico;
 
 import java.util.UUID;
 
@@ -15,9 +16,13 @@ import java.util.UUID;
 public class AcessoProjetosServico {
 
     private final AcessoProjeto acesso;
+    private final ProjetoRepositorio projetos;
+    private final ContasServico contas;
 
-    AcessoProjetosServico(AcessoProjeto acesso) {
+    AcessoProjetosServico(AcessoProjeto acesso, ProjetoRepositorio projetos, ContasServico contas) {
         this.acesso = acesso;
+        this.projetos = projetos;
+        this.contas = contas;
     }
 
     /** Para consultar: só membros do projeto (RN20); o projeto pode estar arquivado. */
@@ -37,5 +42,12 @@ public class AcessoProjetosServico {
         AcessoProjeto.ProjetoAcessivel a = acesso.comoGestor(projetoId);
         a.projeto().garantirAlteravel();
         return a.quem();
+    }
+
+    /** Só membros do projeto com conta ativa podem ser responsáveis por tarefas (RI02). */
+    public boolean eMembroAtivo(UUID projetoId, UUID utilizadorId) {
+        return projetos.findByIdOptional(projetoId)
+                .filter(p -> p.eMembro(utilizadorId))
+                .isPresent() && contas.eMembroAtivo(utilizadorId);
     }
 }

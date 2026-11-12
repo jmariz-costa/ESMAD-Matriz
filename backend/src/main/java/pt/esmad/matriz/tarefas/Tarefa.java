@@ -87,6 +87,20 @@ public class Tarefa {
         return tarefa;
     }
 
+    /** Vários responsáveis por tarefa, sem repetir a mesma pessoa (RN11, CE8). */
+    public void atribuir(UUID utilizadorId) {
+        if (!responsaveis.add(utilizadorId)) {
+            throw ErroAplicacao.jaExiste("Esta pessoa já é responsável pela tarefa.");
+        }
+    }
+
+    /** Remove só esta atribuição; os outros responsáveis mantêm-se (US05 crit. 7). */
+    public void removerResponsavel(UUID utilizadorId) {
+        if (!responsaveis.remove(utilizadorId)) {
+            throw ErroAplicacao.naoEncontrado();
+        }
+    }
+
     /** Um campo que mudou, com os valores em texto ({@code null} = vazio), para o histórico (RI12). */
     public record CampoAlterado(String campo, String valorAnterior, String valorNovo) {
     }

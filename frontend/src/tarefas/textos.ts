@@ -21,3 +21,12 @@ export function formatarPrazo(prazo: string): string {
   const [ano, mes, dia] = prazo.split('-')
   return `${dia}/${mes}/${ano}`
 }
+
+const DATA_HORA = new Intl.DateTimeFormat('pt-PT', {
+  day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
+})
+
+/** Data e hora ISO 8601 → "12/11/2026, 18:45", na hora local do browser. */
+export function formatarDataHora(iso: string): string {
+  return DATA_HORA.format(new Date(iso))
+}

@@ -4,6 +4,8 @@ import { consultarTarefa, editarTarefa, eliminarTarefa, type Tarefa } from '../a
 import { Dialogo } from '../componentes/Dialogo'
 import { useDados } from '../comum/useDados'
 import { CamposTarefa } from './CamposTarefa'
+import { ComentariosTarefa } from './ComentariosTarefa'
+import { ResponsaveisTarefa } from './ResponsaveisTarefa'
 import {
   alteracoesDe, errosDoServidor, juntarComNovaVersao, validar, valoresDe,
   type CampoTarefa, type ErrosTarefa,
@@ -26,13 +28,13 @@ const MENSAGEM_VERSAO =
 /**
  * Detalhe de uma tarefa (wireframe.html, "Detalhe ao clicar num cartão"): editar os campos e
  * mudar o estado no seletor, a alternativa ao arrastar (nota 4); eliminar, só o Gestor, com
- * confirmação (US09 crit. 1). Responsáveis e comentários entram no I5.
+ * confirmação (US09 crit. 1); responsáveis e comentários (Ficha PL 03, Exercício 6).
  */
 export function DetalheTarefa({ tarefaId, podeEliminar, soLeitura, aoFechar, aoAlterar }: Props) {
   const [dados, recarregar] = useDados(() => consultarTarefa(tarefaId), tarefaId)
 
   return (
-    <Dialogo titulo="Tarefa" aoFechar={aoFechar}>
+    <Dialogo titulo="Tarefa" aoFechar={aoFechar} largo>
       {dados.estado === 'a-carregar' && <p className="suave">A carregar a tarefa…</p>}
       {dados.estado === 'erro' && (
         <>
@@ -127,6 +129,17 @@ function EditarTarefa({ tarefa, podeEliminar, soLeitura, aoFechar, aoAlterar }: 
     }
   }
 
+  /** Depois de atribuir ou remover um responsável: a tarefa tem uma versão nova. */
+  function aoMudarResponsaveis(recente: Tarefa) {
+    setValores(juntarComNovaVersao(base, recente, valores))
+    setBase(recente)
+    if (versaoAntiga) {
+      setVersaoAntiga(false)
+      setAviso(null)
+    }
+    aoAlterar()
+  }
+
   async function eliminar() {
     setAviso(null)
     setAGuardar(true)
@@ -142,6 +155,7 @@ function EditarTarefa({ tarefa, podeEliminar, soLeitura, aoFechar, aoAlterar }: 
   }
 
   return (
+    <>
     <form onSubmit={guardar} noValidate>
       {aviso && (
         <div className="aviso" role="alert">
@@ -156,6 +170,7 @@ function EditarTarefa({ tarefa, podeEliminar, soLeitura, aoFechar, aoAlterar }: 
         </div>
       )}
       <CamposTarefa valores={valores} erros={erros} aoMudar={mudar} comEstado soLeitura={soLeitura} />
+      <ResponsaveisTarefa tarefa={base} soLeitura={soLeitura} aoMudar={aoMudarResponsaveis} />
 
       {aConfirmar ? (
         <div className="confirmar caixa" role="group" aria-label="Confirmar eliminação">
@@ -188,5 +203,7 @@ function EditarTarefa({ tarefa, podeEliminar, soLeitura, aoFechar, aoAlterar }: 
         </div>
       )}
     </form>
+    <ComentariosTarefa tarefaId={base.id} soLeitura={soLeitura} />
+    </>
   )
 }

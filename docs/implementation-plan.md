@@ -385,7 +385,7 @@ quando a API devolve erro); verificação manual do quadro.
   I5. Continua por tratar no I5 que retirar as atribuições ao remover um
   membro (I3) aumente a `versao` das tarefas.
 
-### I5 — Responsáveis e comentários ⬜
+### I5 — Responsáveis e comentários ✅
 
 **Ficha:** Exercício 6. **US:** US05 (crit. 4 e 7), US12 (crit. 1 e 2).
 
@@ -403,6 +403,55 @@ e atribuições disponíveis após reabrir a tarefa.
 **Verificação:** testes de integração (duplicado → 409, não membro → 400,
 autor do comentário é o da sessão mesmo que o pedido traga outro);
 verificação manual.
+
+**Resultado (2026-11-12)**
+- Backend (módulo `tarefas`): `Tarefa.atribuir` (409 `JA_EXISTE`) e
+  `Tarefa.removerResponsavel` (404 se não for responsável);
+  `POST /tarefas/{id}/responsaveis` (201 com a tarefa; qualquer membro; só
+  membros do projeto com conta ativa, senão 400) e
+  `DELETE /tarefas/{id}/responsaveis/{utilizadorId}` (204, só essa
+  atribuição); cada atribuição e remoção aumenta a versão da tarefa e fica no
+  histórico com o nome da pessoa; projeto arquivado → 409.
+  `AcessoTarefasServico`, por onde outros módulos perguntam o acesso a uma
+  tarefa.
+- Backend (outros módulos): novo módulo `comentarios` (ADR 0001), com o
+  agregado `Comentario` (1 a 2000 caracteres sem contar os espaços nas
+  pontas), `GET /tarefas/{id}/comentarios` (do mais antigo para o mais
+  recente, paginado) e `POST` (autor da sessão e data do servidor; projeto
+  arquivado → 409); `AcessoProjetosServico.eMembroAtivo` (RI02);
+  `Identificadores.doCorpo` em `comum`, usado também pelos membros.
+- Pendente do I3 resolvido: retirar as atribuições ao remover um membro passa
+  pelo agregado `Tarefa`, aumenta a versão das tarefas afetadas e regista a
+  remoção no histórico, com o Gestor como autor.
+- Frontend: no detalhe da tarefa (diálogo mais largo), os responsáveis como
+  etiquetas com ✕ (remove só essa atribuição) e "+ Adicionar" (só membros
+  ativos do projeto que ainda não são responsáveis), gravados logo, sem
+  "Guardar"; depois de atribuir ou remover, o formulário passa a usar a versão
+  nova, sem perder o que estava escrito; secção "Comentários (N)" com autor,
+  data e hora, os primeiros 20 e "Ver mais comentários", e a caixa
+  "Escrever comentário"; num projeto arquivado, só leitura.
+- Verificação contra o Backend real (pedidos pelo proxy do Vite, num projeto
+  temporário eliminado no fim): atribuir vários, repetido (409), não membro
+  (400), remover só um, histórico com o autor certo, comentário com o autor
+  da sessão, pedido com `autor` (400), texto só com espaços (400), não membro
+  (403), remover um membro do projeto aumenta a versão da tarefa e regista a
+  remoção.
+- Testes: `./mvnw test` (138; 18 novos) e `npm test` (79; 11 novos); `tsc`,
+  `npm run lint` e `npm run build` sem erros.
+- Verificação manual no browser: feita (2026-11-12).
+
+**Desvios ao plano**
+- Um pedido de comentário que traga `autor` (ou `criadoEm`) é recusado com
+  400, e não ignorado: o contrato não aceita campos desconhecidos
+  (`additionalProperties: false`). O autor é sempre o da sessão.
+- Os comentários ficam numa secção por baixo dos campos, e não num
+  separador: os separadores "Comentários | Histórico" entram com o histórico
+  (Fase 2, US13).
+- Comentar não aumenta a versão da tarefa nem fica no histórico, porque não
+  altera os campos da tarefa.
+- O ✕ dos responsáveis remove sem pedir confirmação (como no wireframe).
+- A data dos comentários é guardada ao microssegundo (a precisão do
+  PostgreSQL) e mostrada na hora local do browser.
 
 ### I6 — Revisão da interface ⬜
 

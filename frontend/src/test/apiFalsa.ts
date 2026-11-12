@@ -103,3 +103,8 @@ export function quadro(projetoId: string, tarefas: Tarefa[] = [], prioridade?: s
     return [rotaColuna(projetoId, estado, 1, prioridade), { estado: 200, corpo: { itens, total: itens.length, pagina: 1, tamanho: 20 } }]
   }))
 }
+
+/** GET de uma página de comentários de uma tarefa, como o detalhe a pede. */
+export function rotaComentarios(tarefaId: string, pagina = 1): string {
+  return `GET /api/tarefas/${tarefaId}/comentarios?pagina=${pagina}&tamanho=20`
+}

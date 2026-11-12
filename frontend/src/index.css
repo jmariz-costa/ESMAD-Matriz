@@ -618,3 +618,117 @@ label {
 .aviso .btn {
   margin-top: 8px;
 }
+
+.fundo-dialogo {
+  overflow-y: auto;
+}
+
+.dialogo.largo {
+  max-width: 640px;
+}
+
+.btn.pequeno {
+  padding: 2px 8px;
+  font-size: 13px;
+}
+
+/* Responsáveis e comentários da tarefa */
+.rotulo {
+  font-weight: bold;
+  margin: 12px 0 4px;
+  font-size: 13px;
+}
+
+.etiquetas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid #777;
+  border-radius: 10px;
+  padding: 0 4px 0 8px;
+  font-size: 13px;
+  background: #f2f2f2;
+}
+
+.remover-chip {
+  border: 0;
+  background: none;
+  padding: 0 4px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.remover-chip:focus-visible {
+  outline: 2px solid var(--texto);
+}
+
+.escolher {
+  margin-top: 8px;
+  padding: 8px;
+}
+
+.lista-escolha {
+  list-style: none;
+  margin: 0 0 8px;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.responsaveis-tarefa .aviso {
+  margin-top: 8px;
+}
+
+.comentarios {
+  margin-top: 20px;
+  padding-top: 12px;
+  border-top: 2px solid #ccc;
+}
+
+.comentarios h3 {
+  margin: 0 0 8px;
+  font-size: 14px;
+}
+
+.lista-comentarios {
+  list-style: none;
+  margin: 0 0 8px;
+  padding: 0;
+}
+
+.lista-comentarios li {
+  padding: 6px 0;
+  border-bottom: 1px solid #ddd;
+}
+
+.lista-comentarios p {
+  margin: 2px 0 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.cabecalho-comentario {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  font-size: 13px;
+}
+
+.cabecalho-comentario time {
+  color: var(--texto-suave);
+}
+
+.comentarios .aviso {
+  margin: 8px 0;
+}
