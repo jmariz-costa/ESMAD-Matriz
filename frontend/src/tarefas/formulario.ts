@@ -1,4 +1,5 @@
 import type { ErroApi } from '../api/cliente'
+import { validarTexto } from '../comum/texto'
 import type { Estado } from '../api/projetos'
 import type { AlteracoesTarefa, DadosTarefa, Prioridade, Tarefa } from '../api/tarefas'
 
@@ -28,21 +29,18 @@ export function valoresDe(tarefa?: Tarefa): ValoresTarefa {
   }
 }
 
-/** Caracteres como o utilizador os vê (um emoji conta como um), igual ao Backend. */
-const comprimento = (texto: string) => [...texto].length
-
 /** As mesmas regras do Backend (RN10, RN23); o Backend volta a verificar. */
 export function validar(valores: ValoresTarefa): ErrosTarefa {
   const erros: ErrosTarefa = {}
-  const n = comprimento(valores.titulo.trim())
-  if (n === 0) {
-    erros.titulo = 'O título é obrigatório.'
-  } else if (n < 3 || n > 150) {
-    erros.titulo = 'O título deve ter entre 3 e 150 caracteres.'
-  }
-  if (comprimento(valores.descricao.trim()) > 2000) {
-    erros.descricao = 'A descrição não pode ter mais de 2000 caracteres.'
-  }
+  const erroTitulo = validarTexto(valores.titulo, {
+    obrigatorio: 'O título é obrigatório.', minimo: 3, maximo: 150,
+    foraDosLimites: 'O título deve ter entre 3 e 150 caracteres.',
+  })
+  const erroDescricao = validarTexto(valores.descricao, {
+    maximo: 2000, foraDosLimites: 'A descrição não pode ter mais de 2000 caracteres.',
+  })
+  if (erroTitulo) erros.titulo = erroTitulo
+  if (erroDescricao) erros.descricao = erroDescricao
   return erros
 }
 

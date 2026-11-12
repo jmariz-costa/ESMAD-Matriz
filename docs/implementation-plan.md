@@ -553,6 +553,21 @@ verification.md.
 - Três exemplos de utilização da IA em verification.md.
 - Confirmar que o projeto arranca a partir de uma cópia limpa.
 
+**Refatoração (decisão registada, 2026-11-12)**
+- **Oportunidade:** a contagem de caracteres e a regra "obrigatório / fora dos
+  limites" dos textos (RN23) estavam copiadas em três formulários do Frontend
+  (`FormularioProjeto.tsx`, `tarefas/formulario.ts`, `ComentariosTarefa.tsx`).
+  Mudar a regra obrigava a lembrar-se das três cópias, e no Backend a mesma
+  regra já está num só sítio (`Texto.java`).
+- **Decisão:** juntar a regra em `frontend/src/comum/texto.ts`
+  (`comprimento` e `validarTexto`), usada pelos três formulários, com as mesmas
+  mensagens. Foram consideradas e não escolhidas: juntar a validação de
+  tamanho dos três agregados do Backend (mexe em mais código) e um método
+  privado para o 409 de versão no `TarefasServico` (benefício pequeno).
+- **Comportamento preservado:** os 85 testes do Frontend que já existiam
+  passam sem alterações; acrescentados 3 testes unitários de
+  `comum/texto.ts`. Feita num commit separado, sem outras mudanças.
+
 ## 5. Fase 2 — restantes User Stories do MVP
 
 Cada uma é um incremento próprio, com o mesmo método, e acrescenta os seus

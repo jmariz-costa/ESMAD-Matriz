@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { comoErroApi, type ErroApi } from '../api/cliente'
 import { useNotificar } from '../comum/notificacao'
+import { validarTexto } from '../comum/texto'
 import { comentarTarefa, listarComentarios, type Comentario } from '../api/comentarios'
 import { formatarDataHora } from './textos'
 
@@ -16,14 +17,11 @@ interface Lista {
   paginas: number
 }
 
-/** Caracteres como o utilizador os vê (um emoji conta como um), igual ao Backend. */
-const comprimento = (texto: string) => [...texto].length
-
 function validar(texto: string): string | null {
-  const n = comprimento(texto.trim())
-  if (n === 0) return 'O comentário não pode estar vazio.'
-  if (n > 2000) return 'O comentário não pode ter mais de 2000 caracteres.'
-  return null
+  return validarTexto(texto, {
+    obrigatorio: 'O comentário não pode estar vazio.', maximo: 2000,
+    foraDosLimites: 'O comentário não pode ter mais de 2000 caracteres.',
+  })
 }
 
 /**

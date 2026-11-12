@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { comoErroApi } from '../api/cliente'
 import { criarProjeto, editarProjeto, type Projeto } from '../api/projetos'
 import { Dialogo } from '../componentes/Dialogo'
+import { validarTexto } from '../comum/texto'
 
 interface Props {
   /** Sem projeto, o formulário cria um novo; com projeto, edita-o. */
@@ -15,20 +16,17 @@ interface Erros {
   descricao?: string
 }
 
-/** Caracteres como o utilizador os vê (um emoji conta como um), igual ao Backend. */
-const comprimento = (texto: string) => [...texto].length
-
 function validar(nome: string, descricao: string): Erros {
   const erros: Erros = {}
-  const n = comprimento(nome.trim())
-  if (n === 0) {
-    erros.nome = 'O nome é obrigatório.'
-  } else if (n < 3 || n > 100) {
-    erros.nome = 'O nome deve ter entre 3 e 100 caracteres.'
-  }
-  if (comprimento(descricao.trim()) > 1000) {
-    erros.descricao = 'A descrição não pode ter mais de 1000 caracteres.'
-  }
+  const erroNome = validarTexto(nome, {
+    obrigatorio: 'O nome é obrigatório.', minimo: 3, maximo: 100,
+    foraDosLimites: 'O nome deve ter entre 3 e 100 caracteres.',
+  })
+  const erroDescricao = validarTexto(descricao, {
+    maximo: 1000, foraDosLimites: 'A descrição não pode ter mais de 1000 caracteres.',
+  })
+  if (erroNome) erros.nome = erroNome
+  if (erroDescricao) erros.descricao = erroDescricao
   return erros
 }
 
