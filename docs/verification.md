@@ -95,7 +95,8 @@ de IA, a pedido do responsável do projeto, contra a aplicação a correr
 (Backend em modo de desenvolvimento, PostgreSQL em Docker, dados de
 demonstração). É uma verificação automatizada pelo agente, e não manual: o
 script ficou fora do repositório e as capturas de ecrã do P11 foram vistas uma
-a uma. Os dados criados no percurso foram eliminados no fim.
+a uma. Os dados criados no percurso foram eliminados no fim. O responsável do
+projeto repetiu depois os testes de forma manual no browser.
 
 | # | Ecrã | Passos | Resultado esperado | Observado |
 |---|------|--------|--------------------|-----------|
@@ -137,15 +138,17 @@ erros do caso 09 passaram à primeira.
 ## Limitações e o que não foi executado
 
 - **O percurso da interface (P01–P11) foi executado pelo agente de IA**, com o
-  Firefox 141 do Playwright sem janela, e não por uma pessoa. As capturas de
-  ecrã das larguras menores foram vistas, mas o restante aspeto visual não foi
-  revisto por uma pessoa nesse percurso.
+  Firefox 141 do Playwright sem janela. O responsável do projeto repetiu
+  depois os testes de forma manual no browser; os resultados registados na
+  tabela são os da execução do agente.
 - **No P09, a falta de ligação ao Backend foi simulada** cortando os pedidos
   `/api` no browser, e não parando o Backend.
 - **O caso 03 (reinício do Backend) não tem teste automatizado**: foi feito
   com `curl` e o reinício do Backend, com o resultado registado acima.
-- **Gravações simultâneas**: o 409 de duas gravações exatamente ao mesmo tempo
-  (`@Version`) não tem teste automatizado; o caso da versão antiga tem.
+- **Erros inesperados do servidor (500)** não vêm no formato único de erro e
+  o contrato não os define (revisão do I8, R3). O Frontend mostra "Ocorreu um
+  erro inesperado. Tente novamente." quando a resposta não tem esse formato.
+  Fica como limitação conhecida, para não alterar o contrato na entrega.
 - **Layout adaptativo** sem teste automatizado (o jsdom não aplica CSS);
   coberto pelo P11.
 - **Não executado**: testes noutros browsers além do Firefox (fora do âmbito,
