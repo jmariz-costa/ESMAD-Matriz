@@ -1,6 +1,6 @@
-/// <reference types="vitest/config" />
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
+import { configDefaults } from 'vitest/config'
 
 // Endereço do Backend usado pelo proxy de desenvolvimento.
 // É o único sítio onde está definido; o código da aplicação usa sempre o caminho relativo /api.
@@ -18,5 +18,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
+    // Os testes E2E correm com o Playwright (npm run e2e), não com o Vitest
+    exclude: [...configDefaults.exclude, 'e2e/**'],
   },
 })

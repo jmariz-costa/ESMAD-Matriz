@@ -1,6 +1,8 @@
 package pt.esmad.matriz.tarefas;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import pt.esmad.matriz.comum.erros.CodigoErro;
 import pt.esmad.matriz.comum.erros.Erro;
 import pt.esmad.matriz.comum.erros.ErroAplicacao;
@@ -56,6 +58,23 @@ class TarefaTest {
         assertEquals("titulo", unicoErro(() -> criar("ab", null)).campo());
         assertEquals("titulo", unicoErro(() -> criar("x".repeat(151), null)).campo());
         assertEquals(150, criar("x".repeat(150), null).titulo().length());
+    }
+
+    /**
+     * Valores-limite do título (RN23: entre 3 e 150, limites incluídos), com e sem espaços nas
+     * pontas, que não contam. Ficha PL 04, Exercício 2; cenário T05 do docs/test-plan.md.
+     */
+    @ParameterizedTest(name = "título com {0} caracteres: aceite = {1}")
+    @CsvSource({"2, false", "3, true", "150, true", "151, false"})
+    void limitesDoTituloSemContarOsEspacosNasPontas(int tamanho, boolean aceite) {
+        String titulo = "x".repeat(tamanho);
+        for (String escrito : List.of(titulo, "  " + titulo + "  ")) {
+            if (aceite) {
+                assertEquals(titulo, criar(escrito, null).titulo());
+            } else {
+                assertEquals("titulo", unicoErro(() -> criar(escrito, null)).campo());
+            }
+        }
     }
 
     @Test
