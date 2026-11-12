@@ -33,10 +33,10 @@ Os testes indicam-se como `Classe.método`. Os do Backend estão em `backend/src
 
 ## Pressupostos verificados
 
-Cada linha é um pressuposto que uma matriz de cenários poderia fazer sem fundamento: ou é uma prática habitual noutras aplicações, ou é um ponto que as user stories deixam em aberto. Para cada um, foi conferido o que dizem os requisitos e o contrato. Não houve uma primeira versão da matriz com estes erros: a matriz foi escrita já conferida, e a tabela regista as verificações feitas.
+Cada linha é um pressuposto errado que uma matriz de cenários poderia fazer sem fundamento: ou é uma prática habitual noutras aplicações, ou preenche um ponto que as user stories deixam em aberto. **Não é o que a Matriz faz**; a regra da Matriz está na coluna "Decidido como". Para cada um, foi conferido o que dizem os requisitos e o contrato. Não houve uma primeira versão da matriz com estes erros: a matriz foi escrita já conferida, e a tabela regista as verificações feitas.
 
-| # | Pressuposto habitual ou em aberto | Problema | Decidido como | Fonte |
-|---|-----------------------------------|----------|---------------|-------|
+| # | Pressuposto errado que foi evitado | Problema | Decidido como | Fonte |
+|---|------------------------------------|----------|---------------|-------|
 | P1 | "Utilizador sem acesso → 404, para não revelar que a tarefa existe" | É uma prática comum, mas não é a regra da Matriz. | Recurso que existe, sem acesso → **403** `SEM_PERMISSAO`. Identificador inexistente ou que não é UUID → **404**. | openapi.yaml l. 33–35 |
 | P2 | "O Administrador consulta tudo" | O Administrador não participa em projetos. | **403** em todas as operações de tarefas, mesmo quando a tarefa não existe. | RN19; openapi.yaml l. 29–31 |
 | P3 | "Só quem criou a tarefa a pode editar" | Os requisitos não falam do criador. | **Qualquer membro do projeto** edita e muda o estado; só o Gestor elimina. | RN09, RN14 |
