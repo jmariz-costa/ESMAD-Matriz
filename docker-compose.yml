@@ -6,8 +6,10 @@ services:
     image: postgres:17
     container_name: matriz-postgres
     env_file: backend/.env
+    # Só neste computador (127.0.0.1): a base de dados não fica acessível a partir da rede.
+    # Revisão de segurança da Ficha PL 04 (S1, docs/quality-security-review.md).
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - matriz-dados:/var/lib/postgresql/data
     healthcheck:

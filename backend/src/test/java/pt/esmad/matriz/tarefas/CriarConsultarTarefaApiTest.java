@@ -122,7 +122,12 @@ class CriarConsultarTarefaApiTest {
                 Map.of("titulo", ""),
                 Map.of("titulo", "    "),
                 Map.of("titulo", " ab "),
-                Map.of("titulo", "x".repeat(151)));
+                Map.of("titulo", "x".repeat(151)),
+                // Invisíveis: regressão da revisão da Ficha PL 04 (Q1/S2)
+                Map.of("titulo", "\u00A0\u00A0\u00A0"),
+                Map.of("titulo", "\u200B\u200B\u200B"),
+                Map.of("titulo", "\uFEFF\uFEFF\uFEFF"),
+                Map.of("titulo", "\u00A0ab\u200B"));
 
         for (Map<String, Object> corpo : invalidos) {
             criar(corpo).then().statusCode(400)
