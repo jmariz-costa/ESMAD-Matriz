@@ -1,0 +1,14 @@
+# Gerados localmente: a imagem instala e constrói os seus
+node_modules/
+dist/
+playwright-report/
+test-results/
+*.log
+
+# Nunca entram ficheiros de configuração local com segredos
+**/.env
+**/.env.*
+
+# Só servem para construir a imagem, não para o build do Vite
+Dockerfile
+.dockerignore

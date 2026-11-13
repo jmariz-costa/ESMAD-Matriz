@@ -1,0 +1,10 @@
+# Só entra no build o que a imagem precisa (lista de permissões); tudo o resto fica de fora
+*
+!mvnw
+!.mvn/
+!pom.xml
+!src/
+
+# Nunca entram ficheiros de configuração local com segredos, mesmo dentro das pastas permitidas
+**/.env
+**/.env.*
