@@ -21,7 +21,7 @@ Antes de executar, é preciso `backend/.env` (copiado de `backend/.env.example`)
 **Executar:**
 
 ```bash
-docker compose up -d                    # PostgreSQL em Docker (volume matriz-dados)
+docker compose up -d postgres           # Só o PostgreSQL em Docker (volume matriz-dados)
 cd backend && ./mvnw quarkus:dev        # Backend: http://localhost:8081, API em /api
 cd frontend && npm install && npm run dev   # Frontend: http://localhost:5173
 ```

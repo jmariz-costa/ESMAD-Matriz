@@ -78,7 +78,7 @@ O ficheiro `backend/.env` guarda a configuração local e nunca é enviado para 
 Git. É lido pelo contentor PostgreSQL e pelo Backend. **Mude as três
 palavras-passe antes do primeiro arranque**: os valores do `.env.example` são
 públicos. A base de dados só aceita ligações deste computador (`127.0.0.1:5432`,
-ver `docker-compose.yml`).
+ver `compose.yaml`).
 
 | Variável                | Para que serve                                                                 |
 |-------------------------|--------------------------------------------------------------------------------|
@@ -95,7 +95,7 @@ omissão `http://localhost:8081`); o código usa sempre o caminho relativo `/api
 ### Arrancar
 
 ```bash
-docker compose up -d                    # PostgreSQL (dados no volume matriz-dados)
+docker compose up -d postgres           # Só o PostgreSQL (dados no volume matriz-dados)
 cd backend && ./mvnw quarkus:dev        # Backend em http://localhost:8081 (API em /api)
 cd frontend && npm run dev              # Frontend em http://localhost:5173
 ```

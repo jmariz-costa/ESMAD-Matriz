@@ -1,0 +1,93 @@
+# Matriz com Docker Compose (Ficha PL 05, Exercício 3).
+#
+#   Aplicação completa:            docker compose up -d --build   →  http://localhost:8090
+#   Só a base de dados (modo dev): docker compose up -d postgres  (Backend e Frontend no host)
+#
+# As credenciais vêm de backend/.env (copiar de backend/.env.example e mudar as palavras-passe).
+# Nada neste ficheiro é segredo.
+
+# Nome fixo: o volume continua a ser "esmad-matriz_matriz-dados", seja qual for o nome da pasta
+name: esmad-matriz
+
+services:
+  # Base de dados (D02). Os dados ficam no volume matriz-dados e sobrevivem a "down" (sem -v).
+  postgres:
+    image: postgres:17
+    container_name: matriz-postgres
+    env_file: backend/.env
+    # Só neste computador (127.0.0.1), para o Backend em modo dev (Ficha PL 04, S1)
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - matriz-dados:/var/lib/postgresql/data
+    networks:
+      - data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  # API Quarkus (backend/Dockerfile). Sem porta no host: só o Frontend lhe chega, pela rede "web".
+  backend:
+    build: backend
+    env_file: backend/.env
+    environment:
+      MATRIZ_DB_HOST: postgres
+    networks:
+      - data
+      - web
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://localhost:8081/q/health/ready"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    # Hardening (Ficha PL 05, decisão 3a): sem privilégios extra e sistema de ficheiros só de leitura
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+    # Cada thread da JVM conta como processo: margem para o pool de workers do Quarkus
+    pids_limit: 512
+
+  # nginx com o build do React (frontend/Dockerfile); reencaminha /api para o Backend
+  frontend:
+    build: frontend
+    ports:
+      - "127.0.0.1:8090:8080"
+    networks:
+      - web
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://localhost:8080/"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+    pids_limit: 100
+
+# data: Backend ↔ base de dados; web: Frontend ↔ Backend. O Frontend não chega à base de dados.
+networks:
+  data:
+  web:
+
+volumes:
+  matriz-dados:
