@@ -14,6 +14,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -32,12 +33,13 @@ public class AdministradorInicial {
 
     public AdministradorInicial(AgroalDataSource dataSource,
                                 @ConfigProperty(name = "matriz.admin.nome") String nome,
-                                @ConfigProperty(name = "matriz.admin.email") String email,
-                                @ConfigProperty(name = "matriz.admin.password") String palavraPasse) {
+                                // Optional: sem valor, o Quarkus não arrancaria e o aviso abaixo nunca apareceria
+                                @ConfigProperty(name = "matriz.admin.email") Optional<String> email,
+                                @ConfigProperty(name = "matriz.admin.password") Optional<String> palavraPasse) {
         this.dataSource = dataSource;
         this.nome = nome;
-        this.email = email;
-        this.palavraPasse = palavraPasse;
+        this.email = email.orElse("");
+        this.palavraPasse = palavraPasse.orElse("");
     }
 
     @Transactional

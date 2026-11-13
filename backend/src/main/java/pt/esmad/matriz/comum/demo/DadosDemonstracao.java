@@ -19,6 +19,7 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -37,10 +38,11 @@ public class DadosDemonstracao {
 
     public DadosDemonstracao(AgroalDataSource dataSource,
                              @ConfigProperty(name = "matriz.seed.demo") boolean ativo,
-                             @ConfigProperty(name = "matriz.seed.demo-password") String palavraPasse) {
+                             // Optional: sem valor, o Quarkus não arrancaria (mesmo com o seed desligado)
+                             @ConfigProperty(name = "matriz.seed.demo-password") Optional<String> palavraPasse) {
         this.dataSource = dataSource;
         this.ativo = ativo;
-        this.palavraPasse = palavraPasse;
+        this.palavraPasse = palavraPasse.orElse("");
     }
 
     @Transactional
