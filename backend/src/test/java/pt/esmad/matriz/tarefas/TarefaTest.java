@@ -65,7 +65,7 @@ class TarefaTest {
      * pontas, que não contam. Ficha PL 04, Exercício 2; cenário T05 do docs/test-plan.md.
      */
     @ParameterizedTest(name = "título com {0} caracteres: aceite = {1}")
-    @CsvSource({"2, false", "3, true", "150, false", "151, false"}) // FALHA CONTROLADA (Ficha PL 05, Ex. 4): 150 devia ser true
+    @CsvSource({"2, false", "3, true", "150, true", "151, false"})
     void limitesDoTituloSemContarOsEspacosNasPontas(int tamanho, boolean aceite) {
         String titulo = "x".repeat(tamanho);
         for (String escrito : List.of(titulo, "  " + titulo + "  ")) {
