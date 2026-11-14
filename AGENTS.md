@@ -21,6 +21,8 @@ Antes de executar, é preciso `backend/.env` (copiado de `backend/.env.example`)
 **Executar:**
 
 ```bash
+docker compose up -d --build            # Aplicação completa em Docker: http://localhost:8090
+# ou, em modo de desenvolvimento:
 docker compose up -d postgres           # Só o PostgreSQL em Docker (volume matriz-dados)
 cd backend && ./mvnw quarkus:dev        # Backend: http://localhost:8081, API em /api
 cd frontend && npm install && npm run dev   # Frontend: http://localhost:5173
@@ -41,6 +43,9 @@ cd frontend && npx tsc -b && npm run lint && npm run build
   (secção 7). Ver o README, "Testes E2E".
 - `docker compose down -v` apaga todos os dados locais: só com aprovação
   (secção 6).
+- Cada push para `main` corre a pipeline `.github/workflows/ci.yml`; não
+  desligar testes nem verificações para a pôr verde (ver
+  [docs/deployment.md](docs/deployment.md) §7).
 
 ## 1. Consultar a documentação antes de agir
 

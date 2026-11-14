@@ -56,8 +56,29 @@ consulta do histórico e o Administrador ficam para a Fase 2 (ver
 | [docs/verification.md](docs/verification.md)   | Registo das verificações do MVP: percurso da interface (I6) e casos de verificação (I7)       |
 | [docs/test-plan.md](docs/test-plan.md)         | Plano de testes (Ficha PL 04): cenários de tarefas e permissões, níveis, testes e resultados  |
 | [docs/quality-security-review.md](docs/quality-security-review.md) | Code Review e Security Review (Ficha PL 04): findings, evidências e decisões |
+| [docs/deployment.md](docs/deployment.md)       | Execução com Docker Compose, imagens, pipeline de CI, limitações e troubleshooting (Ficha PL 05) |
 | [docs/decisions/](docs/decisions/)             | Architecture Decision Records (ADRs), com índice no README da pasta                           |
+| [CHANGELOG.md](CHANGELOG.md)                   | Histórico de alterações por versão (Keep a Changelog, Semantic Versioning)                    |
+| [RELEASE_NOTES.md](RELEASE_NOTES.md)           | Notas da versão candidata `0.1.0-rc.1`                                                         |
 | [AGENTS.md](AGENTS.md)                         | Instruções para agentes de IA que trabalhem neste repositório                                 |
+
+## Executar com Docker Compose
+
+A forma mais simples de executar a aplicação completa: só precisa de Docker
+com Docker Compose (não precisa de Java nem de Node.js).
+
+```bash
+cp backend/.env.example backend/.env    # depois, mudar as três palavras-passe
+docker compose up -d --build            # PostgreSQL, Backend e Frontend
+docker compose ps                       # os três serviços devem ficar "healthy"
+```
+
+Abrir **http://localhost:8090** e entrar com uma
+[conta de demonstração](#contas-de-demonstração). Para parar:
+`docker compose stop` (os dados mantêm-se no volume `matriz-dados`).
+
+Serviços, redes, hardening, pipeline e troubleshooting em
+[docs/deployment.md](docs/deployment.md).
 
 ## Executar localmente
 
@@ -150,7 +171,8 @@ precisam de outra porta: `./mvnw test -Dquarkus.http.test-port=0`. O registo
 das verificações do MVP está em [docs/verification.md](docs/verification.md).
 
 **Testes E2E** (Playwright, Firefox). Correm contra a aplicação a correr: a
-base de dados, o Backend e o Frontend têm de estar ligados (ver "Arrancar").
+base de dados, o Backend e o Frontend têm de estar ligados (ver "Arrancar"
+ou "Executar com Docker Compose").
 Cada execução cria um projeto com nome único na conta da Ana e elimina-o no
 fim.
 
@@ -162,7 +184,7 @@ cd frontend && MATRIZ_DEMO_PASSWORD=<valor do backend/.env> npm run e2e
 - `MATRIZ_DEMO_PASSWORD` é a palavra-passe das contas de demonstração, a
   mesma do `backend/.env`. Não é guardada em nenhum ficheiro do Frontend.
 - `MATRIZ_E2E_URL` (opcional) muda o endereço testado; por omissão é
-  `http://localhost:5173`.
+  `http://localhost:5173`. Com o Docker Compose: `MATRIZ_E2E_URL=http://localhost:8090`.
 - Em sistemas que o Playwright 1.55 ainda não reconhece (por exemplo, Ubuntu
   26.04), acrescentar `PLAYWRIGHT_HOST_PLATFORM_OVERRIDE=ubuntu24.04-x64`.
 - Para ver o browser: `npm run e2e -- --headed`; passo a passo:
@@ -172,6 +194,13 @@ cd frontend && MATRIZ_DEMO_PASSWORD=<valor do backend/.env> npm run e2e
 
 **Análise estática e dependências:** `cd frontend && npm run lint` (oxlint) e
 `cd frontend && npm audit`. O Backend não tem análise estática configurada.
+
+**Integração contínua:** cada push e Pull Request para `main` corre a pipeline
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) no GitHub Actions:
+testes do Backend; lint, testes, build e `npm audit` do Frontend; e, só se
+estes passarem, imagens Docker, smoke tests e o teste E2E contra o Docker
+Compose. Os resultados estão no separador **Actions** do repositório (ver
+[docs/deployment.md](docs/deployment.md) §7).
 O plano de testes está em [docs/test-plan.md](docs/test-plan.md) e a revisão
 de qualidade e segurança em
 [docs/quality-security-review.md](docs/quality-security-review.md).
@@ -233,6 +262,13 @@ verificações em [docs/verification.md](docs/verification.md).
   respetivos testes de regressão (ver
   [docs/test-plan.md](docs/test-plan.md) e
   [docs/quality-security-review.md](docs/quality-security-review.md)).
+
+- Ficha PL 05 (DevOps e documentação): Dockerfiles do Backend e do Frontend,
+  Docker Compose com a aplicação completa, pipeline de CI no GitHub Actions,
+  documentação de execução ([docs/deployment.md](docs/deployment.md),
+  [ADR 0002](docs/decisions/0002-execucao-em-contentores-e-ci.md)) e versão
+  candidata **`0.1.0-rc.1`** ([CHANGELOG.md](CHANGELOG.md),
+  [RELEASE_NOTES.md](RELEASE_NOTES.md)).
 
 Próximo: Fase 2 (arquivo, "As minhas tarefas", histórico consultável,
 edição de comentários e Administrador).

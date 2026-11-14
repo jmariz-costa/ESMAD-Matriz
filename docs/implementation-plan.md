@@ -662,3 +662,80 @@ Não é um incremento funcional: valida a Fase 1 com testes, Code Review e Secur
 - O utilizador tem de mudar as três palavras-passe do seu `backend/.env` (S1); a da base de dados exige um `ALTER USER` no volume que já existe.
 - Q2 (o teste de gravações simultâneas não força a sobreposição), Q4 (parâmetros de URL desconhecidos ignorados) e O1 (texto da US07). Ficam registados, sem correção.
 - Não executados: análise estática do Backend, auditoria das dependências do Maven, E2E noutros browsers, testes de carga e de produção.
+
+## 8. Ficha PL 05 — DevOps e documentação
+
+Não é um incremento funcional: prepara a Fase 1 para entrega com Docker,
+Docker Compose e GitHub Actions, e identifica a versão candidata. O detalhe
+está em [deployment.md](deployment.md) e no
+[ADR 0002](decisions/0002-execucao-em-contentores-e-ci.md).
+
+**Plano (Ex. 1, 2026-11-13).** Componentes: Backend Quarkus (porta 8081, API
+em `/api`, health em `/q/health`), Frontend React/Vite (proxy de `/api` para a
+mesma origem), PostgreSQL 17 em Docker, configuração em `backend/.env`, testes
+169 + 102 + 1 E2E, sem CI. Etapas: Dockerfiles (Ex. 2) → `compose.yaml`
+(Ex. 3) → `ci.yml` (Ex. 4) → documentação e versão (Ex. 5) → validação (Ex. 6).
+
+**Decisões do utilizador (2026-11-13)**
+- Ex. 1: **1a** nginx serve o build do Vite e reencaminha `/api/`; **2a** um
+  só `backend/.env`, lido pelo Compose com `env_file`; **3a** E2E na
+  pipeline; **4a** palavras-passe da CI geradas em cada execução, sem GitHub
+  Secrets.
+- Ex. 3: **1a** Frontend em `127.0.0.1:8090`; **2a** um só `compose.yaml`
+  também para o modo de desenvolvimento (`docker compose up -d postgres`);
+  **3a** hardening do Backend e do Frontend.
+- Ex. 4: **1a** actions pelo SHA do commit; **2a** `npm audit
+  --audit-level=high` na pipeline; **3b** falha controlada diretamente no
+  `main`, com `git revert`. Correção da falha da CI: **a**, corrigir o código.
+- Ex. 5: **1a** versão `0.1.0-rc.1`; **2a** tag anotada `v0.1.0-rc.1` sem
+  GitHub Release, depois da validação final; **3a** README curto,
+  `docs/deployment.md` e ADR 0002.
+
+**Resultado (2026-11-13)**
+- **Ex. 2** (`73a4f8b`): `backend/Dockerfile` (JDK 21 → JRE 21, uid 10001,
+  cerca de 334 MB) e `frontend/Dockerfile` (Node 24 → nginx sem root, cerca de
+  60 MB), `.dockerignore` sem `.env`, `frontend/nginx.conf`, e
+  `MATRIZ_DB_HOST` no `application.properties`. Validado com `docker run`
+  contra a base de dados local: health `UP`, login, `/auth/me` e `/projetos`
+  através do nginx; sem segredos nas imagens.
+- **Ex. 3** (`e886eb4`): `compose.yaml` com `postgres`, `backend` e
+  `frontend`, redes `data`/`web`, healthchecks em cadeia e hardening;
+  substitui o `docker-compose.yml`. Validado: os três serviços `healthy`; o
+  Frontend não resolve o `postgres`; persistência depois de `down`/`up` com um
+  projeto de teste (eliminado no fim); E2E passa contra o Compose; teste do
+  utilizador no browser.
+- **Ex. 4** (`f98f102`, `2a42d56`): `.github/workflows/ci.yml` com
+  `backend-tests`, `frontend-checks` e `docker-build` (`needs`). A primeira
+  execução falhou no Backend (ver desvios); depois da correção, os três jobs
+  ficaram verdes. Falha controlada em `TarefaTest` (`0f62fae`): o
+  `backend-tests` falhou e o `docker-build` não correu; revertida em
+  `01f9cfd`, a pipeline voltou a verde. Resultados vistos pelo utilizador no
+  separador Actions.
+- **Ex. 5:** README (secção "Executar com Docker Compose", pipeline nos
+  testes), `docs/deployment.md`, ADR 0002, diagrama de execução em Mermaid em
+  `architecture.md`, `CHANGELOG.md`, `RELEASE_NOTES.md`; `pom.xml` e
+  `package.json` em `0.1.0-rc.1`. O `openapi.yaml` não mudou (0.3.0, versão do
+  contrato).
+
+**Desvios ao plano**
+- O build do Backend falhou na verificação SHA-256 do Maven: sem `unzip`, o
+  `mvnw` descarrega o `.tar.gz`, e a soma configurada é a do `.zip`. A soma
+  estava certa; instalou-se o `unzip` na fase de compilação.
+- A porta 8080, prevista para o Frontend, está ocupada na máquina do
+  utilizador por um processo fora do Docker; passou-se para a 8090.
+- A CI encontrou um bug escondido pelos testes locais: sem `backend/.env`, o
+  Quarkus não arrancava (`SRCFG00040`), porque `MATRIZ_ADMIN_*` e
+  `MATRIZ_DEMO_PASSWORD` vazios eram tratados como em falta. O aviso
+  "Administrador não configurado" nunca chegava a aparecer. Corrigido com
+  `Optional<String>` (`2a42d56`); 169 testes passam com e sem `.env`.
+- A mensagem do commit de revert tem a linha do corpo que o Git gera ("This
+  reverts commit …"), fora da convenção de uma só linha.
+- Não foi testado localmente um arranque com volume novo e palavras-passe
+  novas (evitou-se `down -v` no volume do utilizador); a pipeline faz esse
+  arranque em cada execução.
+
+**Pendentes**
+- Ex. 6: validação final e relatório; depois, a tag `v0.1.0-rc.1`.
+- O utilizador continua a ter de mudar as três palavras-passe do seu
+  `backend/.env` (Ficha PL 04, S1).
+- Desafios opcionais (A–C) não feitos.

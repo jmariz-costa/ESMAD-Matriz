@@ -76,6 +76,33 @@ flowchart LR
 
 Toda a comunicação entre o browser e o servidor é feita por HTTPS (S02).
 
+### Execução com Docker Compose (Ficha PL 05)
+
+Como os componentes acima correm hoje em contentores (`compose.yaml`; detalhe
+em [deployment.md](deployment.md) e decisões no
+[ADR 0002](decisions/0002-execucao-em-contentores-e-ci.md)):
+
+```mermaid
+flowchart LR
+    U[Browser no host] -->|HTTP 127.0.0.1:8090| FE
+
+    FE[frontend<br/>nginx + build do React<br/>porta 8080] -->|rede web<br/>/api/ para backend:8081| BE
+    BE[backend<br/>Quarkus, JRE 21<br/>porta 8081] -->|rede data<br/>JDBC postgres:5432| DB[(postgres<br/>PostgreSQL 17)]
+    DB --- V[[volume matriz-dados]]
+
+    DEV[Backend em modo dev<br/>no host] -.->|127.0.0.1:5432| DB
+```
+
+| Serviço | Responsabilidade | Exposto no host |
+|---------|------------------|-----------------|
+| `frontend` | nginx sem root: serve o build do React e reencaminha `/api/` para o Backend, mantendo a mesma origem (o cookie funciona sem CORS) | `127.0.0.1:8090` |
+| `backend` | A aplicação Quarkus, em JRE 21, sem root e com o sistema de ficheiros só de leitura | Não |
+| `postgres` | A base de dados, com os dados no volume `matriz-dados` | `127.0.0.1:5432`, só para o modo de desenvolvimento |
+
+O Frontend não chega à base de dados: estão em redes diferentes. Localmente,
+a ligação é por HTTP; o HTTPS (S02) depende do alojamento (D04, pendente).
+O serviço de email não existe nesta fase (US01 adiada).
+
 ## 6. Módulos e responsabilidades
 
 | Módulo          | Responsabilidade                                                                                                   | Requisitos             |
@@ -113,7 +140,9 @@ Escolhidas na Ficha PL 03 (decisões em [constraints.md](constraints.md)).
 | Base de dados | PostgreSQL, executado em Docker (Docker Compose, com volume persistente); migrations Flyway   | D02     |
 | Palavras-passe| Hash bcrypt (S01)                                                                            | S01     |
 | Frontend      | React com TypeScript, criado com Vite; React Router para a navegação                         | D01     |
-| Testes        | Backend: JUnit + RestAssured contra PostgreSQL criado pelo Quarkus Dev Services; Frontend: Vitest + Testing Library | D11 |
+| Testes        | Backend: JUnit + RestAssured contra PostgreSQL criado pelo Quarkus Dev Services; Frontend: Vitest + Testing Library; E2E: Playwright (Firefox) | D11 |
+| Contentores   | Docker e Docker Compose; nginx a servir o Frontend                                          | ADR 0002 |
+| CI            | GitHub Actions: testes, build, imagens Docker, smoke tests e E2E                             | ADR 0002 |
 
 ### Organização do backend
 
@@ -161,6 +190,9 @@ pelo cliente.
   backend, para que frontend e backend fiquem na mesma origem e o cookie
   funcione sem CORS. O endereço do backend fica num único sítio de
   configuração.
+- No Docker Compose, o nginx faz o mesmo papel do proxy do Vite
+  (`frontend/nginx.conf`), e o endereço da base de dados vem de
+  `MATRIZ_DB_HOST` (ADR 0002).
 
 ## 8. Pressupostos e decisões pendentes
 
