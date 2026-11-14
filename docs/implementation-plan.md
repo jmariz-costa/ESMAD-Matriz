@@ -690,6 +690,11 @@ mesma origem), PostgreSQL 17 em Docker, configuração em `backend/.env`, testes
 - Ex. 5: **1a** versão `0.1.0-rc.1`; **2a** tag anotada `v0.1.0-rc.1` sem
   GitHub Release, depois da validação final; **3a** README curto,
   `docs/deployment.md` e ADR 0002.
+- Ex. 6: **1a** validação numa cópia limpa (`git clone`, volume e
+  palavras-passe novos, `-p matriz-validacao`); **2a** gitleaks em todo o
+  histórico; **3a** revisão final feita pelo agente com lista de verificação.
+  Sobre os problemas encontrados: **V1a** registar o aviso "trust" do
+  PostgreSQL como limitação; **V2a** tirar o nome fixo do contentor.
 
 **Resultado (2026-11-13)**
 - **Ex. 2** (`73a4f8b`): `backend/Dockerfile` (JDK 21 → JRE 21, uid 10001,
@@ -717,6 +722,14 @@ mesma origem), PostgreSQL 17 em Docker, configuração em `backend/.env`, testes
   `package.json` em `0.1.0-rc.1`. O `openapi.yaml` não mudou (0.3.0, versão do
   contrato).
 
+- **Ex. 6:** relatório em [delivery-report.md](delivery-report.md). Cópia
+  limpa a partir do README: três serviços `healthy`, primeiro arranque com
+  Flyway, seed e Administrador; percurso funcional 24/24; E2E passa; pipeline
+  de `a001d67` verde; gitleaks sem fugas nos 24 commits. Encontrados e
+  tratados: V1 (limitação), V2 (corrigido e validado lado a lado com a
+  instalação local, que manteve os dados) e a falta da secção "Tecnologias"
+  no README (acrescentada). O OpenAPI e o código têm as mesmas 21 operações.
+
 **Desvios ao plano**
 - O build do Backend falhou na verificação SHA-256 do Maven: sem `unzip`, o
   `mvnw` descarrega o `.tar.gz`, e a soma configurada é a do `.zip`. A soma
@@ -735,7 +748,8 @@ mesma origem), PostgreSQL 17 em Docker, configuração em `backend/.env`, testes
   arranque em cada execução.
 
 **Pendentes**
-- Ex. 6: validação final e relatório; depois, a tag `v0.1.0-rc.1`.
-- O utilizador continua a ter de mudar as três palavras-passe do seu
-  `backend/.env` (Ficha PL 04, S1).
+- Confirmar a pipeline do commit do Ex. 6 e criar a tag `v0.1.0-rc.1`.
+- ~~Mudar as três palavras-passe do `backend/.env` (Ficha PL 04, S1)~~:
+  resolvido a 2026-11-14 (ver [delivery-report.md](delivery-report.md) §7);
+  o `.env.example` tem valores de exemplo novos.
 - Desafios opcionais (A–C) não feitos.

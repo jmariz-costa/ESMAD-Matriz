@@ -60,6 +60,10 @@ Primeira versão identificada: versão **candidata** com a Fase 1 do MVP
   pelo `compose.yaml`.
 - O endereço da base de dados pode vir de `MATRIZ_DB_HOST` (por omissão,
   `localhost`).
+- O contentor do PostgreSQL deixa de ter o nome fixo `matriz-postgres`
+  (passa a `esmad-matriz-postgres-1`, com o mesmo volume), para permitir uma
+  segunda instalação com `docker compose -p`.
+- O README passa a ter a secção "Tecnologias".
 
 ### Fixed
 
@@ -81,6 +85,8 @@ Primeira versão identificada: versão **candidata** com a Fase 1 do MVP
   de leitura, sem capacidades Linux e com `no-new-privileges`.
 - Pipeline com permissões mínimas (`contents: read`), sem segredos, e com as
   actions referidas pelo SHA do commit.
+- Valores de exemplo novos para as três palavras-passe do `.env.example`;
+  os anteriores tinham sido usados numa instalação local (S1).
 
 [Unreleased]: https://github.com/jmariz-costa/ESMAD-Matriz/compare/v0.1.0-rc.1...HEAD
 [0.1.0-rc.1]: https://github.com/jmariz-costa/ESMAD-Matriz/tree/v0.1.0-rc.1

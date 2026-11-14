@@ -53,9 +53,9 @@ Abrir http://localhost:8090. As contas de demonstração estão no
 | Teste E2E (Playwright, Firefox) | 1, passa contra o Docker Compose |
 | Lint, tipos, build e `npm audit` do Frontend | Sem erros nem vulnerabilidades altas |
 | Pipeline de CI (GitHub Actions) | Verde; a falha controlada confirmou que bloqueia o build das imagens |
+| Validação final (cópia limpa seguindo o README) | Três serviços saudáveis; percurso funcional 24/24; E2E passa; gitleaks sem fugas em todo o histórico |
 
-Os resultados da validação final desta candidata ficam registados no
-Exercício 6.
+O relatório completo está em [docs/delivery-report.md](docs/delivery-report.md).
 
 ## Documentação
 
@@ -83,5 +83,9 @@ Docker e pipeline), [docs/architecture.md](docs/architecture.md),
   projeto sem tarefas (O1).
 - Não há análise de vulnerabilidades das imagens Docker nem auditoria das
   dependências do Maven.
+- Dentro do contentor do PostgreSQL, as ligações locais (`docker exec`) não
+  pedem palavra-passe (aviso "trust" do `initdb`); as ligações pela rede pedem.
+- As portas do host são fixas (8090 e 5432): só uma instalação pode correr de
+  cada vez.
 - **Configuração:** os valores do `backend/.env.example` são públicos; cada
   instalação tem de definir as suas palavras-passe antes do primeiro arranque.

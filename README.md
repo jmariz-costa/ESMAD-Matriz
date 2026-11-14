@@ -41,6 +41,22 @@ Kanban, responsáveis e comentários); o arquivo, "As minhas tarefas", a
 consulta do histórico e o Administrador ficam para a Fase 2 (ver
 [Estado atual](#estado-atual)).
 
+## Tecnologias
+
+Versões em uso na `0.1.0-rc.1`; as decisões estão em
+[docs/constraints.md](docs/constraints.md) §4 e no
+[ADR 0002](docs/decisions/0002-execucao-em-contentores-e-ci.md).
+
+| Camada | Tecnologias |
+|--------|-------------|
+| Backend | Java 21, Quarkus 3.40 (REST com Jackson, Hibernate ORM 7.4 com Panache, Hibernate Validator, SmallRye Health), Flyway 12, bcrypt |
+| Base de dados | PostgreSQL 17 |
+| Frontend | React 19, TypeScript 7.0, Vite 8, React Router 8 |
+| Testes | JUnit 6 e RestAssured 6 (Backend, com Quarkus Dev Services); Vitest 5 e Testing Library (Frontend); Playwright 1.55 com Firefox (E2E) |
+| Qualidade | oxlint, `npm audit`, `tsc` |
+| Execução | Docker e Docker Compose; nginx 1.30 a servir o Frontend; JRE 21 (Eclipse Temurin) no Backend |
+| CI | GitHub Actions |
+
 ## Organização da documentação
 
 | Ficheiro                                       | Conteúdo                                                                                      |
@@ -57,6 +73,7 @@ consulta do histórico e o Administrador ficam para a Fase 2 (ver
 | [docs/test-plan.md](docs/test-plan.md)         | Plano de testes (Ficha PL 04): cenários de tarefas e permissões, níveis, testes e resultados  |
 | [docs/quality-security-review.md](docs/quality-security-review.md) | Code Review e Security Review (Ficha PL 04): findings, evidências e decisões |
 | [docs/deployment.md](docs/deployment.md)       | Execução com Docker Compose, imagens, pipeline de CI, limitações e troubleshooting (Ficha PL 05) |
+| [docs/delivery-report.md](docs/delivery-report.md) | Validação final e relatório de entrega da `0.1.0-rc.1` (Ficha PL 05)                      |
 | [docs/decisions/](docs/decisions/)             | Architecture Decision Records (ADRs), com índice no README da pasta                           |
 | [CHANGELOG.md](CHANGELOG.md)                   | Histórico de alterações por versão (Keep a Changelog, Semantic Versioning)                    |
 | [RELEASE_NOTES.md](RELEASE_NOTES.md)           | Notas da versão candidata `0.1.0-rc.1`                                                         |

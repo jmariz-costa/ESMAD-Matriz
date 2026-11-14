@@ -97,6 +97,10 @@ curl -i http://localhost:8090/api/auth/me                                    # A
   volume chama-se `esmad-matriz_matriz-dados`, seja qual for o nome da pasta).
 - **Só localmente:** todas as portas publicadas estão em `127.0.0.1`.
 - **Reinício:** `restart: unless-stopped` nos três serviços.
+- **Nomes dos contentores:** dados pelo Compose a partir do nome do projeto
+  (`esmad-matriz-postgres-1`, `esmad-matriz-backend-1`…). Outra instalação
+  pode coexistir com `docker compose -p <outro-nome> …`, com volume próprio;
+  como as portas do host são fixas, só uma de cada vez pode estar a correr.
 
 **Hardening** do `backend` e do `frontend` (o `postgres` precisa de
 privilégios para arrancar e não o tem):
@@ -172,6 +176,15 @@ correu. A falha foi revertida (`01f9cfd`) e a pipeline voltou a verde.
   auditoria das dependências do Maven; só `npm audit`.
 - O E2E da pipeline tem um teste (criar tarefa); o resto do comportamento é
   coberto pelos testes do Backend e do Frontend.
+- **Autenticação "trust" dentro do contentor do PostgreSQL** (aviso do
+  `initdb` no primeiro arranque): as ligações feitas de dentro do contentor
+  (socket local ou `127.0.0.1` do próprio contentor, com `docker exec`) não
+  pedem palavra-passe; as ligações pela rede Docker e pela porta publicada no
+  host pedem (verificado com uma palavra-passe errada, recusada). Quem
+  consegue usar `docker exec` já controla o Docker do host, por isso ficou
+  registado como limitação (Ficha PL 05, V1).
+- **Portas do host fixas** (8090 e 5432): duas instalações não podem correr
+  ao mesmo tempo nesta máquina.
 
 ## 9. Troubleshooting
 
@@ -186,5 +199,7 @@ Problemas encontrados na Ficha PL 05 e problemas frequentes:
 | O Backend não liga à BD | Credenciais diferentes das do volume: o `POSTGRES_PASSWORD` só é aplicado quando o volume é criado | Para mudar a palavra-passe num volume que já existe: `ALTER USER` dentro da BD, ou recriar o volume (`down -v`, apaga os dados) |
 | Alterações ao código não aparecem | Imagem antiga | `docker compose up -d --build` |
 | Os dados desapareceram | Volume removido (`down -v`) ou nome de projeto diferente | `docker volume ls`: deve existir `esmad-matriz_matriz-dados` |
+| `initdb: warning: enabling "trust" authentication for local connections` nos logs do PostgreSQL | Comportamento normal da imagem oficial no primeiro arranque | Ver §8 (limitação V1) |
 | Página em branco ou 404 numa rota como `/projetos/<id>` | nginx sem o fallback para o `index.html` | Confirmar `try_files … /index.html` em `frontend/nginx.conf` |
+| "Conflict. The container name … is already in use" ao arrancar uma segunda instalação | Até à `0.1.0-rc.1`, o PostgreSQL tinha o nome fixo `matriz-postgres` | Corrigido: o nome é dado pelo Compose. Usar `docker compose -p <outro-nome>` para a segunda instalação |
 | "can not modify /etc/nginx/conf.d/default.conf (read-only file system?)" nos logs do nginx | O script da imagem tenta acrescentar escuta IPv6 e o sistema de ficheiros é só de leitura | Inofensivo: a configuração é a da Matriz |
