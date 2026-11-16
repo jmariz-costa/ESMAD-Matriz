@@ -1,0 +1,66 @@
+# Blueprint do Render: os dois serviços da Matriz em produção (ADR 0006).
+#
+#   browser ──HTTPS──> matriz-frontend (nginx) ──/api, HTTPS──> matriz-backend (Quarkus) ──SSL──> Neon (PostgreSQL)
+#
+# Os serviços usam as imagens publicadas no Docker Hub pela pipeline (ci.yml). O deploy de uma
+# release é feito pelo workflow "Deploy prod" (deploy-prod.yml), que indica a imagem exata; a
+# etiqueta "latest" abaixo só é usada na criação dos serviços.
+#
+# Os valores com "sync: false" não ficam neste ficheiro: o Render pede-os no painel ao criar o
+# Blueprint (palavras-passe, ligação ao Neon e endereço do Backend).
+services:
+  - type: web
+    name: matriz-backend
+    runtime: image
+    image:
+      url: docker.io/jmariz/matriz-backend:latest
+    plan: free
+    region: frankfurt
+    healthCheckPath: /q/health/ready
+    envVars:
+      # Porta em que o Quarkus escuta (application.properties)
+      - key: PORT
+        value: "8081"
+      # Neon: endereço direto (sem "-pooler"), base de dados, utilizador e palavra-passe
+      - key: MATRIZ_DB_HOST
+        sync: false
+      - key: POSTGRES_DB
+        sync: false
+      - key: POSTGRES_USER
+        sync: false
+      - key: POSTGRES_PASSWORD
+        sync: false
+      # SSL obrigatório, com o certificado e o nome do servidor confirmados
+      - key: MATRIZ_DB_SSLMODE
+        value: verify-full
+      # O Render serve por HTTPS: o cookie de sessão leva Secure (S02)
+      - key: MATRIZ_COOKIE_SEGURO
+        value: "true"
+      - key: MATRIZ_ADMIN_NOME
+        value: Administrador
+      - key: MATRIZ_ADMIN_EMAIL
+        sync: false
+      - key: MATRIZ_ADMIN_PASSWORD
+        sync: false
+      # Dados de demonstração ligados para a apresentação (decisão 3a); palavra-passe nova e forte
+      - key: MATRIZ_SEED_DEMO
+        value: "true"
+      - key: MATRIZ_DEMO_PASSWORD
+        sync: false
+
+  - type: web
+    name: matriz-frontend
+    runtime: image
+    image:
+      url: docker.io/jmariz/matriz-frontend:latest
+    plan: free
+    region: frankfurt
+    healthCheckPath: /
+    envVars:
+      # Porta do nginx (frontend/Dockerfile)
+      - key: PORT
+        value: "8080"
+      # Endereço público do Backend no Render, sem barra no fim (por exemplo,
+      # https://matriz-backend.onrender.com); só se conhece depois de o Backend ser criado
+      - key: MATRIZ_API_URL
+        sync: false

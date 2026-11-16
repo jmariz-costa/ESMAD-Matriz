@@ -1,0 +1,35 @@
+# nginx do Frontend da Matriz (Ficha PL 05, decisão 1a).
+# Faz o mesmo que o proxy do Vite em desenvolvimento: o browser só fala com esta origem,
+# por isso o cookie de sessão funciona sem CORS (vite.config.ts).
+#
+# É um modelo: no arranque, a imagem do nginx substitui ${MATRIZ_API_URL} pelo valor da variável
+# de ambiente e grava o resultado em /tmp/default.conf (frontend/Dockerfile).
+# MATRIZ_API_URL é o endereço do Backend, sem barra no fim:
+#   - Docker Compose: http://backend:8081 (por omissão, definido no Dockerfile);
+#   - Render: o endereço público do Backend, por exemplo https://matriz-backend.onrender.com.
+server {
+    listen 8080;
+    server_name _;
+    server_tokens off;
+    root /usr/share/nginx/html;
+
+    location /api/ {
+        proxy_pass ${MATRIZ_API_URL};
+        # Host do destino (backend:8081 ou o nome do serviço no Render, que encaminha os pedidos
+        # por este cabeçalho); o endereço que o browser usou segue em X-Forwarded-Host
+        proxy_set_header Host $proxy_host;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        # Destino em HTTPS (Render): envia o nome do servidor no TLS (SNI)
+        proxy_ssl_server_name on;
+        # No plano gratuito do Render, um Backend adormecido demora cerca de 1 minuto a acordar
+        proxy_connect_timeout 75s;
+        proxy_read_timeout 120s;
+    }
+
+    # Rotas do React Router (por exemplo /projetos/<id>): devolvem o index.html
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}

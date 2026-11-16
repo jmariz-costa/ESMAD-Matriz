@@ -1,0 +1,116 @@
+# Põe uma release em produção, no Render (render.yaml).
+#
+#   Run workflow "Deploy prod" com a release (por exemplo, v0.2.0)
+#     ├─> confirma que a release existe no GitHub e que as imagens :v0.2.0 existem no Docker Hub
+#     ├─> pede ao Render o deploy das imagens :v0.2.0 (deploy hooks do Backend e do Frontend)
+#     └─> confirma que a produção responde
+#
+# As imagens com a versão são criadas pelo workflow "Release" (release.yml) quando a release é
+# publicada. Só corre à mão (botão "Run workflow" no separador Actions).
+#
+# Secrets: DOCKERHUB_USERNAME, RENDER_DEPLOY_HOOK_BACKEND e RENDER_DEPLOY_HOOK_FRONTEND (os deploy
+# hooks são URLs com uma chave: quem os tiver consegue fazer deploy).
+# Variável (não secreta): MATRIZ_PROD_URL, o endereço público do Frontend no Render.
+name: Deploy prod
+
+on:
+  workflow_dispatch:
+    inputs:
+      release:
+        description: "Release a pôr em produção (por exemplo, v0.2.0)"
+        required: true
+        type: string
+
+# Só ler o código e as releases
+permissions:
+  contents: read
+
+# Um deploy de cada vez; um novo espera que o anterior termine
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy da release no Render
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      RELEASE: ${{ inputs.release }}
+      URL_PRODUCAO: ${{ vars.MATRIZ_PROD_URL }}
+    steps:
+      - name: Confirmar a release no GitHub
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ! [[ "$RELEASE" =~ ^v[0-9][0-9A-Za-z.-]*$ ]]; then
+            echo "::error::Nome de release inválido: '$RELEASE' (esperado, por exemplo, v0.2.0)"; exit 1
+          fi
+          if ! rascunho="$(gh release view "$RELEASE" --repo "$GITHUB_REPOSITORY" --json isDraft --jq .isDraft)"; then
+            echo "::error::A release $RELEASE não existe no GitHub (separador Releases)."; exit 1
+          fi
+          if [ "$rascunho" = "true" ]; then
+            echo "::error::A release $RELEASE ainda é um rascunho: publique-a primeiro."; exit 1
+          fi
+          echo "Release $RELEASE encontrada"
+
+      - name: Confirmar as imagens no Docker Hub
+        run: |
+          if [ -z "$DOCKERHUB_USERNAME" ]; then
+            echo "::error::Falta o secret DOCKERHUB_USERNAME"; exit 1
+          fi
+          for servico in backend frontend; do
+            if ! docker buildx imagetools inspect "${DOCKERHUB_USERNAME}/matriz-${servico}:${RELEASE}" > /dev/null 2>&1; then
+              echo "::error::Não existe a imagem matriz-${servico}:${RELEASE} no Docker Hub. Confirme que o workflow \"Release\" desta release terminou com sucesso."
+              exit 1
+            fi
+          done
+          echo "Imagens matriz-backend:${RELEASE} e matriz-frontend:${RELEASE} encontradas"
+
+      # O imgURL indica ao Render a imagem exata a usar (em vez da que está configurada no serviço)
+      - name: Pedir o deploy ao Render
+        env:
+          HOOK_BACKEND: ${{ secrets.RENDER_DEPLOY_HOOK_BACKEND }}
+          HOOK_FRONTEND: ${{ secrets.RENDER_DEPLOY_HOOK_FRONTEND }}
+        run: |
+          if [ -z "$HOOK_BACKEND" ] || [ -z "$HOOK_FRONTEND" ]; then
+            echo "::error::Faltam os secrets RENDER_DEPLOY_HOOK_BACKEND e RENDER_DEPLOY_HOOK_FRONTEND"; exit 1
+          fi
+          pedir_deploy() {
+            local servico="$1" hook="$2"
+            local imagem="docker.io/${DOCKERHUB_USERNAME}/matriz-${servico}:${RELEASE}"
+            local codificada
+            codificada="$(jq -rn --arg valor "$imagem" '$valor | @uri')"
+            curl -fsS -X POST -o /dev/null "${hook}&imgURL=${codificada}"
+            echo "Deploy pedido: matriz-${servico}:${RELEASE}"
+          }
+          pedir_deploy backend "$HOOK_BACKEND"
+          pedir_deploy frontend "$HOOK_FRONTEND"
+
+      # Até 15 minutos (30 × 30 s): o deploy e, no plano gratuito, o arranque de um serviço adormecido
+      - name: Confirmar que a produção responde
+        run: |
+          if [ -z "$URL_PRODUCAO" ]; then
+            echo "::warning::Falta a variável MATRIZ_PROD_URL: a produção não foi verificada."; exit 0
+          fi
+          for tentativa in $(seq 1 30); do
+            pagina="$(curl -s -o /dev/null -w '%{http_code}' --max-time 60 "${URL_PRODUCAO}/" || true)"
+            api="$(curl -s -o /dev/null -w '%{http_code}' --max-time 60 "${URL_PRODUCAO}/api/auth/me" || true)"
+            # Página do Frontend e API através do nginx (sem sessão: 401)
+            if [ "$pagina" = "200" ] && [ "$api" = "401" ]; then
+              echo "Produção a responder: página ${pagina}, /api/auth/me ${api}"
+              {
+                echo "### Deploy da release ${RELEASE}"
+                echo ""
+                echo "- Imagens: \`matriz-backend:${RELEASE}\` e \`matriz-frontend:${RELEASE}\`"
+                echo "- Produção: ${URL_PRODUCAO}"
+                echo "- O estado de cada deploy está nos Events de cada serviço no Render."
+              } >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            echo "Ainda não (página ${pagina}, /api/auth/me ${api}; tentativa ${tentativa} de 30); nova tentativa em 30 s"
+            sleep 30
+          done
+          echo "::error::A produção não respondeu como esperado. Ver os logs e os Events dos serviços no Render."
+          exit 1

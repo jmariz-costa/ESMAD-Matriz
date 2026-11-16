@@ -1,0 +1,87 @@
+# Etiqueta as imagens de uma release do GitHub com a versão.
+#
+#   release v0.2.0 publicada no GitHub, no commit abc1234 do main
+#     └─> <utilizador>/matriz-backend:abc1234  ─┐  passam a ter também a etiqueta v0.2.0
+#         <utilizador>/matriz-frontend:abc1234 ─┘  (as mesmas imagens: não há build novo)
+#
+# As imagens do commit são publicadas pela pipeline (ci.yml) em cada push para o main que passa
+# em todas as etapas. Se a pipeline desse commit ainda estiver a correr, este workflow espera.
+# Depois, a release pode ser posta em produção com o workflow "Deploy prod" (deploy-prod.yml).
+name: Release
+
+on:
+  release:
+    types: [published]
+  # Para repetir à mão, por exemplo se a pipeline do commit demorou mais do que a espera
+  workflow_dispatch:
+    inputs:
+      release:
+        description: "Release a etiquetar (por exemplo, v0.2.0)"
+        required: true
+        type: string
+
+# Só ler o código e as releases
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.event.release.tag_name || inputs.release }}
+  cancel-in-progress: false
+
+jobs:
+  etiquetar:
+    name: Etiquetar as imagens com a versão
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      RELEASE: ${{ github.event.release.tag_name || inputs.release }}
+    steps:
+      - name: Validar a release e obter o commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ! [[ "$RELEASE" =~ ^v[0-9][0-9A-Za-z.-]*$ ]]; then
+            echo "::error::Nome de release inválido: '$RELEASE' (esperado, por exemplo, v0.2.0)"; exit 1
+          fi
+          commit="$(gh api "repos/${GITHUB_REPOSITORY}/commits/${RELEASE}" --jq .sha)"
+          echo "COMMIT=${commit::7}" >> "$GITHUB_ENV"
+          echo "Release ${RELEASE}: commit ${commit::7}"
+
+      - name: Autenticar no Docker Hub
+        env:
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          if [ -z "$DOCKERHUB_USERNAME" ] || [ -z "$DOCKERHUB_TOKEN" ]; then
+            echo "::error::Faltam os secrets DOCKERHUB_USERNAME e DOCKERHUB_TOKEN"; exit 1
+          fi
+          echo "$DOCKERHUB_TOKEN" | docker login --username "$DOCKERHUB_USERNAME" --password-stdin
+
+      # Até 20 minutos (40 × 30 s), o tempo de uma execução da pipeline
+      - name: Esperar pelas imagens do commit
+        run: |
+          for tentativa in $(seq 1 40); do
+            if docker buildx imagetools inspect "${DOCKERHUB_USERNAME}/matriz-backend:${COMMIT}" > /dev/null 2>&1 \
+              && docker buildx imagetools inspect "${DOCKERHUB_USERNAME}/matriz-frontend:${COMMIT}" > /dev/null 2>&1; then
+              echo "Imagens do commit ${COMMIT} encontradas"
+              exit 0
+            fi
+            echo "Ainda não há imagens do commit ${COMMIT} (tentativa ${tentativa} de 40); nova tentativa em 30 s"
+            sleep 30
+          done
+          echo "::error::Não há imagens do commit ${COMMIT} no Docker Hub. A release tem de apontar para um commit do main em que a pipeline passou."
+          exit 1
+
+      # Copia a referência no registry: as imagens não são descarregadas nem construídas de novo
+      - name: Etiquetar com a versão
+        run: |
+          echo "### Imagens da release ${RELEASE}" >> "$GITHUB_STEP_SUMMARY"
+          for servico in backend frontend; do
+            imagem="${DOCKERHUB_USERNAME}/matriz-${servico}"
+            docker buildx imagetools create --tag "${imagem}:${RELEASE}" "${imagem}:${COMMIT}"
+            echo "- \`${imagem}:${RELEASE}\` (as mesmas de \`${imagem}:${COMMIT}\`)" >> "$GITHUB_STEP_SUMMARY"
+          done
+
+      - name: Terminar sessão no Docker Hub
+        if: always()
+        run: docker logout
