@@ -1,13 +1,14 @@
-# Execução com Docker e integração contínua — Matriz
+# Execução com Docker, integração contínua e produção — Matriz
 
 Como construir, executar e validar a Matriz em contentores, e o que a pipeline
 de integração contínua verifica. Preparado na Ficha PL 05. As decisões estão
 no [ADR 0002](decisions/0002-execucao-em-contentores-e-ci.md) e o diagrama de
 execução em [architecture.md](architecture.md) §5.
 
-Esta é uma configuração para **execução local e validação**, não para
-produção: não há HTTPS, nem alojamento, nem publicação de imagens (ver
-[§8](#8-limitações)).
+O Docker Compose (§1 a §6) serve para **execução local e validação**, só com
+HTTP. A produção corre no Render e no Neon, com HTTPS, a partir das imagens
+publicadas pela pipeline (§8, [ADR 0006](decisions/0006-alojamento-render-e-neon.md)).
+Limitações em [§9](#9-limitações).
 
 ## 1. Dois modos de execução
 
@@ -91,8 +92,9 @@ curl -i http://localhost:8090/api/auth/me                                    # A
   Backend. O Frontend não consegue resolver nem contactar o `postgres`.
 - **Mesma origem:** o browser só fala com o nginx (`:8090`). O nginx serve o
   build do React e reencaminha `/api/` para `backend:8081`
-  (`frontend/nginx.conf`), tal como o proxy do Vite em desenvolvimento. Por
-  isso, o cookie de sessão funciona sem CORS.
+  (`frontend/nginx.conf.template`, variável `MATRIZ_API_URL`), tal como o
+  proxy do Vite em desenvolvimento. Por isso, o cookie de sessão funciona sem
+  CORS.
 - **Volume:** `matriz-dados`, com o nome de projeto fixo `esmad-matriz` (o
   volume chama-se `esmad-matriz_matriz-dados`, seja qual for o nome da pasta).
 - **Só localmente:** todas as portas publicadas estão em `127.0.0.1`.
@@ -134,6 +136,8 @@ cada `push` e `pull_request` para `main`, e manualmente (`workflow_dispatch`).
 Os resultados estão no separador **Actions** do repositório. As decisões
 estão na [ADR 0002](decisions/0002-execucao-em-contentores-e-ci.md) e na
 [ADR 0005](decisions/0005-pipeline-em-etapas-e-publicacao-no-docker-hub.md).
+Os workflows de release e de deploy em produção (`release.yml` e
+`deploy-prod.yml`) estão no §8.
 
 A pipeline tem 5 etapas. Cada etapa só começa quando as anteriores passam
 (quality gates):
@@ -212,12 +216,86 @@ correu. A falha foi revertida (`01f9cfd`) e a pipeline voltou a verde.
 testes. Corrigido em `06e1351` (cópia do `.env.example`, ver acima); a
 pipeline ficou verde e as imagens foram publicadas no Docker Hub.
 
-## 8. Limitações
+## 8. Produção: Render e Neon
 
-- **Só HTTP.** O HTTPS exigido em produção (S02) depende do alojamento, que
-  continua pendente (D04). Com HTTPS, definir `MATRIZ_COOKIE_SEGURO=true`.
-- **Sem deployment:** as imagens são publicadas no Docker Hub, mas ainda não
-  correm em nenhum alojamento (D04).
+Decisões na [ADR 0006](decisions/0006-alojamento-render-e-neon.md).
+
+```
+browser ──HTTPS──> matriz-frontend (Render, nginx) ──/api, HTTPS──> matriz-backend (Render, Quarkus) ──SSL──> Neon (PostgreSQL 17)
+```
+
+| Componente | Onde | Endereço |
+|------------|------|----------|
+| Frontend | Render, serviço web `matriz-frontend` (imagem `jmariz/matriz-frontend`), Frankfurt, plano gratuito | https://matriz-frontend-tbdh.onrender.com |
+| Backend | Render, serviço web `matriz-backend` (imagem `jmariz/matriz-backend`), Frankfurt, plano gratuito | https://matriz-backend-eeka.onrender.com (só usado pelo Frontend) |
+| Base de dados | Neon, PostgreSQL 17, AWS Europe Central 1 (Frankfurt), plano gratuito | Endereço direto (sem `-pooler`), só no Render |
+
+**Configuração.** Os serviços estão definidos no Blueprint
+[`render.yaml`](../render.yaml) (Blueprint `matriz` no Render, com a
+sincronização automática desligada). Os valores fixos estão no ficheiro; os
+secretos (`sync: false`) foram preenchidos no painel do Render e só lá
+existem:
+
+| Variável | Serviço | Valor |
+|----------|---------|-------|
+| `MATRIZ_DB_HOST`, `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` | Backend | Ligação ao Neon (painel) |
+| `MATRIZ_DB_SSLMODE` | Backend | `verify-full` |
+| `MATRIZ_COOKIE_SEGURO` | Backend | `true` |
+| `MATRIZ_ADMIN_EMAIL`, `MATRIZ_ADMIN_PASSWORD` | Backend | Administrador (painel) |
+| `MATRIZ_SEED_DEMO`, `MATRIZ_DEMO_PASSWORD` | Backend | `true`; palavra-passe de produção das contas de demonstração (painel) |
+| `MATRIZ_API_URL` | Frontend | `https://matriz-backend-eeka.onrender.com`, sem barra no fim (painel) |
+| `PORT` | Ambos | `8081` (Backend) e `8080` (Frontend): porta dentro do contentor |
+
+As palavras-passe de produção são diferentes das do `.env.example` e das
+locais. As contas de demonstração só são criadas no primeiro arranque: mudar
+depois o `MATRIZ_DEMO_PASSWORD` não muda as contas que já existem.
+
+**Release e deploy.** Publicar e pôr em produção são ações separadas:
+
+```
+push para o main ──> pipeline (ci.yml) ──> imagens :<sha> e :latest no Docker Hub
+release vX publicada no GitHub ──> workflow "Release" (release.yml) ──> etiqueta :vX nas imagens desse commit
+Run workflow "Deploy prod" (deploy-prod.yml), release vX ──> Render passa a correr :vX
+```
+
+1. **Criar a release** no GitHub (Releases → Draft a new release), com uma
+   tag `v…` num commit do `main` em que a pipeline passou.
+2. O workflow **Release** corre sozinho: espera pelas imagens desse commit
+   (até 20 minutos) e acrescenta-lhes a etiqueta da versão com
+   `docker buildx imagetools create`, sem as descarregar nem construir.
+3. No separador Actions, **Deploy prod** → Run workflow → escrever a release
+   (por exemplo `v0.2.0-rc.1`). O workflow confirma que a release existe e
+   não é rascunho, confirma as imagens `:vX`, chama os deploy hooks do Render
+   com a imagem exata (`imgURL`) e espera até a produção responder (página
+   200 e `/api/auth/me` 401, até 15 minutos).
+
+Secrets e variáveis do GitHub usados por estes workflows:
+
+| Nome | Tipo | Uso |
+|------|------|-----|
+| `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN` | Secrets | Etiquetar as imagens (Release) |
+| `RENDER_DEPLOY_HOOK_BACKEND`, `RENDER_DEPLOY_HOOK_FRONTEND` | Secrets | Deploy no Render (Deploy prod). São URLs com uma chave: quem os tiver consegue fazer deploy |
+| `MATRIZ_PROD_URL` | Variável | Endereço do Frontend, para a verificação final (Deploy prod) |
+
+**Validação (2026-11-16):** os dois serviços foram criados pelo Blueprint e
+ficaram *live* com as imagens do `230179e`; o Backend criou o esquema no
+Neon, o Administrador e os dados de demonstração; entrar como a Ana no
+endereço do Frontend funcionou.
+
+**Antes de uma apresentação:** abrir o endereço do Frontend alguns minutos
+antes, para acordar os dois serviços (plano gratuito).
+
+## 9. Limitações
+
+- **Docker Compose só com HTTP.** Localmente não há HTTPS; em produção, o
+  Render serve por HTTPS e o cookie leva `Secure` (§8).
+- **Plano gratuito em produção:** os serviços do Render adormecem ao fim de
+  15 minutos sem pedidos e demoram cerca de 1 minuto a acordar; não há
+  cópias de segurança da base de dados configuradas por nós.
+- **O nginx resolve o endereço do Backend no arranque:** se o Render mudar os
+  endereços IP do Backend, o Frontend só os vê quando voltar a arrancar.
+- **O "Deploy prod" não confirma a versão** que ficou a correr, só que a
+  produção responde; a versão vê-se nos Events de cada serviço no Render.
 - **Imagem `postgres:17`** sem versão exata, como desde o I0; as imagens da
   Matriz usam versões exatas.
 - **Sem análise de vulnerabilidades das imagens** (por exemplo, Trivy) e sem
@@ -234,7 +312,7 @@ pipeline ficou verde e as imagens foram publicadas no Docker Hub.
 - **Portas do host fixas** (8090 e 5432): duas instalações não podem correr
   ao mesmo tempo nesta máquina.
 
-## 9. Troubleshooting
+## 10. Troubleshooting
 
 Problemas encontrados na Ficha PL 05 e problemas frequentes:
 
@@ -246,9 +324,12 @@ Problemas encontrados na Ficha PL 05 e problemas frequentes:
 | Cobertura abaixo do mínimo na CI, mas acima localmente | O Quarkus também lê o `backend/.env` nos testes: localmente, o Admin e os dados de demonstração correm; numa máquina sem `.env`, não | Corrigido em `06e1351` (a CI copia o `.env.example`). Para medir como a CI, correr os testes numa cópia limpa (`git clone`) com o `.env.example` copiado para `.env` |
 | Um serviço fica `unhealthy` ou não arranca | Erro no arranque ou BD indisponível | `docker compose ps`; `docker compose logs backend` (ou `postgres`, `frontend`) |
 | O Backend não liga à BD | Credenciais diferentes das do volume: o `POSTGRES_PASSWORD` só é aplicado quando o volume é criado | Para mudar a palavra-passe num volume que já existe: `ALTER USER` dentro da BD, ou recriar o volume (`down -v`, apaga os dados) |
+| Produção: a página abre, mas entrar dá erro (502/504) | `MATRIZ_API_URL` do Frontend errado (o Render acrescenta um sufixo ao nome do serviço) ou Backend a acordar | Confirmar no Render o endereço do Backend e o `MATRIZ_API_URL` (sem barra no fim); no plano gratuito, esperar cerca de 1 minuto e tentar de novo |
+| Produção: o Backend não arranca, com `PKIX` ou `certificate` nos logs | O certificado do Neon não foi aceite com `verify-full` | Confirmar o host (sem `-pooler`); em último caso, `MATRIZ_DB_SSLMODE=require` (SSL sem confirmar o servidor) |
+| Deploy prod: "Não existe a imagem matriz-…:vX" | O workflow Release dessa release falhou ou ainda está a correr | Ver o workflow Release no separador Actions; repeti-lo com Run workflow e o nome da release |
 | Alterações ao código não aparecem | Imagem antiga | `docker compose up -d --build` |
 | Os dados desapareceram | Volume removido (`down -v`) ou nome de projeto diferente | `docker volume ls`: deve existir `esmad-matriz_matriz-dados` |
-| `initdb: warning: enabling "trust" authentication for local connections` nos logs do PostgreSQL | Comportamento normal da imagem oficial no primeiro arranque | Ver §8 (limitação V1) |
-| Página em branco ou 404 numa rota como `/projetos/<id>` | nginx sem o fallback para o `index.html` | Confirmar `try_files … /index.html` em `frontend/nginx.conf` |
+| `initdb: warning: enabling "trust" authentication for local connections` nos logs do PostgreSQL | Comportamento normal da imagem oficial no primeiro arranque | Ver §9 (limitação V1) |
+| Página em branco ou 404 numa rota como `/projetos/<id>` | nginx sem o fallback para o `index.html` | Confirmar `try_files … /index.html` em `frontend/nginx.conf.template` |
 | "Conflict. The container name … is already in use" ao arrancar uma segunda instalação | Até à `0.1.0-rc.1`, o PostgreSQL tinha o nome fixo `matriz-postgres` | Corrigido: o nome é dado pelo Compose. Usar `docker compose -p <outro-nome>` para a segunda instalação |
 | "can not modify /etc/nginx/conf.d/default.conf (read-only file system?)" nos logs do nginx | O script da imagem tenta acrescentar escuta IPv6 e o sistema de ficheiros é só de leitura | Inofensivo: a configuração é a da Matriz |

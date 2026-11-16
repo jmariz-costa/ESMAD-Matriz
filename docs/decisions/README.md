@@ -12,3 +12,4 @@ anteriores a estes ADRs (D01 a D11) estão em
 | [0003](0003-base-de-dados-relacional-postgresql.md) | Base de dados relacional: PostgreSQL (registo retroativo de D02) | Aceite |
 | [0004](0004-autenticacao-sessao-na-base-de-dados.md) | Autenticação: sessão na base de dados com cookie, em vez de JWT ou SSO (registo retroativo de D06) | Aceite |
 | [0005](0005-pipeline-em-etapas-e-publicacao-no-docker-hub.md) | Pipeline em 5 etapas, cobertura mínima de 95% (JaCoCo) e publicação das imagens no Docker Hub | Aceite |
+| [0006](0006-alojamento-render-e-neon.md) | Alojamento: Render (Frontend e Backend) e Neon (PostgreSQL), com deploy por release (resolve D04) | Aceite |

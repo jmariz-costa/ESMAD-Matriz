@@ -47,6 +47,10 @@ cd frontend && npx tsc -b && npm run lint && npm run build
   passar, publica as imagens no Docker Hub; não desligar testes nem
   verificações, nem baixar a cobertura mínima do JaCoCo, para a pôr verde (ver
   [docs/deployment.md](docs/deployment.md) §7).
+- A produção (Render e Neon) só muda com o workflow "Deploy prod", corrido
+  pelo utilizador com uma release; nunca correr workflows, criar releases nem
+  mexer no Render ou no Neon sem aprovação (ver
+  [docs/deployment.md](docs/deployment.md) §8).
 
 ## 1. Consultar a documentação antes de agir
 

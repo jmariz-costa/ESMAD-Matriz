@@ -72,14 +72,14 @@ mas são pressupostos e não requisitos pedidos pelo cliente: podem ser revistos
 ## 4. Decisões técnicas
 
 As decisões D01 a D03 e D06 a D09 e D11 foram tomadas nas Fichas PL 02 e
-PL 03. As restantes continuam pendentes.
+PL 03, e a D04 depois da Ficha PL 05. As restantes continuam pendentes.
 
 | ID   | Decisão                                                                                                   |
 |------|-----------------------------------------------------------------------------------------------------------|
 | D01  | Linguagem e framework (frontend e backend). **Decidida** (Ficha PL 03): backend em Java com Quarkus; frontend em React (Vite). |
 | D02  | Base de dados. **Decidida** (Ficha PL 03): PostgreSQL, executado em Docker; esquema criado por migrations (Flyway). Alternativas e justificação no [ADR 0003](decisions/0003-base-de-dados-relacional-postgresql.md). |
 | D03  | Arquitetura da aplicação. **Decidida** (Ficha PL 02): monólito modular, ver [architecture.md](architecture.md). |
-| D04  | Alojamento (onde a Matriz vai correr).                                                                    |
+| D04  | Alojamento (onde a Matriz vai correr). **Decidida** (2026-11-16): Frontend e Backend no Render (imagens do Docker Hub, região Frankfurt) e PostgreSQL no Neon (Frankfurt), com HTTPS; deploy por release com o workflow "Deploy prod". Alternativas e justificação no [ADR 0006](decisions/0006-alojamento-render-e-neon.md). |
 | D05  | Serviço de envio de emails (confirmação de conta).                                                        |
 | D06  | Mecanismo de autenticação e de sessão, incluindo o tempo até uma sessão inativa expirar. **Decidida** (Ficha PL 03): sessão guardada na base de dados; o browser recebe um token aleatório num cookie HttpOnly e o servidor guarda apenas o hash do token. A sessão expira ao fim de 30 minutos sem atividade (cada pedido renova o prazo). Sair apaga a sessão; desativar uma conta apaga todas as sessões dessa pessoa (PR16). Alternativas (JWT, SSO) e justificação no [ADR 0004](decisions/0004-autenticacao-sessao-na-base-de-dados.md). |
 | D07  | Como são configuradas as contas de Administrador na instalação. **Decidida** (Ficha PL 03): no arranque, se a conta de Administrador ainda não existir, é criada com o email e a palavra-passe indicados em variáveis de ambiente. Uma conta já existente nunca é alterada. |

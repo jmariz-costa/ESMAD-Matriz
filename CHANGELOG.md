@@ -8,8 +8,23 @@ Enquanto a versão for `0.x`, a API não é considerada estável.
 
 ## [Unreleased]
 
+## [0.2.0-rc.1] - 2026-11-16
+
+Segunda versão **candidata**: a Matriz passa a estar em produção (Render e
+Neon), com pipeline em 5 etapas, cobertura mínima e deploy por release. As
+funcionalidades são as da `0.1.0-rc.1` (Fase 1 do MVP).
+
 ### Added
 
+- **Produção no Render e no Neon** (D04, ADR 0006): Frontend e Backend no
+  Render, a partir das imagens do Docker Hub, e PostgreSQL no Neon, com HTTPS
+  e SSL `verify-full` na ligação à base de dados. Configuração no Blueprint
+  `render.yaml`, sem segredos.
+- **Workflow "Release"** (`release.yml`): ao publicar uma release no GitHub,
+  acrescenta a etiqueta da versão às imagens desse commit, sem build novo.
+- **Workflow "Deploy prod"** (`deploy-prod.yml`): põe em produção a release
+  escolhida, depois de confirmar a release e as imagens, e verifica que a
+  produção responde.
 - **Testes unitários do Backend:** 66 testes novos (`PedidoTarefaTest`,
   `EditarProjetoPedidoTest`, `PedidoPaginaTest`, `IdentificadoresTest`,
   `FiltrosEContagensTest`, `AdministradorInicialTest`,
@@ -24,6 +39,10 @@ Enquanto a versão for `0.x`, a API não é considerada estável.
 
 ### Changed
 
+- **Destino do `/api` configurável no nginx** (`MATRIZ_API_URL`,
+  `frontend/nginx.conf.template`); por omissão continua `http://backend:8081`.
+- **URL da base de dados com modo SSL configurável** (`MATRIZ_DB_SSLMODE`;
+  por omissão `prefer`, como até aqui).
 - **Pipeline em 5 etapas:** build; testes unitários, de integração e do
   Frontend em jobs separados; cobertura; imagens com smoke tests e E2E;
   publicação. Os testes de integração do Backend passam a ter
@@ -115,5 +134,6 @@ Primeira versão identificada: versão **candidata** com a Fase 1 do MVP
 - Valores de exemplo novos para as três palavras-passe do `.env.example`;
   os anteriores tinham sido usados numa instalação local (S1).
 
-[Unreleased]: https://github.com/jmariz-costa/ESMAD-Matriz/compare/v0.1.0-rc.1...HEAD
+[Unreleased]: https://github.com/jmariz-costa/ESMAD-Matriz/compare/v0.2.0-rc.1...HEAD
+[0.2.0-rc.1]: https://github.com/jmariz-costa/ESMAD-Matriz/compare/v0.1.0-rc.1...v0.2.0-rc.1
 [0.1.0-rc.1]: https://github.com/jmariz-costa/ESMAD-Matriz/tree/v0.1.0-rc.1

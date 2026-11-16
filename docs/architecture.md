@@ -191,8 +191,11 @@ pelo cliente.
   funcione sem CORS. O endereço do backend fica num único sítio de
   configuração.
 - No Docker Compose, o nginx faz o mesmo papel do proxy do Vite
-  (`frontend/nginx.conf`), e o endereço da base de dados vem de
+  (`frontend/nginx.conf.template`), e o endereço da base de dados vem de
   `MATRIZ_DB_HOST` (ADR 0002).
+- Em produção (Render e Neon, ADR 0006), o nginx reencaminha `/api` para o
+  endereço público do Backend (`MATRIZ_API_URL`), e o Backend liga-se ao Neon
+  com SSL (`MATRIZ_DB_SSLMODE=verify-full`).
 
 ## 8. Pressupostos e decisões pendentes
 

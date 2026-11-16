@@ -4,6 +4,10 @@ A Matriz é uma aplicação web interna de gestão de projetos e tarefas, no
 estilo de ferramentas como Jira, Azure DevOps ou Trello, pensada para as
 equipas de uma única empresa.
 
+**Em produção:** https://matriz-frontend-tbdh.onrender.com (Render e Neon,
+plano gratuito: o primeiro acesso depois de algum tempo sem uso pode demorar
+cerca de 1 minuto). Ver [docs/deployment.md](docs/deployment.md) §8.
+
 ## Problema
 
 As equipas da empresa precisam de um sítio comum para organizar projetos,
@@ -54,9 +58,11 @@ cada incremento em
 
 ## Tecnologias
 
-Versões em uso na `0.1.0-rc.1`; as decisões estão em
-[docs/constraints.md](docs/constraints.md) §4 e no
-[ADR 0002](docs/decisions/0002-execucao-em-contentores-e-ci.md).
+Versões em uso na `0.2.0-rc.1`; as decisões estão em
+[docs/constraints.md](docs/constraints.md) §4 e nos ADR
+[0002](docs/decisions/0002-execucao-em-contentores-e-ci.md),
+[0005](docs/decisions/0005-pipeline-em-etapas-e-publicacao-no-docker-hub.md) e
+[0006](docs/decisions/0006-alojamento-render-e-neon.md).
 
 | Camada | Tecnologias |
 |--------|-------------|
@@ -66,7 +72,8 @@ Versões em uso na `0.1.0-rc.1`; as decisões estão em
 | Testes | JUnit 6 e RestAssured 6 (Backend, com Quarkus Dev Services); Vitest 5 e Testing Library (Frontend); Playwright 1.55 com Firefox (E2E) |
 | Qualidade | oxlint, `npm audit`, `tsc` |
 | Execução | Docker e Docker Compose; nginx 1.30 a servir o Frontend; JRE 21 (Eclipse Temurin) no Backend |
-| CI | GitHub Actions |
+| CI/CD | GitHub Actions (pipeline em 5 etapas, release e deploy em produção); JaCoCo; imagens no Docker Hub |
+| Produção | Render (Frontend e Backend) e Neon (PostgreSQL 17), região Frankfurt |
 
 ## Organização da documentação
 
@@ -83,11 +90,12 @@ Versões em uso na `0.1.0-rc.1`; as decisões estão em
 | [docs/verification.md](docs/verification.md)   | Registo das verificações do MVP: percurso da interface (I6) e casos de verificação (I7)       |
 | [docs/test-plan.md](docs/test-plan.md)         | Plano de testes (Ficha PL 04): cenários de tarefas e permissões, níveis, testes e resultados  |
 | [docs/quality-security-review.md](docs/quality-security-review.md) | Code Review e Security Review (Ficha PL 04): findings, evidências e decisões |
-| [docs/deployment.md](docs/deployment.md)       | Execução com Docker Compose, imagens, pipeline de CI, limitações e troubleshooting (Ficha PL 05) |
+| [docs/deployment.md](docs/deployment.md)       | Execução com Docker Compose, imagens, pipeline de CI, produção (Render e Neon), release e deploy, limitações e troubleshooting |
+| [render.yaml](render.yaml)                     | Blueprint do Render: serviços de produção (sem segredos)                                      |
 | [docs/delivery-report.md](docs/delivery-report.md) | Validação final e relatório de entrega da `0.1.0-rc.1` (Ficha PL 05)                      |
 | [docs/decisions/](docs/decisions/)             | Architecture Decision Records (ADRs), com índice no README da pasta                           |
 | [CHANGELOG.md](CHANGELOG.md)                   | Histórico de alterações por versão (Keep a Changelog, Semantic Versioning)                    |
-| [RELEASE_NOTES.md](RELEASE_NOTES.md)           | Notas da versão candidata `0.1.0-rc.1`                                                         |
+| [RELEASE_NOTES.md](RELEASE_NOTES.md)           | Notas da versão candidata `0.2.0-rc.1`                                                         |
 | [AGENTS.md](AGENTS.md)                         | Instruções para agentes de IA que trabalhem neste repositório                                 |
 
 ## Executar com Docker Compose
@@ -315,8 +323,12 @@ verificações em [docs/verification.md](docs/verification.md).
   decisões já tomadas na Ficha PL 03 (ver [docs/decisions/](docs/decisions/)).
 - Depois da versão candidata: pipeline em 5 etapas (build, testes unitários e
   de integração separados, cobertura JaCoCo com mínimo de 95%, imagens e
-  publicação no Docker Hub) e 66 testes unitários novos no Backend (ver
-  [CHANGELOG.md](CHANGELOG.md), "Unreleased").
+  publicação no Docker Hub) e 66 testes unitários novos no Backend.
+- Versão candidata **`0.2.0-rc.1`**: produção no Render e no Neon, com
+  deploy por release (workflows "Release" e "Deploy prod"; ver
+  [docs/deployment.md](docs/deployment.md) §8,
+  [ADR 0006](docs/decisions/0006-alojamento-render-e-neon.md),
+  [CHANGELOG.md](CHANGELOG.md) e [RELEASE_NOTES.md](RELEASE_NOTES.md)).
 
 Próximo: Fase 2 (arquivo, "As minhas tarefas", histórico consultável,
 edição de comentários e Administrador).
