@@ -21,24 +21,35 @@ cliente foi:
 - Permitir discutir o trabalho e saber quem alterou o quê e quando.
 - Garantir que só pessoas da empresa acedem à informação.
 
-## Funcionalidades previstas para o MVP
+## Funcionalidades
 
-- Entrada e saída da conta. O registo com email da empresa (com confirmação
-  por email) foi adiado: as contas de demonstração são criadas por seed (L07).
-- Criação de projetos; quem cria é o Gestor e gere os membros.
-- Tarefas com descrição, prazo, prioridade e vários responsáveis.
-- Quatro estados de tarefa: A fazer, Em curso, Em revisão, Concluída.
-- Quadro Kanban.
-- Percentagem de conclusão de cada projeto.
+### Implementadas (Fase 1)
+
+- Entrar e sair da conta, com sessão que expira ao fim de 30 minutos sem
+  atividade e bloqueio de 15 minutos depois de 5 tentativas falhadas. As
+  contas de demonstração são criadas por seed (o registo foi adiado, L07).
+- Projetos: criar, editar, eliminar e pesquisar, com paginação. Quem cria o
+  projeto é o Gestor e gere os membros.
+- Painel inicial com as contagens de tarefas por estado e percentagem de
+  conclusão de cada projeto.
+- Tarefas com descrição, prazo e prioridade opcionais e vários responsáveis,
+  escolhidos entre os membros do projeto.
+- Quatro estados de tarefa (A fazer, Em curso, Em revisão, Concluída) e
+  quadro Kanban: mudar de estado arrastando o cartão, com filtros.
+- Comentários nas tarefas.
+- Registo das alterações das tarefas no histórico (a consulta é da Fase 2).
+
+### Previstas (Fase 2)
+
 - Lista "As minhas tarefas", com as tarefas por concluir de todos os projetos.
-- Comentários e histórico de alterações em cada tarefa.
+- Consulta do histórico de cada tarefa e do registo de tarefas eliminadas.
+- Editar e apagar os próprios comentários.
 - Arquivo e reativação de projetos.
 - Desativação e reativação de contas por um Administrador.
 
-O detalhe está em [docs/requirements.md](docs/requirements.md). Na Ficha PL 03
-foi implementada a Fase 1 (autenticação, projetos, membros, tarefas e quadro
-Kanban, responsáveis e comentários); o arquivo, "As minhas tarefas", a
-consulta do histórico e o Administrador ficam para a Fase 2 (ver
+O detalhe está em [docs/requirements.md](docs/requirements.md) e o estado de
+cada incremento em
+[docs/implementation-plan.md](docs/implementation-plan.md) (ver também
 [Estado atual](#estado-atual)).
 
 ## Tecnologias
@@ -284,8 +295,12 @@ verificações em [docs/verification.md](docs/verification.md).
   Docker Compose com a aplicação completa, pipeline de CI no GitHub Actions,
   documentação de execução ([docs/deployment.md](docs/deployment.md),
   [ADR 0002](docs/decisions/0002-execucao-em-contentores-e-ci.md)) e versão
-  candidata **`0.1.0-rc.1`** ([CHANGELOG.md](CHANGELOG.md),
-  [RELEASE_NOTES.md](RELEASE_NOTES.md)).
+  candidata **`0.1.0-rc.1`** (tag `v0.1.0-rc.1`; [CHANGELOG.md](CHANGELOG.md),
+  [RELEASE_NOTES.md](RELEASE_NOTES.md),
+  [relatório de entrega](docs/delivery-report.md)).
+- Depois da versão candidata: ADR 0003 (base de dados relacional PostgreSQL)
+  e ADR 0004 (autenticação com sessão na base de dados), que registam
+  decisões já tomadas na Ficha PL 03 (ver [docs/decisions/](docs/decisions/)).
 
 Próximo: Fase 2 (arquivo, "As minhas tarefas", histórico consultável,
 edição de comentários e Administrador).
