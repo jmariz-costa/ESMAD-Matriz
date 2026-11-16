@@ -5,6 +5,7 @@ import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import pt.esmad.matriz.ContasDeTeste;
 import pt.esmad.matriz.ContasDeTeste.Conta;
@@ -23,6 +24,7 @@ import static pt.esmad.matriz.ContasDeTeste.COOKIE;
 
 /** Editar, mudar o estado e eliminar tarefas (US05 crit. 6 e 8, US06, US09; D08, RI09, RI12). */
 @QuarkusTest
+@Tag("integracao")
 class EditarEliminarTarefaApiTest {
 
     @Inject

@@ -7,6 +7,7 @@ import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
@@ -23,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** POST /auth/login (US02 crit. 1 e 3, PR03, D06, D09). Contas e palavras-passe fictícias. */
 @QuarkusTest
+@Tag("integracao")
 class LoginTest {
 
     private static final String PALAVRA_PASSE = "palavra-passe-ficticia";

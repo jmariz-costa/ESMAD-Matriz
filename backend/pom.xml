@@ -16,6 +16,11 @@
         <quarkus.platform.version>3.40.1.1</quarkus.platform.version>
         <skipITs>true</skipITs>
         <surefire-plugin.version>3.5.6</surefire-plugin.version>
+        <jacoco-plugin.version>0.8.15</jacoco-plugin.version>
+        <!-- Cobertura mínima de linhas e de ramos (0.00 a 1.00): abaixo dela, jacoco:check falha -->
+        <cobertura.minima.linhas>0.95</cobertura.minima.linhas>
+        <cobertura.minima.ramos>0.95</cobertura.minima.ramos>
+        <jacoco.ficheiro>jacoco-unit.exec</jacoco.ficheiro>
     </properties>
 
     <dependencyManagement>
@@ -74,6 +79,12 @@
             <artifactId>rest-assured</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <!-- Cobertura dos @QuarkusTest: instrumenta as classes antes das transformações do Quarkus -->
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-jacoco</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -121,6 +132,86 @@
                         <maven.home>${maven.home}</maven.home>
                     </systemPropertyVariables>
                 </configuration>
+            </plugin>
+            <plugin>
+                <!--
+                  Cobertura (JaCoCo). O agente regista a execução dos testes em target/jacoco-*.exec
+                  (jacoco-unit.exec por omissão; a CI muda o nome com -Djacoco.ficheiro=...).
+                  No verify, os ficheiros jacoco-*.exec são juntados em target/jacoco.exec, que dá o
+                  relatório (target/site/jacoco) e a verificação da cobertura mínima.
+                -->
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>agente</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                        <configuration>
+                            <!-- As classes carregadas pelo Quarkus são instrumentadas pela extensão quarkus-jacoco -->
+                            <exclClassLoaders>*QuarkusClassLoader</exclClassLoaders>
+                            <destFile>${project.build.directory}/${jacoco.ficheiro}</destFile>
+                            <append>false</append>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>juntar</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>merge</goal>
+                        </goals>
+                        <configuration>
+                            <fileSets>
+                                <fileSet>
+                                    <directory>${project.build.directory}</directory>
+                                    <includes>
+                                        <include>jacoco-*.exec</include>
+                                    </includes>
+                                </fileSet>
+                            </fileSets>
+                            <destFile>${project.build.directory}/jacoco.exec</destFile>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>relatorio</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                        <configuration>
+                            <dataFile>${project.build.directory}/jacoco.exec</dataFile>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>minimo</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <configuration>
+                            <dataFile>${project.build.directory}/jacoco.exec</dataFile>
+                            <rules>
+                                <rule>
+                                    <element>BUNDLE</element>
+                                    <limits>
+                                        <limit>
+                                            <counter>LINE</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>${cobertura.minima.linhas}</minimum>
+                                        </limit>
+                                        <limit>
+                                            <counter>BRANCH</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>${cobertura.minima.ramos}</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

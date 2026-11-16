@@ -5,6 +5,7 @@ import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import pt.esmad.matriz.ContasDeTeste;
 import pt.esmad.matriz.ContasDeTeste.Conta;
@@ -22,6 +23,7 @@ import static pt.esmad.matriz.ContasDeTeste.COOKIE;
 
 /** PATCH e DELETE /projetos/{id} (US16, RN22, RI10, RI17). */
 @QuarkusTest
+@Tag("integracao")
 class EditarEliminarProjetoApiTest {
 
     @Inject

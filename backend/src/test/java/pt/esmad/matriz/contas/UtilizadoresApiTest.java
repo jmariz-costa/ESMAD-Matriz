@@ -3,6 +3,7 @@ package pt.esmad.matriz.contas;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.response.Response;
 import jakarta.inject.Inject;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import pt.esmad.matriz.ContasDeTeste;
 import pt.esmad.matriz.ContasDeTeste.Conta;
@@ -19,6 +20,7 @@ import static pt.esmad.matriz.ContasDeTeste.COOKIE;
 
 /** GET /utilizadores: Membros ativos para adicionar a um projeto (RI16, S07). */
 @QuarkusTest
+@Tag("integracao")
 class UtilizadoresApiTest {
 
     @Inject

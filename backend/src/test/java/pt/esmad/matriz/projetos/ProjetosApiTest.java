@@ -5,6 +5,7 @@ import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import pt.esmad.matriz.ContasDeTeste;
 import pt.esmad.matriz.ContasDeTeste.Conta;
@@ -22,6 +23,7 @@ import static pt.esmad.matriz.ContasDeTeste.COOKIE;
 
 /** POST /projetos e GET /projetos/{id} (US03, RN05, RN19, RN20, RN23, RI01). */
 @QuarkusTest
+@Tag("integracao")
 class ProjetosApiTest {
 
     @Inject

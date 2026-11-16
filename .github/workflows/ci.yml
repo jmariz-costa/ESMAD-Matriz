@@ -1,12 +1,19 @@
-# Pipeline de integração contínua da Matriz (Ficha PL 05, Exercício 4).
+# Pipeline de integração contínua e publicação da Matriz.
 #
-#   backend-tests ──┐
-#                   ├──> docker-build (imagens, compose, smoke tests e E2E)
-#   frontend-checks ┘
+#   Etapa 1 Build        Etapa 2 Testes                 Etapa 3        Etapa 4               Etapa 5
 #
-# Não usa segredos: as palavras-passe da stack de teste são geradas em cada execução e
-# desaparecem com a máquina do runner (decisão 4a).
-# As actions são referidas pelo SHA do commit, com a versão em comentário (decisão 1a).
+#   build-backend  ──┬─> testes-unitarios ──────┐
+#                    └─> testes-integracao ─────┴─> cobertura ──┐
+#                                                               ├─> imagens ──────────> publicar
+#   build-frontend ────> testes-frontend ───────────────────────┘   (smoke tests e E2E)  (só no main)
+#
+# Cada etapa só começa quando as anteriores passam (quality gates).
+# A etapa 4 testa as imagens (smoke tests e E2E) e a etapa 5 publica essas mesmas imagens
+# no Docker Hub, só em push para o main (tags: SHA curto do commit e latest).
+# As palavras-passe da stack de teste são geradas em cada execução (openssl rand) e
+# desaparecem com a máquina do runner. O único segredo é o token do Docker Hub
+# (repository secrets DOCKERHUB_USERNAME e DOCKERHUB_TOKEN), usado só na etapa 5.
+# As actions são referidas pelo SHA do commit, com a versão em comentário.
 name: CI Matriz
 
 on:
@@ -20,16 +27,19 @@ on:
 permissions:
   contents: read
 
-# Um push novo no mesmo branch cancela a execução anterior, que já está desatualizada
+# Num pull request, um push novo cancela a execução anterior, que já está desatualizada.
+# No main não se cancela, para não interromper uma publicação a meio.
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  backend-tests:
-    name: Testes Backend
+  # ---------------------------------------------------------------- Etapa 1: build
+
+  build-backend:
+    name: "1 · Build Backend"
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 10
     defaults:
       run:
         working-directory: backend
@@ -47,20 +57,11 @@ jobs:
           cache: maven
           cache-dependency-path: backend/pom.xml
 
-      # Os testes de integração usam um PostgreSQL temporário (Quarkus Dev Services), com o Docker do runner
-      - name: Executar testes
-        run: ./mvnw -B test
+      - name: Compilar e empacotar (sem testes)
+        run: ./mvnw -B package -DskipTests
 
-      - name: Guardar relatórios dos testes em caso de falha
-        if: failure()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: relatorios-backend
-          path: backend/target/surefire-reports/
-          retention-days: 7
-
-  frontend-checks:
-    name: Testes e Build Frontend
+  build-frontend:
+    name: "1 · Build Frontend"
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     defaults:
@@ -85,24 +86,200 @@ jobs:
       - name: Análise estática (oxlint)
         run: npm run lint
 
-      - name: Executar testes
-        run: npm test
-
       - name: Construir frontend (inclui tsc -b)
         run: npm run build
 
-      # Falha com vulnerabilidades altas ou críticas nas dependências (decisão 2a)
+      # Falha com vulnerabilidades altas ou críticas nas dependências
       - name: Auditar dependências
         run: npm audit --audit-level=high
 
-  docker-build:
-    name: Docker Build, Smoke Tests e E2E
+  # ---------------------------------------------------------------- Etapa 2: testes
+
+  testes-unitarios:
+    name: "2 · Testes unitários Backend"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    needs: build-backend
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Obter código
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Configurar Java 21
+        uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+          cache-dependency-path: backend/pom.xml
+
+      # Testes sem @Tag("integracao"): sem Quarkus nem base de dados
+      - name: Executar testes unitários
+        run: ./mvnw -B test -DexcludedGroups=integracao -Djacoco.ficheiro=jacoco-unit.exec
+
+      - name: Guardar dados de cobertura
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: cobertura-unitarios
+          path: backend/target/jacoco-unit.exec
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Guardar relatórios dos testes em caso de falha
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: relatorios-unitarios
+          path: backend/target/surefire-reports/
+          retention-days: 7
+
+  testes-integracao:
+    name: "2 · Testes de integração Backend"
     runs-on: ubuntu-24.04
     timeout-minutes: 20
-    # Só corre depois de os testes do Backend e do Frontend passarem (quality gate)
+    needs: build-backend
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Obter código
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Configurar Java 21
+        uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+          cache-dependency-path: backend/pom.xml
+
+      # Testes @QuarkusTest: PostgreSQL temporário (Quarkus Dev Services) com o Docker do runner
+      - name: Executar testes de integração
+        run: ./mvnw -B test -Dgroups=integracao -Djacoco.ficheiro=jacoco-integracao.exec
+
+      - name: Guardar dados de cobertura
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: cobertura-integracao
+          path: backend/target/jacoco-integracao.exec
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Guardar relatórios dos testes em caso de falha
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: relatorios-integracao
+          path: backend/target/surefire-reports/
+          retention-days: 7
+
+  testes-frontend:
+    name: "2 · Testes Frontend"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    needs: build-frontend
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Obter código
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Configurar Node.js 24
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Executar testes (Vitest)
+        run: npm test
+
+  # ---------------------------------------------------------------- Etapa 3: cobertura
+
+  cobertura:
+    name: "3 · Cobertura JaCoCo"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
     needs:
-      - backend-tests
-      - frontend-checks
+      - testes-unitarios
+      - testes-integracao
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Obter código
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Configurar Java 21
+        uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+          cache-dependency-path: backend/pom.xml
+
+      # jacoco-unit.exec e jacoco-integracao.exec, gravados na etapa 2
+      - name: Obter dados de cobertura dos testes
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: cobertura-*
+          merge-multiple: true
+          path: backend/target
+
+      # O relatório precisa das classes compiladas; o mínimo (95% de linhas e de ramos) está no pom.xml
+      - name: Juntar, gerar relatório e verificar o mínimo
+        run: ./mvnw -B compile jacoco:merge@juntar jacoco:report@relatorio jacoco:check@minimo
+
+      - name: Resumo da cobertura
+        if: always()
+        run: |
+          csv=target/site/jacoco/jacoco.csv
+          test -f "$csv" || exit 0
+          # Colunas do CSV: 6/7 ramos (falhados/cobertos), 8/9 linhas (falhadas/cobertas)
+          awk -F, 'NR > 1 { rf += $6; rc += $7; lf += $8; lc += $9 }
+            END {
+              print "### Cobertura do Backend (JaCoCo)"
+              print ""
+              print "| Contador | Cobertos | Total | Cobertura |"
+              print "|---|---|---|---|"
+              printf "| Linhas | %d | %d | %.1f%% |\n", lc, lc + lf, 100 * lc / (lc + lf)
+              printf "| Ramos | %d | %d | %.1f%% |\n", rc, rc + rf, 100 * rc / (rc + rf)
+              print ""
+              print "Mínimo: 95% de linhas e 95% de ramos."
+            }' "$csv" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Guardar relatório de cobertura
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: relatorio-cobertura
+          path: backend/target/site/jacoco/
+          if-no-files-found: ignore
+          retention-days: 14
+
+  # ---------------------------------------------------------------- Etapa 4: imagens
+
+  imagens:
+    name: "4 · Imagens Docker, Smoke Tests e E2E"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    needs:
+      - cobertura
+      - testes-frontend
     steps:
       - name: Obter código
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -161,6 +338,21 @@ jobs:
           MATRIZ_E2E_URL: http://127.0.0.1:8090
         run: npm run e2e
 
+      # A etapa 5 publica exatamente estas imagens (as que passaram nos smoke tests e no E2E)
+      - name: Exportar imagens para publicação
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: docker save esmad-matriz-backend:latest esmad-matriz-frontend:latest | gzip > imagens.tar.gz
+
+      - name: Guardar imagens para publicação
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: imagens
+          path: imagens.tar.gz
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 1
+
       - name: Consultar logs em caso de falha
         if: failure()
         run: docker compose logs --tail=200
@@ -178,3 +370,49 @@ jobs:
       - name: Limpar ambiente
         if: always()
         run: docker compose down -v
+
+  # ---------------------------------------------------------------- Etapa 5: publicar
+
+  publicar:
+    name: "5 · Publicar imagens no Docker Hub"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    needs: imagens
+    # Só em push para o main: nos pull requests as imagens são construídas e testadas, mas não publicadas
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    env:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+    steps:
+      - name: Obter imagens testadas na etapa 4
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: imagens
+
+      - name: Carregar imagens
+        run: gunzip -c imagens.tar.gz | docker load
+
+      - name: Autenticar no Docker Hub
+        env:
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          if [ -z "$DOCKERHUB_USERNAME" ] || [ -z "$DOCKERHUB_TOKEN" ]; then
+            echo "Faltam os secrets DOCKERHUB_USERNAME e DOCKERHUB_TOKEN"; exit 1
+          fi
+          echo "$DOCKERHUB_TOKEN" | docker login --username "$DOCKERHUB_USERNAME" --password-stdin
+
+      - name: Etiquetar e publicar
+        run: |
+          versao="${GITHUB_SHA::7}"
+          echo "### Imagens publicadas no Docker Hub" >> "$GITHUB_STEP_SUMMARY"
+          for servico in backend frontend; do
+            destino="${DOCKERHUB_USERNAME}/matriz-${servico}"
+            for etiqueta in "$versao" latest; do
+              docker tag "esmad-matriz-${servico}:latest" "${destino}:${etiqueta}"
+              docker push "${destino}:${etiqueta}"
+            done
+            echo "- \`${destino}:${versao}\` e \`${destino}:latest\`" >> "$GITHUB_STEP_SUMMARY"
+          done
+
+      - name: Terminar sessão no Docker Hub
+        if: always()
+        run: docker logout

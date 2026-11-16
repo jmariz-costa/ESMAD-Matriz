@@ -5,6 +5,7 @@ import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import pt.esmad.matriz.ContasDeTeste.Conta;
 
@@ -24,6 +25,7 @@ import static pt.esmad.matriz.ContasDeTeste.COOKIE;
  * (S03, RN20). A Ana é Gestora do projeto A; o projeto B é do Bruno, com a Carla como membro.
  */
 @QuarkusTest
+@Tag("integracao")
 class AutorizacaoApiTest {
 
     @Inject

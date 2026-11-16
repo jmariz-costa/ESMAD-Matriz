@@ -3,6 +3,7 @@ package pt.esmad.matriz.comum;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import jakarta.inject.Inject;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import pt.esmad.matriz.ContasDeTeste;
 import pt.esmad.matriz.ContasDeTeste.Conta;
@@ -20,6 +21,7 @@ import static pt.esmad.matriz.ContasDeTeste.COOKIE;
  * era aceite e convertido em texto (ex.: o projeto "12345"); agora é recusado com 400.
  */
 @QuarkusTest
+@Tag("integracao")
 class TiposJsonApiTest {
 
     @Inject

@@ -5,6 +5,7 @@ import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import pt.esmad.matriz.ContasDeTeste;
 import pt.esmad.matriz.ContasDeTeste.Conta;
@@ -28,6 +29,7 @@ import static pt.esmad.matriz.ContasDeTeste.COOKIE;
  * outro recusado com 409, sem gravações perdidas nem atribuições repetidas. Revisão do I8 (R2).
  */
 @QuarkusTest
+@Tag("integracao")
 class GravacoesSimultaneasApiTest {
 
     private static final int RONDAS = 3;

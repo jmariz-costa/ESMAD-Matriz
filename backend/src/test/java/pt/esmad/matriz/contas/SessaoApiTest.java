@@ -6,6 +6,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
@@ -21,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** Ciclo da sessão: GET /auth/me, POST /auth/logout, expiração e renovação (US02 crit. 4, D06). */
 @QuarkusTest
+@Tag("integracao")
 class SessaoApiTest {
 
     private static final String PALAVRA_PASSE = "palavra-passe-ficticia";

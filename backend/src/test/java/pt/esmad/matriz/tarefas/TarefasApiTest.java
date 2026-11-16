@@ -5,6 +5,7 @@ import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import pt.esmad.matriz.ContasDeTeste;
 import pt.esmad.matriz.ContasDeTeste.Conta;
@@ -26,6 +27,7 @@ import static pt.esmad.matriz.ContasDeTeste.COOKIE;
 
 /** Criar, consultar e listar tarefas (US05, US07, US17; Ficha PL 03, Exercício 5). */
 @QuarkusTest
+@Tag("integracao")
 class TarefasApiTest {
 
     @Inject

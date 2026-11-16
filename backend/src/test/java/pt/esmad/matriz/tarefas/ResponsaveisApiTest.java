@@ -5,6 +5,7 @@ import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import pt.esmad.matriz.ContasDeTeste;
 import pt.esmad.matriz.ContasDeTeste.Conta;
@@ -21,6 +22,7 @@ import static pt.esmad.matriz.ContasDeTeste.COOKIE;
 
 /** Responsáveis de uma tarefa (Ficha PL 03, Exercício 6; US05 crit. 4 e 7; RN11, RI02, CE8). */
 @QuarkusTest
+@Tag("integracao")
 class ResponsaveisApiTest {
 
     @Inject
