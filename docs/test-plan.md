@@ -10,7 +10,8 @@ Secções: [como foi feito](#como-foi-feito) ·
 [pressupostos](#pressupostos-verificados) ·
 [matriz de cenários](#matriz-de-cenários) ·
 [testes novos](#testes-novos-da-ficha-pl-04) ·
-[fora do âmbito](#fora-do-âmbito) · [resultados](#resultados)
+[fora do âmbito](#fora-do-âmbito) · [resultados](#resultados) ·
+[pirâmide e cobertura](#pirâmide-de-testes-e-cobertura-depois-da-ficha-pl-05)
 
 ## Como foi feito
 
@@ -118,3 +119,42 @@ Execuções reais a 2026-11-12. Os do Backend usaram os Dev Services (PostgreSQL
 - No Ubuntu 26.04, o Playwright 1.55 não reconhece o sistema. É preciso definir `PLAYWRIGHT_HOST_PLATFORM_OVERRIDE=ubuntu24.04-x64` para usar o Firefox compilado para o Ubuntu 24.04.
 - Só foi executado no Firefox.
 
+## Pirâmide de testes e cobertura (depois da Ficha PL 05)
+
+Ao separar a pipeline em etapas (2026-11-16), os testes do Backend foram
+divididos em unitários e de integração (`@Tag("integracao")` nos 16
+`@QuarkusTest`). Havia 46 unitários e 123 de integração: a pirâmide estava
+quase invertida, porque a validação dos pedidos só era testada pela API.
+
+Foram acrescentados 66 testes unitários às classes com ramos por cobrir, que
+são validação pura e não precisam de Quarkus nem de base de dados:
+
+| Classe de teste | O que verifica |
+|-----------------|----------------|
+| `tarefas/PedidoTarefaTest` | Corpos de criar e editar tarefa: `versao` em falta, decimal, negativa, demasiado grande ou em texto; só a versão; título a `null`; estado e prioridade inválidos; prazo mal formatado; campos desconhecidos; corpo que não é objeto |
+| `projetos/EditarProjetoPedidoTest` | Corpo vazio, nome a `null` ou numérico, descrição que não é texto, campo desconhecido |
+| `comum/paginacao/PedidoPaginaTest` | Valores por omissão, limites 1 e 100, valores fora dos limites ou que não são números, início da página |
+| `comum/IdentificadoresTest` | UUID inválido no caminho (404) e no corpo (400) |
+| `tarefas/FiltrosEContagensTest` | Filtro "sem prioridade" e contagens por estado |
+| `contas/AdministradorInicialTest` | Sem email, sem palavra-passe ou com palavra-passe curta, o Admin não é criado |
+| `comum/demo/DadosDemonstracaoTest` | Com o seed desligado ou com palavra-passe curta, não há dados de demonstração |
+
+Os 66 passaram à primeira: confirmam o comportamento existente e não
+encontraram defeitos.
+
+| | Antes | Depois |
+|---|---|---|
+| Testes unitários do Backend | 46 | **112** |
+| Testes de integração do Backend | 123 | 123 |
+| Cobertura de linhas (JaCoCo) | 97,9% | **98,9%** |
+| Cobertura de ramos (JaCoCo) | 89,7% | **95,6%** |
+
+A pipeline falha abaixo de 95% de linhas ou de ramos. Os valores acima foram
+medidos com o `backend/.env` presente (como na CI, que copia o
+`.env.example`); sem ele, o Admin e os dados de demonstração não correm nos
+testes e a cobertura desce para cerca de 90%.
+
+**Limitações:** a cobertura do arranque (Admin e dados de demonstração) é
+incidental, porque nenhum teste verifica as contas criadas; e a margem nos
+ramos é pequena (14 ramos por cobrir), por isso código novo sem testes pode
+fazer a pipeline falhar.

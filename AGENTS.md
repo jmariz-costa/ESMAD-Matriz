@@ -43,8 +43,9 @@ cd frontend && npx tsc -b && npm run lint && npm run build
   (secção 7). Ver o README, "Testes E2E".
 - `docker compose down -v` apaga todos os dados locais: só com aprovação
   (secção 6).
-- Cada push para `main` corre a pipeline `.github/workflows/ci.yml`; não
-  desligar testes nem verificações para a pôr verde (ver
+- Cada push para `main` corre a pipeline `.github/workflows/ci.yml` e, se
+  passar, publica as imagens no Docker Hub; não desligar testes nem
+  verificações, nem baixar a cobertura mínima do JaCoCo, para a pôr verde (ver
   [docs/deployment.md](docs/deployment.md) §7).
 
 ## 1. Consultar a documentação antes de agir

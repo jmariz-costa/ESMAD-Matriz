@@ -189,10 +189,19 @@ A conta de Administrador usa `MATRIZ_ADMIN_EMAIL` e `MATRIZ_ADMIN_PASSWORD`.
 ### Testes
 
 ```bash
-cd backend && ./mvnw test               # precisa do Docker: cria um PostgreSQL temporário
+cd backend && ./mvnw test               # todos (unitários e integração); precisa do Docker: cria um PostgreSQL temporário
+cd backend && ./mvnw test -DexcludedGroups=integracao   # só os unitários (sem Quarkus nem base de dados)
+cd backend && ./mvnw test -Dgroups=integracao           # só os de integração (@QuarkusTest)
+cd backend && ./mvnw verify             # todos, com relatório de cobertura e mínimo de 95% (JaCoCo)
 cd frontend && npm test                 # Vitest + Testing Library
 cd frontend && npx tsc -b && npm run lint && npm run build   # tipos, lint e build
 ```
+
+O Backend tem 112 testes unitários e 123 de integração (com `@Tag("integracao")`).
+O relatório de cobertura fica em `backend/target/site/jacoco/index.html`; o
+`verify` falha abaixo de 95% de linhas ou de ramos. Os testes também leem o
+`backend/.env`: sem ele, o Admin e os dados de demonstração não são criados e
+a cobertura desce (ver [docs/deployment.md](docs/deployment.md) §7).
 
 Com o Backend de desenvolvimento a correr na porta 8081, os testes do Backend
 precisam de outra porta: `./mvnw test -Dquarkus.http.test-port=0`. O registo
@@ -224,10 +233,13 @@ cd frontend && MATRIZ_DEMO_PASSWORD=<valor do backend/.env> npm run e2e
 `cd frontend && npm audit`. O Backend não tem análise estática configurada.
 
 **Integração contínua:** cada push e Pull Request para `main` corre a pipeline
-[`.github/workflows/ci.yml`](.github/workflows/ci.yml) no GitHub Actions:
-testes do Backend; lint, testes, build e `npm audit` do Frontend; e, só se
-estes passarem, imagens Docker, smoke tests e o teste E2E contra o Docker
-Compose. Os resultados estão no separador **Actions** do repositório (ver
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) no GitHub Actions, em
+5 etapas: (1) build do Backend e do Frontend, com lint e `npm audit`;
+(2) testes unitários, de integração e do Frontend; (3) cobertura JaCoCo, com
+mínimo de 95% de linhas e de ramos; (4) imagens Docker, smoke tests e o teste
+E2E contra o Docker Compose; (5) só em push para o `main`, publicação das
+imagens testadas no Docker Hub (`matriz-backend` e `matriz-frontend`). Os
+resultados estão no separador **Actions** do repositório (ver
 [docs/deployment.md](docs/deployment.md) §7).
 O plano de testes está em [docs/test-plan.md](docs/test-plan.md) e a revisão
 de qualidade e segurança em
@@ -301,6 +313,10 @@ verificações em [docs/verification.md](docs/verification.md).
 - Depois da versão candidata: ADR 0003 (base de dados relacional PostgreSQL)
   e ADR 0004 (autenticação com sessão na base de dados), que registam
   decisões já tomadas na Ficha PL 03 (ver [docs/decisions/](docs/decisions/)).
+- Depois da versão candidata: pipeline em 5 etapas (build, testes unitários e
+  de integração separados, cobertura JaCoCo com mínimo de 95%, imagens e
+  publicação no Docker Hub) e 66 testes unitários novos no Backend (ver
+  [CHANGELOG.md](CHANGELOG.md), "Unreleased").
 
 Próximo: Fase 2 (arquivo, "As minhas tarefas", histórico consultável,
 edição de comentários e Administrador).

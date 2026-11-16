@@ -8,6 +8,33 @@ Enquanto a versão for `0.x`, a API não é considerada estável.
 
 ## [Unreleased]
 
+### Added
+
+- **Testes unitários do Backend:** 66 testes novos (`PedidoTarefaTest`,
+  `EditarProjetoPedidoTest`, `PedidoPaginaTest`, `IdentificadoresTest`,
+  `FiltrosEContagensTest`, `AdministradorInicialTest`,
+  `DadosDemonstracaoTest`), sem Quarkus nem base de dados. O Backend passa a
+  ter 112 testes unitários e 123 de integração (antes, 46 e 123).
+- **Cobertura (JaCoCo):** `jacoco-maven-plugin` e extensão `quarkus-jacoco`;
+  `./mvnw verify` gera o relatório e falha abaixo de 95% de linhas ou de
+  ramos (98,9% e 95,6% em `06e1351`).
+- **Publicação das imagens no Docker Hub** (`matriz-backend` e
+  `matriz-frontend`, etiquetas SHA curto e `latest`), só em push para o
+  `main`, com as imagens que passaram nos smoke tests e no E2E.
+
+### Changed
+
+- **Pipeline em 5 etapas:** build; testes unitários, de integração e do
+  Frontend em jobs separados; cobertura; imagens com smoke tests e E2E;
+  publicação. Os testes de integração do Backend passam a ter
+  `@Tag("integracao")`.
+
+### Fixed
+
+- Os testes do Backend na CI corriam sem `backend/.env` e, por isso, sem o
+  Admin e os dados de demonstração, ao contrário do que acontece localmente;
+  a CI passa a copiar o `.env.example` (`06e1351`).
+
 ## [0.1.0-rc.1] - 2026-11-13
 
 Primeira versão identificada: versão **candidata** com a Fase 1 do MVP

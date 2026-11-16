@@ -2,7 +2,10 @@
 
 ## Estado
 
-Aceite (2026-11-13)
+Aceite (2026-11-13). Alargada pela [ADR 0005](0005-pipeline-em-etapas-e-publicacao-no-docker-hub.md)
+(2026-11-16): a pipeline passou a ter 5 etapas e a publicar as imagens no
+Docker Hub, com um segredo; a consequência "a pipeline não guarda nem expõe
+segredos" deixou de se aplicar.
 
 ## Contexto
 

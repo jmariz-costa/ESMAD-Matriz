@@ -131,45 +131,93 @@ privilégios para arrancar e não o tem):
 
 Workflow: [`.github/workflows/ci.yml`](../.github/workflows/ci.yml). Corre em
 cada `push` e `pull_request` para `main`, e manualmente (`workflow_dispatch`).
-Os resultados estão no separador **Actions** do repositório.
+Os resultados estão no separador **Actions** do repositório. As decisões
+estão na [ADR 0002](decisions/0002-execucao-em-contentores-e-ci.md) e na
+[ADR 0005](decisions/0005-pipeline-em-etapas-e-publicacao-no-docker-hub.md).
+
+A pipeline tem 5 etapas. Cada etapa só começa quando as anteriores passam
+(quality gates):
 
 ```
-backend-tests ──┐
-                ├──> docker-build
-frontend-checks ┘
+Etapa 1 Build      Etapa 2 Testes           Etapa 3      Etapa 4                Etapa 5
+build-backend  ─┬─> testes-unitarios ──┐
+                └─> testes-integracao ─┴─> cobertura ─┐
+                                                      ├─> imagens ───────────> publicar
+build-frontend ───> testes-frontend ──────────────────┘   (smoke tests + E2E)   (só no main)
 ```
 
-| Job | Verificações |
-|-----|--------------|
-| `backend-tests` | Java 21; `./mvnw -B test` (testes unitários e de integração, com o PostgreSQL dos Dev Services) |
-| `frontend-checks` | Node 24; `npm ci`, oxlint, `npm test`, `npm run build` (inclui `tsc -b`), `npm audit --audit-level=high` |
-| `docker-build` | Só depois dos dois anteriores (`needs`). `docker compose config -q`, `build`, `up --wait`; smoke tests (health do Backend, página inicial, `/api/auth/me` → 401 através do nginx); teste E2E com o Firefox contra a stack; `down -v` no fim |
+| Etapa | Job | Verificações |
+|-------|-----|--------------|
+| 1 | `build-backend` | Java 21; `./mvnw -B package -DskipTests` |
+| 1 | `build-frontend` | Node 24; `npm ci`, oxlint, `npm run build` (inclui `tsc -b`), `npm audit --audit-level=high` |
+| 2 | `testes-unitarios` | `./mvnw -B test -DexcludedGroups=integracao`: os testes sem `@Tag("integracao")`, sem Quarkus nem base de dados. Guarda `jacoco-unit.exec` |
+| 2 | `testes-integracao` | `./mvnw -B test -Dgroups=integracao`: os `@QuarkusTest`, com o PostgreSQL dos Dev Services. Guarda `jacoco-integracao.exec` |
+| 2 | `testes-frontend` | `npm ci`, `npm test` (Vitest) |
+| 3 | `cobertura` | Junta os dois ficheiros de cobertura (`jacoco:merge`), gera o relatório (`jacoco:report`) e **falha abaixo de 95% de linhas ou de ramos** (`jacoco:check`). Mostra a tabela da cobertura no resumo da execução e guarda o relatório HTML durante 14 dias (`relatorio-cobertura`) |
+| 4 | `imagens` | `docker compose config -q`, `build`, `up --wait`; smoke tests (health do Backend, página inicial, `/api/auth/me` → 401 através do nginx); teste E2E com o Firefox contra a stack; `down -v` no fim. No `main`, exporta as imagens testadas (`docker save`) para a etapa 5 |
+| 5 | `publicar` | Só em `push` para o `main`. Carrega as imagens da etapa 4 (as mesmas que passaram no E2E, sem as construir de novo) e publica-as no Docker Hub |
+
+Nos testes do Backend, a CI copia o `backend/.env.example` para
+`backend/.env`, como num computador de desenvolvimento: o Admin e os dados de
+demonstração são criados no arranque dos testes, com os valores fictícios do
+exemplo. A base de dados dos testes é temporária.
+
+**Cobertura (JaCoCo).** Configurada no `backend/pom.xml`
+(`jacoco-maven-plugin` e extensão `quarkus-jacoco`, que mede as classes que o
+Quarkus transforma nos `@QuarkusTest`). Localmente, `./mvnw verify` corre
+todos os testes, gera o relatório em `backend/target/site/jacoco/index.html`
+e verifica os mínimos (propriedades `cobertura.minima.linhas` e
+`cobertura.minima.ramos`, ambas 0.95).
+
+**Imagens publicadas (Docker Hub):**
+
+| Imagem | Etiquetas |
+|--------|-----------|
+| `<utilizador>/matriz-backend` | SHA curto do commit (ex.: `06e1351`) e `latest` |
+| `<utilizador>/matriz-frontend` | SHA curto do commit e `latest` |
+
+`<utilizador>` é a conta do Docker Hub (secret `DOCKERHUB_USERNAME`). No
+plano gratuito, os repositórios do Docker Hub são **públicos**. As imagens não
+têm nenhum `.env` nem palavras-passe (`.dockerignore`): a configuração é dada
+no arranque, por variáveis de ambiente.
 
 **Segurança da pipeline:**
 
 - `permissions: contents: read` em todo o workflow; `persist-credentials: false`
   no checkout.
-- **Sem segredos:** o `docker-build` cria um `backend/.env` a partir do
-  `.env.example`, com palavras-passe geradas por `openssl rand` em cada
+- **Um único segredo:** o token do Docker Hub, em *repository secrets*
+  (`DOCKERHUB_USERNAME` e `DOCKERHUB_TOKEN`, token com permissão Read & Write).
+  Só o job `publicar` o usa, e só em `push` para o `main`; nos pull requests
+  não é lido. O login usa `docker login --password-stdin` e termina com
+  `docker logout`.
+- As palavras-passe da stack da etapa 4 são geradas por `openssl rand` em cada
   execução e escondidas nos logs (`::add-mask::`). Desaparecem com a máquina
   do runner.
 - Só actions oficiais (`actions/checkout`, `setup-java`, `setup-node`,
-  `upload-artifact`), referidas pelo **SHA do commit**, com a versão em
-  comentário. Para as atualizar, é preciso trocar o SHA à mão.
+  `upload-artifact`, `download-artifact`), referidas pelo **SHA do commit**,
+  com a versão em comentário. Para as atualizar, é preciso trocar o SHA à mão.
+- Num pull request, um push novo cancela a execução anterior; no `main` não,
+  para não interromper uma publicação a meio.
 - Em caso de falha, ficam os logs do Compose e, durante 7 dias, os relatórios
-  dos testes (`relatorios-backend`, `relatorio-e2e`).
+  dos testes (`relatorios-unitarios`, `relatorios-integracao`, `relatorio-e2e`).
 
 **Validação da pipeline (2026-11-13):** a pipeline ficou verde em `2a42d56`.
 Para confirmar que bloqueia, foi introduzida uma falha controlada em
 `TarefaTest` (`0f62fae`): o `backend-tests` falhou e o `docker-build` não
 correu. A falha foi revertida (`01f9cfd`) e a pipeline voltou a verde.
 
+**Validação das 5 etapas (2026-11-16):** em `7e82e7c`, a etapa 3 falhou
+(90% de linhas e 91% de ramos), e as etapas 4 e 5 não correram: sem
+`backend/.env` na CI, o Admin e os dados de demonstração não eram criados nos
+testes. Corrigido em `06e1351` (cópia do `.env.example`, ver acima); a
+pipeline ficou verde e as imagens foram publicadas no Docker Hub.
+
 ## 8. Limitações
 
 - **Só HTTP.** O HTTPS exigido em produção (S02) depende do alojamento, que
   continua pendente (D04). Com HTTPS, definir `MATRIZ_COOKIE_SEGURO=true`.
-- **Sem deployment nem registry:** as imagens só são construídas localmente e
-  na pipeline; não são publicadas.
+- **Sem deployment:** as imagens são publicadas no Docker Hub, mas ainda não
+  correm em nenhum alojamento (D04).
 - **Imagem `postgres:17`** sem versão exata, como desde o I0; as imagens da
   Matriz usam versões exatas.
 - **Sem análise de vulnerabilidades das imagens** (por exemplo, Trivy) e sem
@@ -195,6 +243,7 @@ Problemas encontrados na Ficha PL 05 e problemas frequentes:
 | Build do Backend: "Failed to validate Maven distribution SHA-256" | Sem `unzip`, o `mvnw` descarrega o `.tar.gz` do Maven, mas a soma configurada é a do `.zip` | Instalar `unzip` na fase de compilação (já está no `backend/Dockerfile`). A soma está certa: não a remover |
 | "address already in use" ao publicar uma porta | Outro processo no host usa a porta (nesta máquina, a 8080) | `ss -ltnp \| grep <porta>`; por isso o Frontend usa a 8090 |
 | Testes do Backend falham na CI com `SRCFG00040 … matriz.admin.email` | Os testes dependiam do `backend/.env` local; sem ele, o Quarkus não arrancava | Corrigido em `2a42d56`: as propriedades são opcionais. Para reproduzir, correr os testes numa cópia sem `.env` |
+| Cobertura abaixo do mínimo na CI, mas acima localmente | O Quarkus também lê o `backend/.env` nos testes: localmente, o Admin e os dados de demonstração correm; numa máquina sem `.env`, não | Corrigido em `06e1351` (a CI copia o `.env.example`). Para medir como a CI, correr os testes numa cópia limpa (`git clone`) com o `.env.example` copiado para `.env` |
 | Um serviço fica `unhealthy` ou não arranca | Erro no arranque ou BD indisponível | `docker compose ps`; `docker compose logs backend` (ou `postgres`, `frontend`) |
 | O Backend não liga à BD | Credenciais diferentes das do volume: o `POSTGRES_PASSWORD` só é aplicado quando o volume é criado | Para mudar a palavra-passe num volume que já existe: `ALTER USER` dentro da BD, ou recriar o volume (`down -v`, apaga os dados) |
 | Alterações ao código não aparecem | Imagem antiga | `docker compose up -d --build` |
