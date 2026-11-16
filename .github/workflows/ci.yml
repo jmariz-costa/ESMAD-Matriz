@@ -117,6 +117,11 @@ jobs:
           cache: maven
           cache-dependency-path: backend/pom.xml
 
+      # Os testes usam a configuração de exemplo (Admin e dados de demonstração ligados, valores
+      # fictícios), como num computador de desenvolvimento; sem ela, esse código não corre na CI
+      - name: Preparar configuração de exemplo
+        run: cp .env.example .env
+
       # Testes sem @Tag("integracao"): sem Quarkus nem base de dados
       - name: Executar testes unitários
         run: ./mvnw -B test -DexcludedGroups=integracao -Djacoco.ficheiro=jacoco-unit.exec
@@ -158,6 +163,11 @@ jobs:
           java-version: "21"
           cache: maven
           cache-dependency-path: backend/pom.xml
+
+      # Os testes usam a configuração de exemplo (Admin e dados de demonstração ligados, valores
+      # fictícios), como num computador de desenvolvimento; sem ela, esse código não corre na CI
+      - name: Preparar configuração de exemplo
+        run: cp .env.example .env
 
       # Testes @QuarkusTest: PostgreSQL temporário (Quarkus Dev Services) com o Docker do runner
       - name: Executar testes de integração
