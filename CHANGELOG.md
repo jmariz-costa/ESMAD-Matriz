@@ -10,6 +10,11 @@ Enquanto a versão for `0.x`, a API não é considerada estável.
 
 ### Added
 
+- **`Makefile`** para correr localmente: `make configurar` (cria o
+  `backend/.env` com palavras-passe aleatórias e mostra-as uma vez),
+  `make arrancar`/`parar`/`registos`, e cada tipo de teste em separado
+  (`testes-unitarios`, `testes-integracao`, `testes-frontend`, `testes-e2e`,
+  `cobertura`, `verificar`). O E2E lê a palavra-passe do `backend/.env`.
 - **Editar o nome e repor o acesso** (US19, incremento F2.8): na gestão de
   contas, o Administrador corrige o nome de uma pessoa (o email não se
   altera) e repõe o acesso de quem se esqueceu da palavra-passe, com uma

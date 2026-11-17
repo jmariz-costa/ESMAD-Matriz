@@ -107,10 +107,52 @@ Versões em uso na `0.2.0-rc.1`; as decisões estão em
 | [RELEASE_NOTES.md](RELEASE_NOTES.md)           | Notas da versão candidata `0.2.0-rc.1`                                                         |
 | [AGENTS.md](AGENTS.md)                         | Instruções para agentes de IA que trabalhem neste repositório                                 |
 
+## Executar com o Makefile
+
+O [`Makefile`](Makefile) junta os comandos mais usados. Funciona em Linux e
+macOS; no Windows, no WSL ou no Git Bash. `make` sem argumentos mostra a
+lista.
+
+```bash
+make configurar        # primeira vez: cria o backend/.env com palavras-passe aleatórias
+make arrancar          # aplicação completa em Docker: http://localhost:8090
+make parar             # para os contentores (os dados mantêm-se)
+make testes-unitarios  # Backend, sem Quarkus nem base de dados
+make testes-integracao # Backend, com um PostgreSQL temporário (precisa do Docker)
+make testes-frontend   # Vitest
+make testes-e2e        # Playwright, contra a aplicação do make arrancar
+make testes            # unitários, integração e Frontend
+make cobertura         # Backend, com o mínimo de 95% (JaCoCo)
+make verificar         # Frontend: tipos, lint e build
+```
+
+- **Requisitos:** Docker com Docker Compose para a aplicação; JDK 21 para os
+  testes do Backend; Node.js e npm para os do Frontend e o E2E; `openssl`
+  para o `make configurar`.
+- **Palavras-passe:** o `make configurar` copia o `backend/.env.example` para
+  `backend/.env` e gera palavras-passe aleatórias para a base de dados, o
+  Administrador e as contas de demonstração, como a pipeline. Mostra-as uma
+  vez no fim e ficam guardadas no `backend/.env`, que nunca vai para o Git.
+  Se o ficheiro já existir, não é alterado. Para escolher outras, editar o
+  `backend/.env` **antes** do primeiro `make arrancar`.
+- **Só contam no primeiro arranque:** as contas são criadas quando a base de
+  dados está vazia; depois, mudar o `backend/.env` não as altera (cada pessoa
+  muda a sua na aplicação, US20, ou o Administrador repõe o acesso, US19). A
+  `POSTGRES_PASSWORD` também só é usada quando o volume é criado: mudá-la
+  depois impede o Backend de se ligar. Para recomeçar com as palavras-passe
+  novas, `docker compose down -v` apaga o volume com **todos** os dados.
+- **O `make testes-e2e`** lê a `MATRIZ_DEMO_PASSWORD` do `backend/.env` (o
+  mesmo ficheiro que a aplicação usa) e passa-a só ao Playwright; não a
+  escreve noutro ficheiro. Em sistemas que o Playwright 1.55 ainda não
+  reconhece: `PLAYWRIGHT_HOST_PLATFORM_OVERRIDE=ubuntu24.04-x64 make testes-e2e`.
+- O nome do projeto Docker Compose é fixo (`esmad-matriz`): duas cópias do
+  repositório no mesmo computador partilham o volume da base de dados. Para
+  as separar: `COMPOSE_PROJECT_NAME=outro-nome make arrancar`.
+
 ## Executar com Docker Compose
 
-A forma mais simples de executar a aplicação completa: só precisa de Docker
-com Docker Compose (não precisa de Java nem de Node.js).
+Sem o Makefile: só precisa de Docker com Docker Compose (não precisa de Java
+nem de Node.js).
 
 ```bash
 cp backend/.env.example backend/.env    # depois, mudar as três palavras-passe

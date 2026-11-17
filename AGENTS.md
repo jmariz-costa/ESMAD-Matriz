@@ -15,8 +15,14 @@ O registo das verificações está em [docs/verification.md](docs/verification.m
 
 ## Comandos
 
-Detalhe e configuração na secção "Executar localmente" do [README.md](README.md).
-Antes de executar, é preciso `backend/.env` (copiado de `backend/.env.example`).
+Detalhe e configuração nas secções "Executar com o Makefile" e "Executar
+localmente" do [README.md](README.md). Antes de executar, é preciso
+`backend/.env` (`make configurar` cria-o com palavras-passe aleatórias; nunca
+mostrar nem copiar os valores).
+
+Os mesmos comandos estão no [`Makefile`](Makefile): `make arrancar`,
+`make testes-unitarios`, `make testes-integracao`, `make testes-frontend`,
+`make testes-e2e`, `make cobertura`, `make verificar` (`make` mostra a lista).
 
 **Executar:**
 
