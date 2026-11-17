@@ -68,7 +68,7 @@ Versões em uso na `0.2.0-rc.1`; as decisões estão em
 |--------|-------------|
 | Backend | Java 21, Quarkus 3.40 (REST com Jackson, Hibernate ORM 7.4 com Panache, Hibernate Validator, SmallRye Health), Flyway 12, bcrypt |
 | Base de dados | PostgreSQL 17 |
-| Frontend | React 19, TypeScript 7.0, Vite 8, React Router 8 |
+| Frontend | React 19, TypeScript 7.0, Vite 8, React Router 8; letra Plus Jakarta Sans (`@fontsource-variable`) |
 | Testes | JUnit 6 e RestAssured 6 (Backend, com Quarkus Dev Services); Vitest 5 e Testing Library (Frontend); Playwright 1.55 com Firefox (E2E) |
 | Qualidade | oxlint, `npm audit`, `tsc` |
 | Execução | Docker e Docker Compose; nginx 1.30 a servir o Frontend; JRE 21 (Eclipse Temurin) no Backend |
@@ -329,6 +329,8 @@ verificações em [docs/verification.md](docs/verification.md).
   [docs/deployment.md](docs/deployment.md) §8,
   [ADR 0006](docs/decisions/0006-alojamento-render-e-neon.md),
   [CHANGELOG.md](CHANGELOG.md) e [RELEASE_NOTES.md](RELEASE_NOTES.md)).
+- Depois da versão candidata `0.2.0-rc.1`: novo design da interface, com
+  tema claro e escuro (botão no cabeçalho; ver [CHANGELOG.md](CHANGELOG.md)).
 
 Próximo: Fase 2 (arquivo, "As minhas tarefas", histórico consultável,
 edição de comentários e Administrador).

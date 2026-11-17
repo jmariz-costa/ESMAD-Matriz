@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router'
 import { useSessao, useUtilizador } from '../sessao/sessao'
+import { BotaoTema } from './BotaoTema'
 
 function iniciais(nome: string): string {
   const partes = nome.trim().split(/\s+/)
@@ -23,6 +24,7 @@ export function Cabecalho() {
         </nav>
       )}
       <div className="utilizador">
+        <BotaoTema />
         <span className="avatar" aria-hidden="true">{iniciais(utilizador.nome)}</span>
         <span>{utilizador.nome}</span>
         <button type="button" className="btn" onClick={() => void sair()}>Sair</button>

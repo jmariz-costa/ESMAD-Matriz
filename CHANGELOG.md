@@ -8,6 +8,23 @@ Enquanto a versão for `0.x`, a API não é considerada estável.
 
 ## [Unreleased]
 
+### Added
+
+- **Tema escuro:** botão com sol/lua no cabeçalho para alternar entre o tema
+  claro e o escuro. A escolha fica guardada no browser (`localStorage`); sem
+  escolha, a interface segue o tema do sistema operativo. O tema guardado é
+  aplicado antes de a página aparecer, também no início de sessão.
+
+### Changed
+
+- **Novo aspeto da interface** (proposta «Suave»): cores em tokens CSS, com
+  verde-petróleo como cor de destaque, cartões com sombra suave e cantos
+  arredondados, colunas do quadro com a cor do estado e etiquetas com a cor
+  da prioridade. A disposição dos ecrãs continua a dos wireframes.
+- **Letra Plus Jakarta Sans** incluída na aplicação
+  (`@fontsource-variable/plus-jakarta-sans`), sem pedidos a servidores
+  externos.
+
 ## [0.2.0-rc.1] - 2026-11-16
 
 Segunda versão **candidata**: a Matriz passa a estar em produção (Render e

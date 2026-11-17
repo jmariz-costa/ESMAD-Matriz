@@ -165,6 +165,7 @@ export function QuadroKanban({ projeto, aoAlterar, sinal = 0 }: Props) {
               <section
                 key={codigo}
                 className={alvo === codigo ? 'coluna alvo' : 'coluna'}
+                data-estado={codigo}
                 aria-label={nome}
                 onDragOver={(e) => passarPor(codigo, e)}
                 onDragLeave={() => setAlvo((atual) => (atual === codigo ? null : atual))}

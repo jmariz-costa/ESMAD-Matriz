@@ -45,7 +45,7 @@ export function CartaoTarefa({ tarefa, podeArrastar, aArrastar, aoComecarArrasta
       {(tarefa.prioridade || tarefa.prazo) && (
         <div className="meta">
           {tarefa.prioridade && (
-            <span className="etiqueta">
+            <span className="etiqueta" data-prioridade={tarefa.prioridade}>
               <span className="so-leitores">Prioridade: </span>{nomePrioridade(tarefa.prioridade)}
             </span>
           )}

@@ -282,6 +282,9 @@ ficaram *live* com as imagens do `230179e`; o Backend criou o esquema no
 Neon, o Administrador e os dados de demonstração; entrar como a Ana no
 endereço do Frontend funcionou.
 
+**Primeira release em produção (2026-11-17):** a release `v0.2.0-rc.1` foi
+posta em produção com o "Deploy prod".
+
 **Antes de uma apresentação:** abrir o endereço do Frontend alguns minutos
 antes, para acordar os dois serviços (plano gratuito).
 

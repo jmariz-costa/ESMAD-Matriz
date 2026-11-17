@@ -4,6 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Matriz</title>
+    <script>
+      // Aplica o tema escolhido antes de a página aparecer, para não piscar o tema errado
+      // (a chave é a CHAVE_TEMA de src/comum/tema.ts). Sem escolha, o CSS segue o sistema.
+      try {
+        var tema = localStorage.getItem('matriz-tema')
+        if (tema === 'claro' || tema === 'escuro') document.documentElement.dataset.tema = tema
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

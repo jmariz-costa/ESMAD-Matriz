@@ -23,6 +23,7 @@ describe('Aplicação', () => {
     expect(screen.getByRole('link', { name: 'Projetos' })).toBeInTheDocument()
     expect(screen.getByText('AE')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Sair' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Tema escuro' })).toBeInTheDocument()
   })
 
   it('o Administrador só vê a gestão de contas', async () => {
