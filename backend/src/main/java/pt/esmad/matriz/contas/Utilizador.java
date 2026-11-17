@@ -6,6 +6,9 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import pt.esmad.matriz.comum.erros.ErroAplicacao;
+import pt.esmad.matriz.comum.erros.Validacao;
+import pt.esmad.matriz.comum.texto.Texto;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -13,7 +16,8 @@ import java.util.UUID;
 
 /**
  * Conta de Membro ou de Administrador (agregado do módulo Contas).
- * Protege a regra do limite de tentativas de login (D09).
+ * Protege as regras do limite de tentativas de login (D09), do nome (RN23) e da
+ * palavra-passe temporária (PR20).
  */
 @Entity
 @Table(name = "utilizador")
@@ -21,6 +25,8 @@ public class Utilizador {
 
     static final int MAXIMO_FALHAS_SEGUIDAS = 5;               // D09
     static final Duration DURACAO_BLOQUEIO = Duration.ofMinutes(15); // D09
+    static final int NOME_MINIMO = 2;   // RN23, US19
+    static final int NOME_MAXIMO = 150; // RN23, US19
 
     @Id
     private UUID id;
@@ -44,6 +50,9 @@ public class Utilizador {
     @Column(name = "bloqueado_ate")
     private Instant bloqueadoAte;
 
+    @Column(name = "deve_mudar_palavra_passe")
+    private boolean deveMudarPalavraPasse;
+
     protected Utilizador() {
         // JPA
     }
@@ -61,6 +70,38 @@ public class Utilizador {
     /** Só contas ativas podem iniciar sessão. */
     public boolean estaAtivo() {
         return estado == EstadoConta.ATIVO;
+    }
+
+    /** US19 crit. 1: só o nome muda, entre 2 e 150 caracteres sem contar os espaços nas pontas. */
+    void alterarNome(String novoNome) {
+        String normalizado = Texto.normalizar(novoNome);
+        Validacao validacao = new Validacao();
+        if (normalizado == null) {
+            validacao.erro("nome", "O nome é obrigatório.");
+        } else if (Texto.comprimento(normalizado) < NOME_MINIMO || Texto.comprimento(normalizado) > NOME_MAXIMO) {
+            validacao.erro("nome", "O nome deve ter entre 2 e 150 caracteres.");
+        }
+        validacao.lancarSeHouverErros();
+        nome = normalizado;
+    }
+
+    /**
+     * US19 crit. 2: a palavra-passe temporária substitui a anterior e tem de ser mudada no
+     * próximo login (PR20); o bloqueio por tentativas falhadas é limpo (D09). Só em contas ativas.
+     */
+    void reporAcesso(String hashTemporario) {
+        if (!estaAtivo()) {
+            throw ErroAplicacao.contaDesativada();
+        }
+        passwordHash = hashTemporario;
+        deveMudarPalavraPasse = true;
+        registarSucesso();
+    }
+
+    /** US20: a palavra-passe nova deixa de ser temporária. */
+    void definirPalavraPasse(String novoHash) {
+        passwordHash = novoHash;
+        deveMudarPalavraPasse = false;
     }
 
     /** US14 crit. 1: deixa de poder entrar. */
@@ -121,6 +162,10 @@ public class Utilizador {
 
     public EstadoConta estado() {
         return estado;
+    }
+
+    public boolean deveMudarPalavraPasse() {
+        return deveMudarPalavraPasse;
     }
 
     int tentativasFalhadas() {

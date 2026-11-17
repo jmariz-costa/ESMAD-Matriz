@@ -15,6 +15,8 @@ export interface ValorSessao {
   mensagem: string | null
   entrar: (email: string, palavraPasse: string) => Promise<void>
   sair: () => Promise<void>
+  /** Depois de mudar a palavra-passe: deixa de ser temporária (PR20). */
+  palavraPasseMudada: () => void
 }
 
 export const ContextoSessao = createContext<ValorSessao | null>(null)

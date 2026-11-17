@@ -52,3 +52,15 @@ export function desativarConta(contaId: string, novosGestores: NovoGestor[]): Pr
 export function reativarConta(contaId: string): Promise<Conta> {
   return pedido(`/contas/${encodeURIComponent(contaId)}/reativacao`, { metodo: 'POST' })
 }
+
+/** Só o nome (US19 crit. 1); o email não se altera. */
+export function editarConta(contaId: string, nome: string): Promise<Conta> {
+  return pedido(`/contas/${encodeURIComponent(contaId)}`, { metodo: 'PATCH', corpo: { nome } })
+}
+
+/** Palavra-passe temporária, a mudar no próximo login (US19 crit. 2 e 3, PR20). */
+export function reporAcesso(contaId: string, palavraPasseTemporaria: string): Promise<void> {
+  return pedido(`/contas/${encodeURIComponent(contaId)}/reposicao-acesso`, {
+    metodo: 'POST', corpo: { palavraPasseTemporaria },
+  })
+}

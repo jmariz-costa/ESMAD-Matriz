@@ -12,6 +12,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.NewCookie;
 import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import pt.esmad.matriz.comum.autenticacao.PermitidoComPalavraPasseTemporaria;
 import pt.esmad.matriz.comum.autenticacao.Publico;
 import pt.esmad.matriz.comum.autenticacao.UtilizadorAtual;
 
@@ -59,8 +60,26 @@ public class AutenticacaoRecurso {
 
     @GET
     @Path("/me")
+    @PermitidoComPalavraPasseTemporaria
     public UtilizadorAutenticado utilizadorAutenticado() {
         return UtilizadorAutenticado.de(utilizadorAtual.identidade());
+    }
+
+    /** Corpo de POST /auth/palavra-passe (openapi.yaml, MudarPalavraPassePedido). */
+    public record MudarPalavraPassePedido(String palavraPasseAtual, String palavraPasseNova) {
+    }
+
+    /** US20; também serve para trocar a palavra-passe temporária (PR20). */
+    @POST
+    @Path("/palavra-passe")
+    @PermitidoComPalavraPasseTemporaria
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response mudarPalavraPasse(@CookieParam(COOKIE_SESSAO) String token,
+                                      @NotNull(message = "O corpo do pedido é obrigatório.")
+                                      MudarPalavraPassePedido pedido) {
+        servico.mudarPalavraPasse(utilizadorAtual.identidade(), token,
+                pedido.palavraPasseAtual(), pedido.palavraPasseNova());
+        return Response.noContent().build();
     }
 
     /** Cookie sem prazo no browser: a validade é controlada pelo servidor (D06). */

@@ -187,4 +187,81 @@ describe('Gestão de contas (US14)', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Tentar novamente' }))
     expect(await screen.findByRole('cell', { name: 'Ana Exemplo' })).toBeInTheDocument()
   })
+
+  it('editar altera o nome e mostra o email só para leitura (US19 crit. 1)', async () => {
+    let nome = 'Ana Exemplo'
+    const fetchFalso = simularApi({
+      ...SESSAO,
+      [LISTAR]: () => pagina([{ ...ana, nome }]),
+      'PATCH /api/contas/ana': () => {
+        nome = 'Ana Silva'
+        return { estado: 200, corpo: { ...ana, nome } }
+      },
+    })
+    renderizarAplicacao('/')
+    await userEvent.click(await screen.findByRole('button', { name: 'Editar Ana Exemplo' }))
+
+    const dialogo = await screen.findByRole('dialog', { name: 'Editar conta' })
+    expect(within(dialogo).getByLabelText('Email')).toHaveAttribute('readonly')
+    const campo = within(dialogo).getByLabelText('Nome *')
+    await userEvent.clear(campo)
+    await userEvent.type(campo, 'A')
+    await userEvent.click(within(dialogo).getByRole('button', { name: 'Guardar' }))
+    expect(within(dialogo).getByText('O nome deve ter entre 2 e 150 caracteres.')).toBeInTheDocument()
+
+    await userEvent.clear(campo)
+    await userEvent.type(campo, '  Ana Silva ')
+    await userEvent.click(within(dialogo).getByRole('button', { name: 'Guardar' }))
+
+    expect(await screen.findByText('Nome alterado para Ana Silva.')).toBeInTheDocument()
+    expect(corpoDe(fetchFalso, 'PATCH', '/api/contas/ana')).toEqual({ nome: 'Ana Silva' })
+    expect(await screen.findByRole('cell', { name: 'Ana Silva' })).toBeInTheDocument()
+  })
+
+  it('repor o acesso pede uma palavra-passe temporária e só aparece nas contas ativas (US19 crit. 2)', async () => {
+    const fetchFalso = simularApi({
+      ...SESSAO,
+      [LISTAR]: pagina([ana, daniel]),
+      'POST /api/contas/ana/reposicao-acesso': { estado: 204 },
+    })
+    renderizarAplicacao('/')
+    await screen.findByRole('cell', { name: 'Ana Exemplo' })
+    expect(within(linha('Daniel Exemplo')).queryByRole('button', { name: /Repor o acesso/ })).not.toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Repor o acesso de Ana Exemplo' }))
+    const dialogo = await screen.findByRole('dialog', { name: 'Repor o acesso de Ana Exemplo?' })
+    expect(within(dialogo).getByText(/vai ter de a trocar por uma nova/)).toBeInTheDocument()
+    const campo = within(dialogo).getByLabelText(/Palavra-passe temporária/)
+    expect(campo).toHaveAttribute('type', 'text')
+
+    await userEvent.type(campo, '1234567')
+    await userEvent.click(within(dialogo).getByRole('button', { name: 'Repor acesso' }))
+    expect(within(dialogo).getByText('A palavra-passe deve ter pelo menos 8 caracteres.')).toBeInTheDocument()
+
+    await userEvent.type(campo, '8')
+    await userEvent.click(within(dialogo).getByRole('button', { name: 'Repor acesso' }))
+
+    expect(await screen.findByText('Acesso de Ana Exemplo reposto. Comunique-lhe a palavra-passe temporária.'))
+      .toBeInTheDocument()
+    expect(corpoDe(fetchFalso, 'POST', '/api/contas/ana/reposicao-acesso')).toEqual({ palavraPasseTemporaria: '12345678' })
+  })
+
+  it('repor o acesso mostra o erro do servidor (conta desativada entretanto)', async () => {
+    simularApi({
+      ...SESSAO,
+      [LISTAR]: pagina([ana]),
+      'POST /api/contas/ana/reposicao-acesso': {
+        estado: 409,
+        corpo: { codigo: 'CONTA_DESATIVADA', mensagem: 'Esta conta está desativada. Reative-a antes de repor o acesso.' },
+      },
+    })
+    renderizarAplicacao('/')
+    await userEvent.click(await screen.findByRole('button', { name: 'Repor o acesso de Ana Exemplo' }))
+    const dialogo = await screen.findByRole('dialog')
+    await userEvent.type(within(dialogo).getByLabelText(/Palavra-passe temporária/), 'temporaria-1')
+
+    await userEvent.click(within(dialogo).getByRole('button', { name: 'Repor acesso' }))
+
+    expect(await within(dialogo).findByRole('alert')).toHaveTextContent('Reative-a antes de repor o acesso.')
+  })
 })

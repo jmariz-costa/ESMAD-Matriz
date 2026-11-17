@@ -5,6 +5,7 @@ import jakarta.transaction.Transactional;
 import pt.esmad.matriz.comum.autenticacao.Identidade;
 import pt.esmad.matriz.comum.autenticacao.UtilizadorAtual;
 import pt.esmad.matriz.comum.erros.ErroAplicacao;
+import pt.esmad.matriz.comum.erros.Validacao;
 import pt.esmad.matriz.comum.paginacao.Pagina;
 import pt.esmad.matriz.comum.paginacao.PedidoPagina;
 import pt.esmad.matriz.projetos.GestoresServico;
@@ -14,7 +15,7 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Gestão das contas de Membro pelo Administrador (US14). Ao desativar, pede ao módulo
+ * Gestão das contas de Membro pelo Administrador (US14, US19). Ao desativar, pede ao módulo
  * Projetos os novos Gestores e ao módulo Tarefas que retire as atribuições (ADR 0001,
  * regra 5; architecture.md §6), tudo na mesma transação.
  */
@@ -83,6 +84,30 @@ public class GestaoContasServico {
         Utilizador conta = contaMembro(contaId);
         conta.reativar();
         return ContaResposta.de(conta);
+    }
+
+    /** US19 crit. 1: só o nome muda; o email não. */
+    @Transactional
+    public ContaResposta editarNome(UUID contaId, String nome) {
+        utilizadorAtual.exigirAdministrador();
+        Utilizador conta = contaMembro(contaId);
+        conta.alterarNome(nome);
+        return ContaResposta.de(conta);
+    }
+
+    /**
+     * US19 crit. 2: palavra-passe temporária (RN04), a mudar no próximo login (PR20); as sessões
+     * da pessoa terminam e o bloqueio é limpo (RI21). Uma conta desativada dá 409.
+     */
+    @Transactional
+    public void reporAcesso(UUID contaId, String palavraPasseTemporaria) {
+        utilizadorAtual.exigirAdministrador();
+        Utilizador conta = contaMembro(contaId);
+        Validacao validacao = new Validacao();
+        PalavraPasse.validar(palavraPasseTemporaria, "palavraPasseTemporaria", validacao);
+        validacao.lancarSeHouverErros();
+        conta.reporAcesso(PalavraPasse.hash(palavraPasseTemporaria));
+        sessoes.apagarDoUtilizador(conta.id());
     }
 
     /** 404 se não existir; 403 se for de Administrador, incluindo a própria (US14 crit. 7, RN21). */

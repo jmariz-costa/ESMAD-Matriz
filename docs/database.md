@@ -47,6 +47,7 @@ início e no fim (RN23).
 | `token_expira_em`        | data-hora       | opc.; 24 h após gerar o link                 | RN03, S05       |
 | `tentativas_falhadas`    | inteiro         | obrig.; começa a 0; volta a 0 num login correto | D09          |
 | `bloqueado_ate`          | data-hora       | opc.; login recusado até esta data-hora      | D09             |
+| `deve_mudar_palavra_passe` | booleano      | obrig.; verdadeiro depois de o Administrador repor o acesso, até a pessoa definir uma palavra-passe nova | US19, PR20 |
 
 ### Projeto
 
@@ -191,6 +192,7 @@ erDiagram
         datahora token_expira_em "opcional"
         inteiro tentativas_falhadas
         datahora bloqueado_ate "opcional"
+        booleano deve_mudar_palavra_passe
     }
 
     Projeto {
@@ -285,6 +287,7 @@ Regras que o diagrama não mostra e que a aplicação tem de garantir:
 | RI18 | Cada alteração de uma tarefa aumenta a `versao`; uma alteração feita com uma versão desatualizada é recusada.      | D08               |
 | RI19 | Uma sessão é válida só enquanto não passarem 30 minutos desde a `ultima_atividade`. Sair apaga a sessão; desativar uma conta apaga todas as sessões dessa pessoa. | D06, PR16, US02 crit. 4 |
 | RI20 | Ao chegar a 5 tentativas falhadas seguidas, `bloqueado_ate` passa a 15 minutos depois; um login correto põe `tentativas_falhadas` a 0. | D09, PR03 |
+| RI21 | Repor o acesso guarda o hash da palavra-passe temporária, põe `deve_mudar_palavra_passe` a verdadeiro, limpa o bloqueio (D09) e apaga as sessões da pessoa; mudar a palavra-passe põe-no a falso e apaga as outras sessões. | US19, US20, PR20, PR21 |
 
 ## 6. Pressupostos e decisões pendentes
 

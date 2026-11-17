@@ -56,6 +56,18 @@ public class ErroAplicacao extends RuntimeException {
                 "A tarefa foi alterada por outra pessoa. Recarregue-a antes de guardar.");
     }
 
+    /** Repor o acesso só em contas ativas (US19 crit. 2). */
+    public static ErroAplicacao contaDesativada() {
+        return new ErroAplicacao(409, CodigoErro.CONTA_DESATIVADA,
+                "Esta conta está desativada. Reative-a antes de repor o acesso.");
+    }
+
+    /** Enquanto a palavra-passe temporária não for mudada, só se pode mudá-la (PR20). */
+    public static ErroAplicacao palavraPasseTemporaria() {
+        return new ErroAplicacao(403, CodigoErro.PALAVRA_PASSE_TEMPORARIA,
+                "Defina uma palavra-passe nova antes de continuar.");
+    }
+
     public int estadoHttp() {
         return estadoHttp;
     }

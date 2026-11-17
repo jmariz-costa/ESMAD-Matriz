@@ -13,6 +13,11 @@ public class SessaoRepositorio implements PanacheRepositoryBase<Sessao, UUID> {
         return find("tokenHash", tokenHash).firstResultOptional();
     }
 
+    /** Termina as outras sessões da pessoa, mantendo a do token indicado (PR21). */
+    public long apagarOutrasDoUtilizador(UUID utilizadorId, String tokenHashAtual) {
+        return delete("utilizadorId = ?1 and tokenHash <> ?2", utilizadorId, tokenHashAtual);
+    }
+
     /** Termina todas as sessões da pessoa (PR16). */
     public long apagarDoUtilizador(UUID utilizadorId) {
         return delete("utilizadorId", utilizadorId);

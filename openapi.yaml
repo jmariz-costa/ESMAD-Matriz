@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Matriz API
-  version: 0.5.0
+  version: 0.6.0
   contact:
     name: Equipa Matriz
     email: matriz@empresa.pt
@@ -10,9 +10,16 @@ info:
     operações da **Fase 1** do plano de implementação
     (docs/implementation-plan.md): autenticação, projetos, membros, tarefas,
     responsáveis e comentários. As operações da Fase 2 são acrescentadas
-    quando forem implementadas: já estão "As minhas tarefas" (US11) e a
-    gestão de contas do Administrador (US14); faltam arquivar, histórico e
-    editar e apagar comentários.
+    quando forem implementadas: já estão "As minhas tarefas" (US11), a
+    gestão de contas do Administrador (US14 e US19) e mudar a própria
+    palavra-passe (US20); faltam arquivar, histórico e editar e apagar
+    comentários.
+
+    **Palavra-passe temporária (PR20):** depois de o Administrador repor o
+    acesso, `UtilizadorAutenticado.deveMudarPalavraPasse` vem a `true` e
+    todas as operações, exceto `GET /auth/me`, `POST /auth/palavra-passe` e
+    `POST /auth/logout`, devolvem 403 `PALAVRA_PASSE_TEMPORARIA` até a pessoa
+    definir uma palavra-passe nova.
 
     **Autenticação (D06):** `POST /auth/login` cria uma sessão e devolve o
     cookie `matriz_sessao` (HttpOnly, SameSite=Strict; Secure quando servido
@@ -162,6 +169,34 @@ paths:
                 $ref: '#/components/schemas/UtilizadorAutenticado'
         '401':
           $ref: '#/components/responses/NaoAutenticado'
+
+  /auth/palavra-passe:
+    post:
+      tags: [Autenticação]
+      operationId: mudarPalavraPasse
+      summary: Mudar a própria palavra-passe
+      description: |
+        Só para Membros (US20); o Administrador recebe 403, porque a sua
+        palavra-passe é definida na instalação (RN21, D07). A palavra-passe
+        atual tem de estar certa e a nova tem de ter pelo menos 8 caracteres
+        (RN04) e ser diferente da atual. As outras sessões da pessoa terminam;
+        a sessão deste pedido mantém-se (PR21). Também serve para trocar a
+        palavra-passe temporária (PR20).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MudarPalavraPassePedido'
+      responses:
+        '204':
+          description: Palavra-passe mudada.
+        '400':
+          $ref: '#/components/responses/Validacao'
+        '401':
+          $ref: '#/components/responses/NaoAutenticado'
+        '403':
+          $ref: '#/components/responses/SemPermissao'
 
   /projetos:
     get:
@@ -456,6 +491,82 @@ paths:
           $ref: '#/components/responses/NaoAutenticado'
         '403':
           $ref: '#/components/responses/SemPermissao'
+
+  /contas/{contaId}:
+    parameters:
+      - $ref: '#/components/parameters/ContaId'
+    patch:
+      tags: [Contas]
+      operationId: editarConta
+      summary: Editar o nome de uma conta de Membro (Administrador)
+      description: |
+        Só para o Administrador (US19 crit. 1). Só o nome se altera (entre 2
+        e 150 caracteres, RN23); o email não. Uma conta de Administrador
+        devolve 403 (RN21).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EditarContaPedido'
+            example:
+              nome: Ana Silva
+      responses:
+        '200':
+          description: Conta alterada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Conta'
+        '400':
+          $ref: '#/components/responses/Validacao'
+        '401':
+          $ref: '#/components/responses/NaoAutenticado'
+        '403':
+          $ref: '#/components/responses/SemPermissao'
+        '404':
+          $ref: '#/components/responses/NaoEncontrado'
+
+  /contas/{contaId}/reposicao-acesso:
+    parameters:
+      - $ref: '#/components/parameters/ContaId'
+    post:
+      tags: [Contas]
+      operationId: reporAcesso
+      summary: Repor o acesso de uma conta de Membro (Administrador)
+      description: |
+        Só para o Administrador (US19 crit. 2 e 3). Define uma palavra-passe
+        temporária (pelo menos 8 caracteres, RN04), que a pessoa tem de mudar
+        no próximo login (PR20); as sessões dela terminam e o bloqueio por
+        tentativas falhadas é limpo. Só em contas ativas: uma conta
+        desativada devolve 409 `CONTA_DESATIVADA`. Uma conta de Administrador
+        devolve 403 (RN21).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReporAcessoPedido'
+      responses:
+        '204':
+          description: Acesso reposto.
+        '400':
+          $ref: '#/components/responses/Validacao'
+        '401':
+          $ref: '#/components/responses/NaoAutenticado'
+        '403':
+          $ref: '#/components/responses/SemPermissao'
+        '404':
+          $ref: '#/components/responses/NaoEncontrado'
+        '409':
+          description: A conta está desativada; tem de ser reativada primeiro.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+              example:
+                codigo: CONTA_DESATIVADA
+                mensagem: Esta conta está desativada. Reative-a antes de repor o acesso.
 
   /contas/{contaId}/projetos-geridos:
     parameters:
@@ -1001,7 +1112,7 @@ components:
 
     UtilizadorAutenticado:
       type: object
-      required: [id, nome, email, tipo]
+      required: [id, nome, email, tipo, deveMudarPalavraPasse]
       properties:
         id:
           $ref: '#/components/schemas/Id'
@@ -1013,11 +1124,47 @@ components:
         tipo:
           type: string
           enum: [MEMBRO, ADMINISTRADOR]
+        deveMudarPalavraPasse:
+          type: boolean
+          description: Verdadeiro depois de o Administrador repor o acesso, até a pessoa definir uma palavra-passe nova (PR20).
       example:
         id: 3f2a9c4e-7b1d-4e8a-9c2f-1a2b3c4d5e6f
         nome: Ana Exemplo
         email: ana@empresa.pt
         tipo: MEMBRO
+        deveMudarPalavraPasse: false
+
+    MudarPalavraPassePedido:
+      type: object
+      additionalProperties: false
+      required: [palavraPasseAtual, palavraPasseNova]
+      properties:
+        palavraPasseAtual:
+          type: string
+          format: password
+        palavraPasseNova:
+          type: string
+          format: password
+          minLength: 8
+
+    EditarContaPedido:
+      type: object
+      additionalProperties: false
+      required: [nome]
+      properties:
+        nome:
+          type: string
+          description: Entre 2 e 150 caracteres, sem contar os espaços nas pontas (RN23).
+
+    ReporAcessoPedido:
+      type: object
+      additionalProperties: false
+      required: [palavraPasseTemporaria]
+      properties:
+        palavraPasseTemporaria:
+          type: string
+          format: password
+          minLength: 8
 
     PessoaResumo:
       type: object
@@ -1456,6 +1603,8 @@ components:
             - JA_EXISTE
             - GESTOR_NAO_REMOVIVEL
             - VERSAO_DESATUALIZADA
+            - CONTA_DESATIVADA
+            - PALAVRA_PASSE_TEMPORARIA
         mensagem:
           type: string
           description: Mensagem legível, em português de Portugal.
@@ -1500,7 +1649,9 @@ components:
     SemPermissao:
       description: |
         Quem pediu não é membro do projeto (RN20, US07 crit. 4), não é o
-        Gestor numa operação só do Gestor, ou é Administrador (RN19).
+        Gestor numa operação só do Gestor, ou é Administrador (RN19). Também
+        403, com o código `PALAVRA_PASSE_TEMPORARIA`, enquanto a palavra-passe
+        temporária não for mudada (PR20).
       content:
         application/json:
           schema:

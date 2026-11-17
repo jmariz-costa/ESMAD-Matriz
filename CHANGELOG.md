@@ -10,6 +10,17 @@ Enquanto a versão for `0.x`, a API não é considerada estável.
 
 ### Added
 
+- **Editar o nome e repor o acesso** (US19, incremento F2.8): na gestão de
+  contas, o Administrador corrige o nome de uma pessoa (o email não se
+  altera) e repõe o acesso de quem se esqueceu da palavra-passe, com uma
+  palavra-passe temporária. As sessões dessa pessoa terminam e, no login
+  seguinte, ela tem de definir uma palavra-passe nova; até lá, o servidor
+  recusa os outros pedidos (403 `PALAVRA_PASSE_TEMPORARIA`). Migração Flyway
+  V2 (`deve_mudar_palavra_passe`).
+- **Mudar a própria palavra-passe** (US20): a partir do nome no cabeçalho;
+  as outras sessões da pessoa terminam. Novos endpoints `PATCH /contas/{id}`,
+  `POST /contas/{id}/reposicao-acesso` e `POST /auth/palavra-passe`
+  (OpenAPI 0.6.0).
 - **Gestão de contas do Administrador** (US14, incremento F2.6): a página do
   Administrador lista as contas de Membro, com pesquisa por nome ou email e
   filtro por estado. Desativar pede confirmação e, se a pessoa for Gestora,
@@ -30,6 +41,10 @@ Enquanto a versão for `0.x`, a API não é considerada estável.
 
 ### Changed
 
+- **Recuperação da palavra-passe** (L01 revista): continua a não haver
+  recuperação automática por email, mas o Administrador pode repor o acesso
+  (US19). Novas regras PR20, PR21 e RI21; nome de uma pessoa entre 2 e 150
+  caracteres (RN23).
 - **Novo aspeto da interface** (proposta «Suave»): cores em tokens CSS, com
   verde-petróleo como cor de destaque, cartões com sombra suave e cantos
   arredondados, colunas do quadro com a cor do estado e etiquetas com a cor

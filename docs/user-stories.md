@@ -43,9 +43,12 @@ e [constraints.md](constraints.md).
 | US16 | Editar e eliminar projeto                          | Alta       |
 | US17 | Pesquisar projetos e filtrar tarefas               | Média      |
 | US18 | Ver o painel inicial                               | Média      |
+| US19 | Editar o nome e repor o acesso de uma conta (Administrador) | Média |
+| US20 | Mudar a minha palavra-passe                        | Média      |
 
 A US15 (etiquetas) ficou fora do MVP: ver a secção [Fora do MVP](#fora-do-mvp)
-no fim deste documento. As US16 a US18 foram acrescentadas na Ficha PL 03.
+no fim deste documento. As US16 a US18 foram acrescentadas na Ficha PL 03 e
+as US19 e US20 a 2026-11-17, por decisão do responsável do projeto.
 A US01 foi adiada na Ficha PL 03: enquanto não for implementada, as contas de
 Membro são criadas por seed (L07 em [constraints.md](constraints.md)).
 
@@ -303,6 +306,45 @@ saíram da empresa deixem de ter acesso à Matriz.
 9. **Dado** que entro com uma conta de Administrador, **então** só tenho acesso
    à gestão de contas: não posso criar projetos, ser adicionado a projetos nem
    ter tarefas atribuídas.
+
+## US19 — Editar o nome e repor o acesso de uma conta (Administrador) · Média
+
+*(Acrescentada a 2026-11-17, por decisão do responsável do projeto.)*
+
+Como **Administrador**, quero corrigir o nome de uma pessoa e repor o acesso de
+quem se esqueceu da palavra-passe, para que ninguém fique impedido de usar a
+Matriz.
+
+1. **Dado** que sou Administrador, **quando** altero o nome de uma conta de
+   Membro (entre 2 e 150 caracteres, RN23), **então** o novo nome aparece em
+   toda a Matriz (membros, responsáveis, comentários). O email não se altera;
+   o histórico das tarefas mantém o nome que estava registado.
+2. **Dado** que sou Administrador, **quando** reponho o acesso de uma conta de
+   Membro ativa com uma palavra-passe temporária (pelo menos 8 caracteres,
+   RN04), **então** a palavra-passe anterior deixa de funcionar, as sessões
+   abertas dessa pessoa terminam e o bloqueio por tentativas falhadas é
+   limpo. Uma conta desativada tem de ser reativada primeiro.
+3. **Dado** que o meu acesso foi reposto, **quando** entro com a palavra-passe
+   temporária, **então** tenho de definir uma palavra-passe nova (US20) antes
+   de usar a Matriz; até lá, o servidor recusa os outros pedidos (PR20).
+4. **Dado** que não sou Administrador, ou que a conta é de Administrador,
+   **então** estas ações são recusadas (RN21).
+
+## US20 — Mudar a minha palavra-passe · Média
+
+*(Acrescentada a 2026-11-17, por decisão do responsável do projeto.)*
+
+Como **Membro**, quero mudar a minha palavra-passe, para a manter só do meu
+conhecimento.
+
+1. **Dado** que tenho sessão iniciada, **quando** indico a palavra-passe atual
+   e uma nova (pelo menos 8 caracteres, repetida para confirmar), **então**
+   passo a entrar com a nova e as minhas outras sessões abertas terminam; a
+   sessão atual mantém-se (PR21).
+2. **Dado** que a palavra-passe atual está errada, ou que a nova é igual à
+   atual, **então** a mudança é recusada com uma mensagem clara.
+3. **Dado** que entro com uma conta de Administrador, **então** não posso
+   mudar a palavra-passe na Matriz: é definida na instalação (RN21, D07).
 
 ## US16 — Editar e eliminar projeto · Alta
 

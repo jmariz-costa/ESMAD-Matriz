@@ -39,7 +39,7 @@ desativar e reativar contas.
 |----------------|----------------------------------------------------------------|------------------------------------------------------------------------------------------------------|
 | Membro         | Qualquer pessoa da empresa com conta (exceto o Administrador)  | Criar projetos (tornando-se o seu Gestor) e ver "As minhas tarefas". Só vê os projetos de que faz parte; nesses, pode ver o quadro, criar e editar tarefas, atribuir responsáveis, mudar estados e comentar |
 | Gestor         | O Membro que gere um projeto: quem o criou, ou quem o Administrador nomear (US14). Um por projeto — *pressuposto PR01* | Tudo o que o Membro faz, mais: editar e eliminar o projeto, gerir membros, eliminar tarefas, arquivar e reativar o projeto (*pressuposto PR07*) |
-| Administrador  | Conta(s) definida(s) na instalação da Matriz, só para gerir contas | Desativar contas de Membros (por exemplo, quando alguém sai da empresa) e reativá-las. Não participa em projetos: só vê o nome dos projetos de um Gestor que está a desativar, para nomear o novo Gestor |
+| Administrador  | Conta(s) definida(s) na instalação da Matriz, só para gerir contas | Desativar contas de Membros (por exemplo, quando alguém sai da empresa) e reativá-las, corrigir o nome e repor o acesso (US19). Não participa em projetos: só vê o nome dos projetos de um Gestor que está a desativar, para nomear o novo Gestor |
 
 ## 4. Regras de negócio confirmadas pelo cliente
 
@@ -67,7 +67,7 @@ desativar e reativar contas.
 | RN20 | Um Membro só vê os projetos de que faz parte.                                                                                 |
 | RN21 | Um Administrador só desativa e reativa contas de Membros. As contas de Administrador não podem ser desativadas na Matriz; só se alteram na configuração da instalação (D07). |
 | RN22 | Só o Gestor edita (nome e descrição) e elimina o projeto. A eliminação pede confirmação, é definitiva e apaga tudo o que o projeto contém (L06). Um projeto arquivado não pode ser editado, mas pode ser eliminado. *(Ficha PL 03)* |
-| RN23 | Limites dos textos: nome do projeto entre 3 e 100 caracteres e descrição até 1000; título da tarefa entre 3 e 150 e descrição até 2000; comentário entre 1 e 2000. Os espaços no início e no fim não contam, e um texto obrigatório só com espaços é recusado. *(Ficha PL 03)* |
+| RN23 | Limites dos textos: nome do projeto entre 3 e 100 caracteres e descrição até 1000; título da tarefa entre 3 e 150 e descrição até 2000; comentário entre 1 e 2000; nome de uma pessoa entre 2 e 150 (US19). Os espaços no início e no fim não contam, e um texto obrigatório só com espaços é recusado. *(Ficha PL 03)* |
 
 ## 5. Requisitos funcionais
 
@@ -90,6 +90,8 @@ desativar e reativar contas.
 | RF16 | Editar e eliminar projetos                                                                         | Alta       | US16       |
 | RF17 | Pesquisar projetos pelo nome e filtrar as tarefas por estado e prioridade, com listagens paginadas | Média      | US17       |
 | RF18 | Painel inicial com os projetos acessíveis e a contagem de tarefas por estado                       | Média      | US18       |
+| RF19 | Editar o nome e repor o acesso de uma conta de Membro (Administrador), com palavra-passe temporária | Média      | US19       |
+| RF20 | Mudar a própria palavra-passe (Membro)                                                             | Média      | US20       |
 
 ## 6. Requisitos não funcionais
 
@@ -119,7 +121,7 @@ Funcionalidades identificadas mas deixadas para depois do MVP:
 |--------------------------------------------------------|--------------------------------------------------------------|
 | Interface em inglês                                    | Pedida pelo cliente, adiada para depois do MVP               |
 | RF15 — Etiquetas em tarefas e filtro do quadro por etiqueta (US15) | Pedida pelo cliente, adiada para depois do MVP   |
-| Recuperação de palavra-passe ("Esqueci-me")            | Adiada pelo cliente (ver limitações em constraints.md)        |
+| Recuperação automática de palavra-passe por email ("Esqueci-me") | Adiada pelo cliente; o Administrador repõe o acesso (US19, L01) |
 | Anexos em tarefas                                      | Não pedido pelo cliente                                      |
 | Notificações (email ou na aplicação)                   | Não pedido pelo cliente                                      |
 | Destaque de tarefas em atraso                          | Não pedido pelo cliente                                      |

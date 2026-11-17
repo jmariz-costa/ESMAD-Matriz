@@ -988,6 +988,49 @@ label {
   padding-left: 18px;
 }
 
+/* Nome no cabeçalho (abre "Mudar a palavra-passe", US20) e notas dos campos */
+.nome-utilizador {
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.nome-utilizador:hover {
+  background: var(--superficie-2);
+  color: var(--acento);
+}
+
+.nome-utilizador:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+}
+
+.nota-campo {
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.campo[readonly] {
+  background: var(--superficie-2);
+  color: var(--texto-suave);
+}
+
+.btn.ligacao {
+  margin-top: 12px;
+  border: 0;
+  background: none;
+  color: var(--texto-suave);
+  width: 100%;
+}
+
+.tabela.contas .acoes .btn + .btn {
+  margin-left: 6px;
+}
+
 /* Formulário da tarefa */
 .campos-lado {
   display: grid;

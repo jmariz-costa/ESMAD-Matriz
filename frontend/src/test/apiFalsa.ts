@@ -32,6 +32,7 @@ export const ANA = {
   nome: 'Ana Exemplo',
   email: 'ana@empresa.pt',
   tipo: 'MEMBRO',
+  deveMudarPalavraPasse: false,
 } as const
 
 export const ADMIN = {
@@ -39,6 +40,7 @@ export const ADMIN = {
   nome: 'Administrador',
   email: 'admin@empresa.pt',
   tipo: 'ADMINISTRADOR',
+  deveMudarPalavraPasse: false,
 } as const
 
 export const SEM_SESSAO: RespostaFalsa = {

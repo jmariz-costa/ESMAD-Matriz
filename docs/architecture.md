@@ -107,7 +107,7 @@ O serviço de email não existe nesta fase (US01 adiada).
 
 | Módulo          | Responsabilidade                                                                                                   | Requisitos             |
 |-----------------|--------------------------------------------------------------------------------------------------------------------|------------------------|
-| **Contas**      | Registo com email da empresa e confirmação por link (adiados), login e logout, sessões, limite de tentativas, desativar e reativar contas de Membro | RF01, RF02, RF14       |
+| **Contas**      | Registo com email da empresa e confirmação por link (adiados), login e logout, sessões, limite de tentativas, desativar e reativar contas de Membro, editar o nome e repor o acesso, mudar a própria palavra-passe | RF01, RF02, RF14, RF19, RF20 |
 | **Projetos**    | Criar, editar, eliminar e pesquisar projetos, gerir membros e o Gestor, arquivar e reativar, calcular a percentagem de conclusão e as contagens do painel | RF03, RF04, RF08, RF10, RF16–RF18 |
 | **Tarefas**     | Criar, editar e eliminar tarefas (com o registo das tarefas eliminadas), mudar estados, atribuir e remover responsáveis, controlo de versão, filtrar, quadro Kanban, lista "As minhas tarefas" | RF05–RF07, RF09, RF11, RF17 |
 | **Comentários** | Comentar tarefas; só o autor edita ou apaga o seu comentário (PR11)                                                | RF12                   |

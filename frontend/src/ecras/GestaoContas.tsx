@@ -6,6 +6,8 @@ import { TAMANHO_PAGINA } from '../api/projetos'
 import { useDados } from '../comum/useDados'
 import { useNotificar } from '../comum/notificacao'
 import { DesativarConta } from '../contas/DesativarConta'
+import { EditarConta } from '../contas/EditarConta'
+import { ReporAcesso } from '../contas/ReporAcesso'
 
 const ESPERA_PESQUISA_MS = 300
 
@@ -24,9 +26,9 @@ function textoTotal(total: number): string {
 }
 
 /**
- * Gestão de contas do Administrador (US14): contas de Membro com pesquisa, filtro por estado
- * e paginação, guardados no URL. Desativar abre a confirmação (e a escolha dos novos Gestores);
- * reativar é imediato.
+ * Gestão de contas do Administrador (US14, US19): contas de Membro com pesquisa, filtro por
+ * estado e paginação, guardados no URL. Editar o nome e repor o acesso abrem um diálogo;
+ * desativar abre a confirmação (e a escolha dos novos Gestores); reativar é imediato.
  */
 export function GestaoContas() {
   const [parametros, setParametros] = useSearchParams()
@@ -35,6 +37,8 @@ export function GestaoContas() {
   const pagina = paginaDoUrl(parametros.get('pagina'))
   const [texto, setTexto] = useState(q)
   const [aDesativar, setADesativar] = useState<Conta | null>(null)
+  const [aEditar, setAEditar] = useState<Conta | null>(null)
+  const [aReporAcesso, setAReporAcesso] = useState<Conta | null>(null)
   const [aReativar, setAReativar] = useState<string | null>(null)
   const [erro, setErro] = useState<string | null>(null)
   const notificar = useNotificar()
@@ -141,6 +145,12 @@ export function GestaoContas() {
                         </span>
                       </td>
                       <td className="acoes">
+                        <button type="button" className="btn" onClick={() => setAEditar(conta)}
+                          aria-label={`Editar ${conta.nome}`}>Editar</button>
+                        {conta.estado === 'ATIVO' && (
+                          <button type="button" className="btn" onClick={() => setAReporAcesso(conta)}
+                            aria-label={`Repor o acesso de ${conta.nome}`}>Repor acesso</button>
+                        )}
                         {conta.estado === 'ATIVO' ? (
                           <button type="button" className="btn perigo-contorno" onClick={() => setADesativar(conta)}
                             aria-label={`Desativar ${conta.nome}`}>Desativar</button>
@@ -173,6 +183,27 @@ export function GestaoContas() {
         </>
       )}
 
+      {aEditar && (
+        <EditarConta
+          conta={aEditar}
+          aoFechar={() => setAEditar(null)}
+          aoGuardar={(conta) => {
+            notificar(`Nome alterado para ${conta.nome}.`)
+            setAEditar(null)
+            recarregar()
+          }}
+        />
+      )}
+      {aReporAcesso && (
+        <ReporAcesso
+          conta={aReporAcesso}
+          aoFechar={() => setAReporAcesso(null)}
+          aoRepor={() => {
+            notificar(`Acesso de ${aReporAcesso.nome} reposto. Comunique-lhe a palavra-passe temporária.`)
+            setAReporAcesso(null)
+          }}
+        />
+      )}
       {aDesativar && (
         <DesativarConta
           conta={aDesativar}

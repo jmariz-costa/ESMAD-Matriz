@@ -43,7 +43,14 @@ export function FornecedorSessao({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  const valor = useMemo(() => ({ estado, mensagem, entrar, sair }), [estado, mensagem, entrar, sair])
+  const palavraPasseMudada = useCallback(() => {
+    setEstado((atual) => atual.tipo === 'autenticado'
+      ? { tipo: 'autenticado', utilizador: { ...atual.utilizador, deveMudarPalavraPasse: false } }
+      : atual)
+  }, [])
+
+  const valor = useMemo(() => ({ estado, mensagem, entrar, sair, palavraPasseMudada }),
+    [estado, mensagem, entrar, sair, palavraPasseMudada])
 
   return <ContextoSessao.Provider value={valor}>{children}</ContextoSessao.Provider>
 }

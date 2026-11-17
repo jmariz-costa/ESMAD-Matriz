@@ -1,13 +1,16 @@
 package pt.esmad.matriz.contas;
 
+import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.PATCH;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import pt.esmad.matriz.comum.Identificadores;
 import pt.esmad.matriz.comum.erros.Validacao;
 import pt.esmad.matriz.comum.paginacao.Pagina;
@@ -16,7 +19,7 @@ import pt.esmad.matriz.projetos.GestoresServico;
 
 import java.util.List;
 
-/** Endpoints da gestão de contas pelo Administrador (openapi.yaml, tag Contas; US14). */
+/** Endpoints da gestão de contas pelo Administrador (openapi.yaml, tag Contas; US14, US19). */
 @Path("/contas")
 @Produces(MediaType.APPLICATION_JSON)
 public class ContasRecurso {
@@ -26,6 +29,14 @@ public class ContasRecurso {
     }
 
     public record NovoGestorPedido(String projetoId, String gestorId) {
+    }
+
+    /** Corpo de PATCH /contas/{id} (openapi.yaml, EditarContaPedido). */
+    public record EditarContaPedido(String nome) {
+    }
+
+    /** Corpo de POST /contas/{id}/reposicao-acesso (openapi.yaml, ReporAcessoPedido). */
+    public record ReporAcessoPedido(String palavraPasseTemporaria) {
     }
 
     private final GestaoContasServico servico;
@@ -41,6 +52,23 @@ public class ContasRecurso {
                                         @QueryParam("tamanho") String tamanho) {
         EstadoConta filtro = lerEstado(estado);
         return servico.listar(q, filtro, PedidoPagina.de(pagina, tamanho));
+    }
+
+    @PATCH
+    @Path("/{contaId}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public ContaResposta editar(@PathParam("contaId") String contaId,
+                                @NotNull(message = "O corpo do pedido é obrigatório.") EditarContaPedido pedido) {
+        return servico.editarNome(Identificadores.paraUuid(contaId), pedido.nome());
+    }
+
+    @POST
+    @Path("/{contaId}/reposicao-acesso")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response reporAcesso(@PathParam("contaId") String contaId,
+                                @NotNull(message = "O corpo do pedido é obrigatório.") ReporAcessoPedido pedido) {
+        servico.reporAcesso(Identificadores.paraUuid(contaId), pedido.palavraPasseTemporaria());
+        return Response.noContent().build();
     }
 
     @GET

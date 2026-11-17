@@ -49,6 +49,8 @@ mas são pressupostos e não requisitos pedidos pelo cliente: podem ser revistos
 | PR17 | A empresa está sediada na União Europeia, pelo que os dados pessoais estão sujeitos ao RGPD.                                                      | Segurança   |
 | PR18 | Os textos da interface são preparados desde o início para acrescentar inglês no futuro, sem refazer a interface.                                 | RNF03       |
 | PR19 | As contas de Administrador usam um email da empresa próprio da função (ex.: `admin@empresa.pt`), diferente do email individual da pessoa. Assim, quem é Administrador pode ter também uma conta de Membro com o seu email individual da empresa. | US14, D07   |
+| PR20 | A palavra-passe temporária definida pelo Administrador (US19) tem de ser mudada no primeiro login; até lá, o servidor só aceita mudar a palavra-passe, consultar a sessão e sair (S03). | US19, US20 |
+| PR21 | Mudar a própria palavra-passe termina as outras sessões abertas da pessoa; a sessão onde a mudança foi feita mantém-se.                | US20, D06   |
 
 ## 3. Segurança e privacidade
 
@@ -94,7 +96,7 @@ Consequências conhecidas das decisões tomadas para o MVP:
 
 | ID   | Limitação                                                                                                                       |
 |------|---------------------------------------------------------------------------------------------------------------------------------|
-| L01  | Não há recuperação de palavra-passe: quem se esquecer dela não consegue voltar a entrar.                                        |
+| L01  | Não há recuperação automática de palavra-passe por email: quem se esquecer dela pede ao Administrador que reponha o acesso, com uma palavra-passe temporária (US19). *(Revista a 2026-11-17.)* |
 | L02  | Não há notificações: uma pessoa só sabe que lhe atribuíram uma tarefa ou que comentaram quando abre a Matriz.                  |
 | L03  | O estado "Em revisão" é apenas informativo: como os movimentos são livres e qualquer membro pode concluir, nada obriga a rever. |
 | L04  | A interface existe apenas em português.                                                                                         |

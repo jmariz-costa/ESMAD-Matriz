@@ -50,15 +50,15 @@ cliente foi:
   (US11).
 - Gestão de contas pelo Administrador: pesquisar e filtrar as contas de
   Membro, desativar (com a escolha do novo Gestor de cada projeto da pessoa)
-  e reativar (US14).
+  e reativar (US14), editar o nome e repor o acesso com uma palavra-passe
+  temporária, que a pessoa tem de mudar no login seguinte (US19).
+- Mudar a própria palavra-passe, a partir do nome no cabeçalho (US20).
 
 ### Previstas (Fase 2)
 
 - Consulta do histórico de cada tarefa e do registo de tarefas eliminadas.
 - Editar e apagar os próprios comentários.
 - Arquivo e reativação de projetos.
-- Editar o nome das contas e repor o acesso (Administrador), e mudar a
-  própria palavra-passe.
 
 O detalhe está em [docs/requirements.md](docs/requirements.md) e o estado de
 cada incremento em
@@ -214,7 +214,7 @@ cd frontend && npm test                 # Vitest + Testing Library
 cd frontend && npx tsc -b && npm run lint && npm run build   # tipos, lint e build
 ```
 
-O Backend tem 131 testes unitários e 150 de integração (com `@Tag("integracao")`).
+O Backend tem 137 testes unitários e 160 de integração (com `@Tag("integracao")`).
 O relatório de cobertura fica em `backend/target/site/jacoco/index.html`; o
 `verify` falha abaixo de 95% de linhas ou de ramos. Os testes também leem o
 `backend/.env`: sem ele, o Admin e os dados de demonstração não são criados e
@@ -343,7 +343,7 @@ verificações em [docs/verification.md](docs/verification.md).
 - Fase 2, incremento F2.4: "As minhas tarefas" (US11), com o histórico das
   concluídas (ver [docs/implementation-plan.md](docs/implementation-plan.md) §5).
 - Fase 2, incremento F2.6: gestão de contas pelo Administrador (US14).
+- Fase 2, incremento F2.8: editar o nome e repor o acesso (US19) e mudar a
+  própria palavra-passe (US20); a L01 foi revista.
 
-Próximo: editar o nome e repor o acesso (Administrador) e mudar a própria
-palavra-passe (F2.8); depois, arquivo, histórico consultável e edição de
-comentários.
+Próximo: Fase 2 (arquivo, histórico consultável e edição de comentários).

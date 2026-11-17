@@ -619,7 +619,7 @@ endpoints ao OpenAPI quando for implementada.
 | F2.5 Editar e apagar os próprios comentários | US12 crit. 3 e 4 | ⬜ |
 | F2.6 Administrador: desativar e reativar contas | US14 | ✅ |
 | F2.7 Registo com confirmação por email (extensão) | US01 | ⬜ |
-| F2.8 Editar o nome e repor o acesso (Administrador); mudar a própria palavra-passe | novas (a escrever) | ⬜ |
+| F2.8 Editar o nome e repor o acesso (Administrador); mudar a própria palavra-passe | US19, US20 | ✅ |
 
 ### F2.4 — As minhas tarefas ✅
 
@@ -711,6 +711,53 @@ incremento à parte (F2.8), por decisão do utilizador.
 - Uma execução da suite falhou ao arrancar o Quarkus porque o Backend de
   desenvolvimento ocupava a porta 8081; repetida com
   `-Dquarkus.http.test-port=0`, como indica o `AGENTS.md`.
+
+### F2.8 — Editar o nome e repor o acesso; mudar a própria palavra-passe ✅
+
+**Plano (2026-11-17).** O utilizador pediu, na gestão de contas, editar e
+"repor acesso" (como na sua captura de ecrã) e que cada pessoa pudesse mudar
+a palavra-passe. Antes do código, foram escritas a US19 e a US20 e revistas a
+L01, a RN23, o RF19 e o RF20, com as regras PR20, PR21 e RI21.
+
+**Decisões do utilizador (2026-11-17)**
+- Âmbito: editar só o nome (o email não); **1a** palavra-passe temporária
+  definida pelo Administrador, com mudança obrigatória no login seguinte (em
+  vez de o Administrador ficar a conhecer a palavra-passe); **2a** mudar a
+  própria palavra-passe num diálogo aberto pelo nome no cabeçalho; **3a** em
+  incremento próprio, depois da US14.
+- US19/US20: **1a** a obrigação de mudar é verificada no servidor (S03);
+  **2a** mudar a palavra-passe termina as outras sessões; **3a** nome entre 2
+  e 150 caracteres.
+
+**Resultado (2026-11-17)**
+- **Contrato:** `editarConta` (`PATCH /contas/{id}`), `reporAcesso`
+  (`POST /contas/{id}/reposicao-acesso`) e `mudarPalavraPasse`
+  (`POST /auth/palavra-passe`); `UtilizadorAutenticado.deveMudarPalavraPasse`;
+  códigos `CONTA_DESATIVADA` e `PALAVRA_PASSE_TEMPORARIA`; OpenAPI 0.6.0.
+- **Backend:** migração V2 (`deve_mudar_palavra_passe`); regras no
+  `Utilizador` (`alterarNome`, `reporAcesso`, `definirPalavraPasse`) e em
+  `PalavraPasse` (RN04, bcrypt); o `FiltroSessao` recusa com 403 os pedidos
+  de quem tem a palavra-passe temporária, exceto os marcados com
+  `@PermitidoComPalavraPasseTemporaria` (`/auth/me`, `/auth/palavra-passe`) e
+  o logout. Testes: `UtilizadorTest` (+4), `PalavraPasseTest` (2),
+  `EditarEReporAcessoApiTest` (7) e `MudarPalavraPasseApiTest` (3). Numa
+  cópia limpa: 297 testes (137 unitários e 160 de integração), cobertura de
+  99,0% das linhas e 96,3% dos ramos.
+- **Frontend:** `FormularioPalavraPasse` (partilhado), ecrã
+  `DefinirPalavraPasse` (mostrado pelo `RotaProtegida` enquanto a
+  palavra-passe for temporária), diálogos `MudarPalavraPasse` (nome no
+  cabeçalho, só Membros), `EditarConta` e `ReporAcesso`; 8 testes novos (128
+  no total).
+- Verificado contra o Backend real (migração V2 aplicada; pedidos sem alterar
+  dados) e testado pelo utilizador no browser.
+
+**Desvios ao plano**
+- Quem tem a palavra-passe temporária pode sair (o logout é público).
+- Uma palavra-passe atual errada ao mudar a palavra-passe não conta para o
+  bloqueio das 5 tentativas (D09); o pedido exige sessão iniciada.
+- A confirmação da palavra-passe nova só é verificada no Frontend.
+- O campo da palavra-passe temporária é de texto visível, para o
+  Administrador a poder comunicar.
 
 ## 6. Pontos em aberto
 
