@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Matriz API
-  version: 0.3.0
+  version: 0.4.0
   contact:
     name: Equipa Matriz
     email: matriz@empresa.pt
@@ -9,9 +9,9 @@ info:
     Contrato REST do MVP da Matriz. Na Ficha PL 03 passou a descrever as
     operações da **Fase 1** do plano de implementação
     (docs/implementation-plan.md): autenticação, projetos, membros, tarefas,
-    responsáveis e comentários. As operações da Fase 2 (arquivar, histórico,
-    "As minhas tarefas", editar e apagar comentários, Administrador) são
-    acrescentadas quando forem implementadas.
+    responsáveis e comentários. As operações da Fase 2 são acrescentadas
+    quando forem implementadas: já está "As minhas tarefas" (US11); faltam
+    arquivar, histórico, editar e apagar comentários e Administrador.
 
     **Autenticação (D06):** `POST /auth/login` cria uma sessão e devolve o
     cookie `matriz_sessao` (HttpOnly, SameSite=Strict; Secure quando servido
@@ -76,7 +76,7 @@ tags:
   - name: Membros
     description: Membros de um projeto e procura de utilizadores (US04).
   - name: Tarefas
-    description: Tarefas de um projeto (US05, US06, US07, US09, US17).
+    description: Tarefas de um projeto e "As minhas tarefas" (US05, US06, US07, US09, US11, US17).
   - name: Responsáveis
     description: Atribuir e remover responsáveis de uma tarefa (US05).
   - name: Comentários
@@ -501,6 +501,49 @@ paths:
           $ref: '#/components/responses/NaoEncontrado'
         '409':
           $ref: '#/components/responses/ProjetoArquivado'
+
+  /minhas-tarefas:
+    get:
+      tags: [Tarefas]
+      operationId: listarMinhasTarefas
+      summary: Listar as tarefas atribuídas a quem tem a sessão
+      description: |
+        "As minhas tarefas" (US11): as tarefas de que o utilizador da sessão é
+        responsável, em todos os projetos de que é membro, exceto os
+        arquivados (US11 crit. 2). Cada tarefa traz o nome do projeto.
+
+        - Por omissão (`concluidas=false`), só as tarefas não concluídas,
+          ordenadas por prazo (o mais próximo primeiro, sem prazo no fim) e
+          depois pelo título (US11 crit. 1 e 3).
+        - Com `concluidas=true`, o histórico das concluídas (US11 crit. 5),
+          da conclusão mais recente para a mais antiga. A data de conclusão
+          (`concluidaEm`) é a da última passagem a `CONCLUIDA` no histórico da
+          tarefa; as tarefas sem essa entrada (ex.: dados de demonstração)
+          vêm no fim, com `concluidaEm` a null.
+
+        O Administrador recebe 403 (RN19).
+      parameters:
+        - name: concluidas
+          in: query
+          description: Omitido ou vazio = `false`.
+          schema:
+            type: boolean
+            default: false
+        - $ref: '#/components/parameters/Pagina'
+        - $ref: '#/components/parameters/Tamanho'
+      responses:
+        '200':
+          description: Página de tarefas.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginaMinhasTarefas'
+        '400':
+          $ref: '#/components/responses/Validacao'
+        '401':
+          $ref: '#/components/responses/NaoAutenticado'
+        '403':
+          $ref: '#/components/responses/SemPermissao'
 
   /tarefas/{tarefaId}:
     parameters:
@@ -1056,6 +1099,32 @@ components:
             nome: Bruno Exemplo
         versao: 3
 
+    MinhaTarefa:
+      description: Uma tarefa de "As minhas tarefas" (US11), com o projeto e a data de conclusão.
+      allOf:
+        - $ref: '#/components/schemas/Tarefa'
+        - type: object
+          required: [projeto, concluidaEm]
+          properties:
+            projeto:
+              $ref: '#/components/schemas/ProjetoResumo'
+            concluidaEm:
+              type: [string, 'null']
+              format: date-time
+              description: |
+                Última passagem a `CONCLUIDA` no histórico da tarefa. Null nas
+                tarefas não concluídas e nas concluídas sem essa entrada.
+
+    ProjetoResumo:
+      type: object
+      description: Apenas o identificador e o nome do projeto.
+      required: [id, nome]
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        nome:
+          type: string
+
     CriarComentarioPedido:
       type: object
       additionalProperties: false
@@ -1134,6 +1203,17 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/Tarefa'
+
+    PaginaMinhasTarefas:
+      allOf:
+        - $ref: '#/components/schemas/Paginacao'
+        - type: object
+          required: [itens]
+          properties:
+            itens:
+              type: array
+              items:
+                $ref: '#/components/schemas/MinhaTarefa'
 
     PaginaComentarios:
       allOf:

@@ -21,6 +21,7 @@ export function Cabecalho() {
         <nav aria-label="Principal">
           <NavLink to="/" end>Início</NavLink>
           <NavLink to="/projetos">Projetos</NavLink>
+          <NavLink to="/minhas-tarefas">As minhas tarefas</NavLink>
         </nav>
       )}
       <div className="utilizador">

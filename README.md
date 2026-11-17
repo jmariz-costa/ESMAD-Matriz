@@ -43,9 +43,14 @@ cliente foi:
 - Comentários nas tarefas.
 - Registo das alterações das tarefas no histórico (a consulta é da Fase 2).
 
+### Implementadas (Fase 2)
+
+- "As minhas tarefas": as tarefas por concluir atribuídas a mim em todos os
+  projetos, por prazo, e o histórico das concluídas, com a data de conclusão
+  (US11).
+
 ### Previstas (Fase 2)
 
-- Lista "As minhas tarefas", com as tarefas por concluir de todos os projetos.
 - Consulta do histórico de cada tarefa e do registo de tarefas eliminadas.
 - Editar e apagar os próprios comentários.
 - Arquivo e reativação de projetos.
@@ -205,7 +210,7 @@ cd frontend && npm test                 # Vitest + Testing Library
 cd frontend && npx tsc -b && npm run lint && npm run build   # tipos, lint e build
 ```
 
-O Backend tem 112 testes unitários e 123 de integração (com `@Tag("integracao")`).
+O Backend tem 118 testes unitários e 135 de integração (com `@Tag("integracao")`).
 O relatório de cobertura fica em `backend/target/site/jacoco/index.html`; o
 `verify` falha abaixo de 95% de linhas ou de ramos. Os testes também leem o
 `backend/.env`: sem ele, o Admin e os dados de demonstração não são criados e
@@ -331,6 +336,8 @@ verificações em [docs/verification.md](docs/verification.md).
   [CHANGELOG.md](CHANGELOG.md) e [RELEASE_NOTES.md](RELEASE_NOTES.md)).
 - Depois da versão candidata `0.2.0-rc.1`: novo design da interface, com
   tema claro e escuro (botão no cabeçalho; ver [CHANGELOG.md](CHANGELOG.md)).
+- Fase 2, incremento F2.4: "As minhas tarefas" (US11), com o histórico das
+  concluídas (ver [docs/implementation-plan.md](docs/implementation-plan.md) §5).
 
-Próximo: Fase 2 (arquivo, "As minhas tarefas", histórico consultável,
-edição de comentários e Administrador).
+Próximo: Fase 2 (Administrador, arquivo, histórico consultável e edição de
+comentários).

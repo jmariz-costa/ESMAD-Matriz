@@ -825,6 +825,83 @@ label {
   opacity: 0.6;
 }
 
+/* As minhas tarefas (US11): separadores e tabela */
+.separadores {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  margin-bottom: 16px;
+  border-radius: 999px;
+  background: var(--superficie);
+  box-shadow: var(--sombra);
+}
+
+.separador {
+  padding: 7px 18px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--texto-suave);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.separador:hover {
+  color: var(--texto);
+}
+
+.separador.ativo {
+  background: var(--acento);
+  color: var(--sobre-acento);
+}
+
+.separador:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+}
+
+.minhas-tarefas .titulo-cartao {
+  margin: 0;
+  padding: 0;
+}
+
+.minhas-tarefas .titulo-cartao:hover {
+  color: var(--acento);
+}
+
+.minhas-tarefas .numeros {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.estado-tarefa {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--e-a-fazer);
+  color: var(--texto);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.estado-tarefa[data-estado='EM_CURSO'] {
+  background: var(--e-em-curso);
+}
+
+.estado-tarefa[data-estado='EM_REVISAO'] {
+  background: var(--e-em-revisao);
+}
+
+.estado-tarefa[data-estado='CONCLUIDA'] {
+  background: var(--e-concluida);
+}
+
+.minhas-tarefas .etiqueta {
+  font-size: 12px;
+}
+
 /* Formulário da tarefa */
 .campos-lado {
   display: grid;

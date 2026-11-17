@@ -3,6 +3,7 @@ import { AreaAutenticada } from './componentes/AreaAutenticada'
 import { DetalheProjeto } from './ecras/DetalheProjeto'
 import { Inicio } from './ecras/Inicio'
 import { InicioSessao } from './ecras/InicioSessao'
+import { MinhasTarefas } from './ecras/MinhasTarefas'
 import { Projetos } from './ecras/Projetos'
 import { RotaProtegida } from './sessao/RotaProtegida'
 import { SoMembros } from './sessao/SoMembros'
@@ -18,6 +19,7 @@ export function RotasMatriz() {
           <Route element={<SoMembros />}>
             <Route path="projetos" element={<Projetos />} />
             <Route path="projetos/:projetoId" element={<DetalheProjeto />} />
+            <Route path="minhas-tarefas" element={<MinhasTarefas />} />
           </Route>
         </Route>
       </Route>

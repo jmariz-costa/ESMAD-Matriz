@@ -236,6 +236,11 @@ todos os projetos, para organizar o meu trabalho.
    por prazo (o mais próximo primeiro) e as tarefas sem prazo aparecem no fim.
 4. **Dado** que não tenho tarefas por concluir atribuídas, **então** a lista
    mostra uma mensagem a indicar que não há tarefas.
+5. **Dado** "As minhas tarefas", **quando** escolho as concluídas, **então**
+   vejo o histórico das tarefas concluídas atribuídas a mim (sem projetos
+   arquivados), da conclusão mais recente para a mais antiga, cada uma com o
+   nome do projeto e a data de conclusão. *(Acrescentado a 2026-11-17, por
+   decisão do responsável do projeto.)*
 
 ## US12 — Comentar tarefas · Média
 

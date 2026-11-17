@@ -83,7 +83,7 @@ desativar e reativar contas.
 | RF08 | Arquivar e reativar projetos                                                                       | Média      | US08       |
 | RF09 | Eliminar tarefas, com registo de quem eliminou e quando                                            | Média      | US09       |
 | RF10 | Percentagem de conclusão do projeto                                                                | Média      | US10       |
-| RF11 | Lista "As minhas tarefas", com as tarefas por concluir atribuídas ao Membro em todos os projetos | Média       | US11       |
+| RF11 | Lista "As minhas tarefas", com as tarefas por concluir atribuídas ao Membro em todos os projetos, e o histórico das concluídas | Média       | US11       |
 | RF12 | Comentários em tarefas                                                                             | Média      | US12       |
 | RF13 | Histórico de alterações de cada tarefa                                                             | Média      | US13       |
 | RF14 | Desativar e reativar contas (Administrador)                                                        | Alta       | US14       |

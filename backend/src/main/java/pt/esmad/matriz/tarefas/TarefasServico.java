@@ -85,13 +85,16 @@ public class TarefasServico {
         TarefaRepositorio.Filtros filtros = new TarefaRepositorio.Filtros(estado, prioridade);
         List<Tarefa> pagina = tarefas.doProjeto(projetoId, filtros, pedido);
         long total = tarefas.contarDoProjeto(projetoId, filtros);
+        return new Pagina<>(detalhes(pagina), total, pedido.pagina(), pedido.tamanho());
+    }
 
+    /** Várias tarefas com os nomes dos responsáveis, obtidos num só pedido ao módulo Contas. */
+    List<TarefaDetalhe> detalhes(List<Tarefa> lista) {
         Map<UUID, PessoaResumo> pessoas = contas.pessoas(
-                pagina.stream().flatMap(t -> t.responsaveis().stream()).distinct().toList());
-        List<TarefaDetalhe> itens = pagina.stream()
+                lista.stream().flatMap(t -> t.responsaveis().stream()).distinct().toList());
+        return lista.stream()
                 .map(t -> new TarefaDetalhe(t, ordenados(t.responsaveis(), pessoas)))
                 .toList();
-        return new Pagina<>(itens, total, pedido.pagina(), pedido.tamanho());
     }
 
     /**

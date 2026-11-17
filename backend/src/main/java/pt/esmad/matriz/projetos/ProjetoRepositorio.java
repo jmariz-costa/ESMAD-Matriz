@@ -32,6 +32,15 @@ public class ProjetoRepositorio implements PanacheRepositoryBase<Projeto, UUID> 
                 .getResultList();
     }
 
+    /** Todos os projetos não arquivados de que o utilizador é membro, sem ordem nem página. */
+    public List<Projeto> todosDoMembro(UUID membro) {
+        return getEntityManager()
+                .createQuery("select p from Projeto p where :membro member of p.membros and p.arquivado = false",
+                        Projeto.class)
+                .setParameter("membro", membro)
+                .getResultList();
+    }
+
     public long contarDoMembro(UUID membro, String pesquisa) {
         return getEntityManager()
                 .createQuery("select count(p) from Projeto p where " + DO_MEMBRO, Long.class)

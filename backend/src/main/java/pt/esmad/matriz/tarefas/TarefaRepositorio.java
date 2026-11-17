@@ -5,6 +5,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.TypedQuery;
 import pt.esmad.matriz.comum.paginacao.PedidoPagina;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
@@ -54,6 +55,46 @@ public class TarefaRepositorio implements PanacheRepositoryBase<Tarefa, UUID> {
         TypedQuery<Long> consulta = getEntityManager().createQuery(
                 "select count(t) from Tarefa t where " + filtros.condicoes(), Long.class);
         return filtros.parametros(consulta, projetoId).getSingleResult();
+    }
+
+    private static final String MINHAS = """
+            t.projetoId in :projetos
+              and :utilizador member of t.responsaveis
+            """;
+
+    /**
+     * "As minhas tarefas" (US11): não concluídas, nos projetos indicados, em que a pessoa é
+     * responsável; ordenadas como no quadro (prazo, sem prazo no fim, e título).
+     */
+    List<Tarefa> porConcluirDe(UUID utilizadorId, Collection<UUID> projetos, PedidoPagina pagina) {
+        return getEntityManager().createQuery("select t from Tarefa t where " + MINHAS
+                        + " and t.estado <> :concluida order by t.prazo asc nulls last, lower(t.titulo), t.id",
+                        Tarefa.class)
+                .setParameter("projetos", projetos)
+                .setParameter("utilizador", utilizadorId)
+                .setParameter("concluida", Estado.CONCLUIDA)
+                .setFirstResult(pagina.inicio())
+                .setMaxResults(pagina.tamanho())
+                .getResultList();
+    }
+
+    long contarPorConcluirDe(UUID utilizadorId, Collection<UUID> projetos) {
+        return getEntityManager().createQuery("select count(t) from Tarefa t where " + MINHAS
+                        + " and t.estado <> :concluida", Long.class)
+                .setParameter("projetos", projetos)
+                .setParameter("utilizador", utilizadorId)
+                .setParameter("concluida", Estado.CONCLUIDA)
+                .getSingleResult();
+    }
+
+    /** Todas as concluídas, sem ordem: a ordem (data de conclusão) vem do módulo Histórico. */
+    List<Tarefa> concluidasDe(UUID utilizadorId, Collection<UUID> projetos) {
+        return getEntityManager().createQuery("select t from Tarefa t where " + MINHAS
+                        + " and t.estado = :concluida", Tarefa.class)
+                .setParameter("projetos", projetos)
+                .setParameter("utilizador", utilizadorId)
+                .setParameter("concluida", Estado.CONCLUIDA)
+                .getResultList();
     }
 
     /** Tarefas não concluídas do projeto em que a pessoa é responsável (RN08, RI04). */

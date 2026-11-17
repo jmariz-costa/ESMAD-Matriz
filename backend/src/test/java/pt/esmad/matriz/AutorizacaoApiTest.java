@@ -115,6 +115,9 @@ class AutorizacaoApiTest {
     void oProjetoBNaoApareceNasListagensDaAna() {
         given().cookie(COOKIE, ana.token()).when().get("/api/projetos")
                 .then().statusCode(200).body("itens.id", not(hasItem(projetoB)));
+        // A tarefa B é da Carla: não aparece em "As minhas tarefas" da Ana (US11)
+        given().cookie(COOKIE, ana.token()).when().get("/api/minhas-tarefas")
+                .then().statusCode(200).body("itens.id", not(hasItem(tarefaB)));
     }
 
     @Test
@@ -144,7 +147,7 @@ class AutorizacaoApiTest {
     void oAdministradorNaoAcedeAosProjetosNemAsTarefas() {
         Conta admin = contas.administrador();
         for (String caminho : new String[] {"/api/projetos", "/api/projetos/" + projetoB, "/api/tarefas/" + tarefaB,
-                "/api/tarefas/" + tarefaB + "/comentarios"}) {
+                "/api/tarefas/" + tarefaB + "/comentarios", "/api/minhas-tarefas"}) {
             given().cookie(COOKIE, admin.token()).when().get(caminho).then().statusCode(403);
         }
     }
@@ -152,7 +155,7 @@ class AutorizacaoApiTest {
     @Test
     void semSessaoTudoDevolve401() {
         for (String caminho : new String[] {"/api/projetos", "/api/projetos/" + projetoB, "/api/tarefas/" + tarefaB,
-                "/api/tarefas/" + tarefaB + "/comentarios", "/api/utilizadores"}) {
+                "/api/tarefas/" + tarefaB + "/comentarios", "/api/utilizadores", "/api/minhas-tarefas"}) {
             given().when().get(caminho).then().statusCode(401).body("codigo", equalTo("NAO_AUTENTICADO"));
         }
     }

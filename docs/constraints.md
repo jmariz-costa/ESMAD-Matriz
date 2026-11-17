@@ -39,7 +39,7 @@ mas são pressupostos e não requisitos pedidos pelo cliente: podem ser revistos
 | PR07 | Só o Gestor arquiva e reativa o projeto; num projeto arquivado os membros continuam a poder consultar tudo, numa lista à parte.                    | US08        |
 | PR08 | Eliminar uma tarefa pede confirmação e apaga também os seus comentários e histórico; fica apenas um registo com o título, quem eliminou e quando. | US09        |
 | PR09 | Percentagem de conclusão = tarefas "Concluída" ÷ total de tarefas × 100, arredondada para baixo às unidades; projeto sem tarefas = 0%.            | US10        |
-| PR10 | "As minhas tarefas" mostra só tarefas não concluídas, sem projetos arquivados, ordenadas pelo prazo mais próximo (sem prazo no fim).              | US11        |
+| PR10 | "As minhas tarefas" mostra só tarefas não concluídas, sem projetos arquivados, ordenadas pelo prazo mais próximo (sem prazo no fim). As concluídas aparecem à parte, num histórico ordenado pela data de conclusão (a mais recente primeiro; crit. 5, 2026-11-17). | US11        |
 | PR11 | Um comentário só pode ser editado ou apagado pelo seu autor.                                                                                      | US12        |
 | PR12 | O histórico mostra as entradas da mais recente para a mais antiga e ninguém o pode editar ou apagar.                                             | US13        |
 | PR13 | As etiquetas são criadas pelos membros e pertencem ao projeto onde foram criadas. (Só se aplica quando a US15 entrar no âmbito.)                 | US15 (fora do MVP) |

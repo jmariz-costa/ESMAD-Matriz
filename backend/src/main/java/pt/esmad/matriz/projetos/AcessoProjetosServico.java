@@ -4,7 +4,9 @@ import jakarta.enterprise.context.ApplicationScoped;
 import pt.esmad.matriz.comum.autenticacao.Identidade;
 import pt.esmad.matriz.contas.ContasServico;
 
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Verificação de acesso a um projeto, pedida pelos outros módulos (ADR 0001, regra 5),
@@ -42,6 +44,12 @@ public class AcessoProjetosServico {
         AcessoProjeto.ProjetoAcessivel a = acesso.comoGestor(projetoId);
         a.projeto().garantirAlteravel();
         return a.quem();
+    }
+
+    /** Nomes dos projetos não arquivados de que o utilizador é membro, por id (US11 crit. 2). */
+    public Map<UUID, String> naoArquivadosDoMembro(UUID utilizadorId) {
+        return projetos.todosDoMembro(utilizadorId).stream()
+                .collect(Collectors.toMap(Projeto::id, Projeto::nome));
     }
 
     /** Só membros do projeto com conta ativa podem ser responsáveis por tarefas (RI02). */

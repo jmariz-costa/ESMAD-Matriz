@@ -1,6 +1,6 @@
 // Operações de tarefas (openapi.yaml, tag Tarefas).
 import { pedido } from './cliente'
-import type { Estado, Pagina, PessoaResumo } from './projetos'
+import { TAMANHO_PAGINA, type Estado, type Pagina, type PessoaResumo } from './projetos'
 
 export type Prioridade = 'BAIXA' | 'MEDIA' | 'ALTA'
 
@@ -79,4 +79,23 @@ export function atribuirResponsavel(tarefaId: string, utilizadorId: string): Pro
 export function removerResponsavel(tarefaId: string, utilizadorId: string): Promise<void> {
   return pedido(`/tarefas/${encodeURIComponent(tarefaId)}/responsaveis/${encodeURIComponent(utilizadorId)}`,
     { metodo: 'DELETE' })
+}
+
+/** Uma tarefa de "As minhas tarefas" (openapi.yaml, schema MinhaTarefa; US11). */
+export interface MinhaTarefa extends Tarefa {
+  projeto: { id: string; nome: string }
+  /** Última passagem a Concluída (ISO 8601); null nas não concluídas e nas concluídas sem registo. */
+  concluidaEm: string | null
+}
+
+/**
+ * Tarefas atribuídas a quem tem a sessão, sem projetos arquivados (US11): as não concluídas,
+ * por prazo, ou, com {@code concluidas}, o histórico da conclusão mais recente para a mais antiga.
+ */
+export function listarMinhasTarefas(filtro: { concluidas: boolean; pagina?: number }): Promise<Pagina<MinhaTarefa>> {
+  const parametros = new URLSearchParams()
+  parametros.set('concluidas', String(filtro.concluidas))
+  parametros.set('pagina', String(filtro.pagina ?? 1))
+  parametros.set('tamanho', String(TAMANHO_PAGINA))
+  return pedido(`/minhas-tarefas?${parametros}`)
 }

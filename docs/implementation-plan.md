@@ -615,10 +615,54 @@ endpoints ao OpenAPI quando for implementada.
 | F2.1 Arquivar e reativar projeto | US08 | ⬜ |
 | F2.2 Consultar o registo de tarefas eliminadas | US09 crit. 4 | ⬜ |
 | F2.3 Consultar o histórico de uma tarefa | US13 | ⬜ |
-| F2.4 As minhas tarefas | US11 | ⬜ |
+| F2.4 As minhas tarefas | US11 | ✅ |
 | F2.5 Editar e apagar os próprios comentários | US12 crit. 3 e 4 | ⬜ |
 | F2.6 Administrador: desativar e reativar contas | US14 | ⬜ |
 | F2.7 Registo com confirmação por email (extensão) | US01 | ⬜ |
+
+### F2.4 — As minhas tarefas ✅
+
+**Plano (2026-11-17).** Um endpoint, `GET /minhas-tarefas`, e um ecrã novo
+no menu dos Membros. Antes de começar, o utilizador decidiu acrescentar à
+US11 o histórico das tarefas concluídas (crit. 5), atualizando também a PR10
+e o RF11.
+
+**Decisões do utilizador (2026-11-17)**
+- **1a** histórico das concluídas da conclusão mais recente para a mais
+  antiga, com a data tirada do histórico da tarefa (última passagem a
+  `CONCLUIDA`); **2a** uma página com dois separadores, "Por concluir" e
+  "Concluídas"; **3a** clicar numa tarefa abre o mesmo detalhe do quadro
+  (sem eliminar, que continua só no quadro).
+
+**Resultado (2026-11-17)**
+- **Contrato:** operação `listarMinhasTarefas` (`?concluidas=&pagina=&tamanho=`),
+  schemas `MinhaTarefa` (Tarefa + `projeto` + `concluidaEm`), `ProjetoResumo`
+  e `PaginaMinhasTarefas`; OpenAPI 0.4.0.
+- **Backend:** `MinhasTarefasRecurso` e `MinhasTarefasServico` no módulo
+  Tarefas; os projetos não arquivados do membro vêm do módulo Projetos
+  (`naoArquivadosDoMembro`) e as datas de conclusão do módulo Histórico
+  (`datasConclusao`), pela regra 5 do ADR 0001. O Administrador recebe 403.
+  Testes: `MinhasTarefasApiTest` (12, integração), `MinhasTarefasRecursoTest`
+  (unitário) e o endpoint acrescentado ao `AutorizacaoApiTest`. Numa cópia
+  limpa: 253 testes (118 unitários e 135 de integração), cobertura de 98,7%
+  das linhas e 95,5% dos ramos.
+- **Frontend:** ecrã `MinhasTarefas` (rota `/minhas-tarefas`, só Membros),
+  com o separador e a página no URL, tabela e detalhe da tarefa; link no
+  cabeçalho. 7 testes novos (113 no total).
+- Verificado contra o Backend real, pelo proxy do Vite, e testado pelo
+  utilizador no browser.
+
+**Desvios ao plano**
+- Os separadores não mostram o número de tarefas ("Por concluir (N)"):
+  exigia um pedido extra em cada vista. O total aparece por baixo da tabela.
+- As concluídas também não mostram projetos arquivados (o crit. 2 só o dizia
+  para as por concluir). Como a data de conclusão vem de outro módulo, são
+  ordenadas e paginadas em memória (até 50 pessoas, RNF04).
+- As tarefas concluídas dos dados de demonstração foram criadas já
+  concluídas, sem passagem a `CONCLUIDA` no histórico: aparecem no fim, "Sem
+  data".
+- No primeiro teste de integração, atribuí uma tarefa a quem não era membro
+  do projeto (400, RI02); o erro era do teste, que foi corrigido.
 
 ## 6. Pontos em aberto
 

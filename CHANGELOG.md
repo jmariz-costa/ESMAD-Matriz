@@ -10,6 +10,12 @@ Enquanto a versão for `0.x`, a API não é considerada estável.
 
 ### Added
 
+- **"As minhas tarefas"** (US11, incremento F2.4): novo separador no menu com
+  as tarefas atribuídas a mim em todos os projetos não arquivados, em dois
+  separadores: por concluir (por prazo) e concluídas (da conclusão mais
+  recente para a mais antiga, com a data). Clicar numa tarefa abre o detalhe.
+  Novo endpoint `GET /minhas-tarefas` (OpenAPI 0.4.0) e critério 5 novo na
+  US11 (histórico das concluídas).
 - **Tema escuro:** botão com sol/lua no cabeçalho para alternar entre o tema
   claro e o escuro. A escolha fica guardada no browser (`localStorage`); sem
   escolha, a interface segue o tema do sistema operativo. O tema guardado é
