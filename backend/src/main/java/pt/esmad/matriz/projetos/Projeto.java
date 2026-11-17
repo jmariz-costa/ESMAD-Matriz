@@ -103,6 +103,16 @@ public class Projeto {
         }
     }
 
+    /**
+     * Nomeado pelo Administrador ao desativar o Gestor anterior (RN17, RI07): passa a membro se
+     * ainda não for. É uma das exceções a "arquivado é só de leitura" (RI10, US14 crit. 4).
+     * O serviço garante antes que é um Membro ativo.
+     */
+    void nomearGestor(UUID novoGestorId) {
+        gestorId = novoGestorId;
+        membros.add(novoGestorId);
+    }
+
     /** Recusa alterações num projeto arquivado (RN15, RI10). */
     public void garantirAlteravel() {
         if (arquivado) {

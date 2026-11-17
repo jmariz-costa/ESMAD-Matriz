@@ -10,6 +10,13 @@ Enquanto a versão for `0.x`, a API não é considerada estável.
 
 ### Added
 
+- **Gestão de contas do Administrador** (US14, incremento F2.6): a página do
+  Administrador lista as contas de Membro, com pesquisa por nome ou email e
+  filtro por estado. Desativar pede confirmação e, se a pessoa for Gestora,
+  o novo Gestor de cada projeto (também arquivados); a pessoa deixa de
+  conseguir entrar, as sessões terminam e sai de responsável das tarefas por
+  concluir, com o Administrador como autor no histórico. Reativar devolve o
+  acesso como Membro. Novos endpoints em `/contas` (OpenAPI 0.5.0).
 - **"As minhas tarefas"** (US11, incremento F2.4): novo separador no menu com
   as tarefas atribuídas a mim em todos os projetos não arquivados, em dois
   separadores: por concluir (por prazo) e concluídas (da conclusão mais

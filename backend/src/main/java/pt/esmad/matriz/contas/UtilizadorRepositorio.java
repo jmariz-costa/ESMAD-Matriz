@@ -5,6 +5,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import pt.esmad.matriz.comum.paginacao.PedidoPagina;
 import pt.esmad.matriz.comum.texto.Texto;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -16,6 +17,12 @@ public class UtilizadorRepositorio implements PanacheRepositoryBase<Utilizador, 
     private static final String MEMBROS_ATIVOS = """
             u.tipo = pt.esmad.matriz.contas.TipoUtilizador.MEMBRO
             and u.estado = pt.esmad.matriz.contas.EstadoConta.ATIVO
+            and (:padrao is null or lower(u.nome) like :padrao escape '\\' or lower(u.email) like :padrao escape '\\')
+            """;
+
+    private static final String CONTAS_MEMBRO = """
+            u.tipo = pt.esmad.matriz.contas.TipoUtilizador.MEMBRO
+            and u.estado in :estados
             and (:padrao is null or lower(u.nome) like :padrao escape '\\' or lower(u.email) like :padrao escape '\\')
             """;
 
@@ -33,6 +40,26 @@ public class UtilizadorRepositorio implements PanacheRepositoryBase<Utilizador, 
                 .setFirstResult(pagina.inicio())
                 .setMaxResults(pagina.tamanho())
                 .getResultList();
+    }
+
+    /** Contas de Membro nos estados indicados, ordenadas pelo nome, com pesquisa no nome ou no email (US14). */
+    public List<Utilizador> contasMembro(String pesquisa, Collection<EstadoConta> estados, PedidoPagina pagina) {
+        return getEntityManager()
+                .createQuery("select u from Utilizador u where " + CONTAS_MEMBRO
+                        + " order by lower(u.nome), u.id", Utilizador.class)
+                .setParameter("estados", estados)
+                .setParameter("padrao", Texto.padraoPesquisa(pesquisa))
+                .setFirstResult(pagina.inicio())
+                .setMaxResults(pagina.tamanho())
+                .getResultList();
+    }
+
+    public long contarContasMembro(String pesquisa, Collection<EstadoConta> estados) {
+        return getEntityManager()
+                .createQuery("select count(u) from Utilizador u where " + CONTAS_MEMBRO, Long.class)
+                .setParameter("estados", estados)
+                .setParameter("padrao", Texto.padraoPesquisa(pesquisa))
+                .getSingleResult();
     }
 
     public long contarMembrosAtivos(String pesquisa) {

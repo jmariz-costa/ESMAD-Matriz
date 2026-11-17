@@ -109,4 +109,43 @@ class ProjetoTest {
         projeto.removerMembro(outro);
         assertFalse(projeto.eMembro(outro));
     }
+
+    // Novo Gestor nomeado pelo Administrador (US14 crit. 3 e 4, RI07)
+
+    @Test
+    void novoGestorQueNaoEraMembroPassaASerEOAntigoContinuaMembro() {
+        Projeto projeto = Projeto.criar("Portal do Cliente", null, GESTOR);
+        UUID novo = UUID.randomUUID();
+
+        projeto.nomearGestor(novo);
+
+        assertTrue(projeto.eGestor(novo));
+        assertTrue(projeto.eMembro(novo));
+        assertFalse(projeto.eGestor(GESTOR));
+        assertTrue(projeto.eMembro(GESTOR));
+    }
+
+    @Test
+    void nomearGestorFuncionaNumProjetoArquivado() {
+        Projeto projeto = Projeto.criar("Portal do Cliente", null, GESTOR);
+        projeto.adicionarMembro(UUID.randomUUID());
+        UUID novo = UUID.randomUUID();
+        projeto.adicionarMembro(novo);
+        arquivar(projeto);
+
+        projeto.nomearGestor(novo);
+
+        assertTrue(projeto.eGestor(novo));
+        assertEquals(3, projeto.membros().size());
+    }
+
+    private static void arquivar(Projeto projeto) {
+        try {
+            var campo = Projeto.class.getDeclaredField("arquivado");
+            campo.setAccessible(true);
+            campo.setBoolean(projeto, true);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException(e);
+        }
+    }
 }

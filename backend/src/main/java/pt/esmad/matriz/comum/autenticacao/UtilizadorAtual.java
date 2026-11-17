@@ -39,6 +39,15 @@ public class UtilizadorAtual {
         return quem;
     }
 
+    /** A identidade do Administrador; os Membros recebem 403 na gestão de contas (US14 crit. 8). */
+    public Identidade exigirAdministrador() {
+        Identidade quem = identidade();
+        if (!quem.administrador()) {
+            throw ErroAplicacao.semPermissao();
+        }
+        return quem;
+    }
+
     public static ErroAplicacao naoAutenticado() {
         return new ErroAplicacao(401, CodigoErro.NAO_AUTENTICADO, MENSAGEM_SESSAO_INVALIDA);
     }

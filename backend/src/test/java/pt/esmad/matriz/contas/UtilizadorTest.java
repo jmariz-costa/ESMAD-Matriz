@@ -63,4 +63,19 @@ class UtilizadorTest {
         assertEquals(1, utilizador.tentativasFalhadas());
         assertFalse(utilizador.estaBloqueado(AGORA));
     }
+
+    // Desativar e reativar (US14 crit. 1 e 6)
+
+    @Test
+    void desativarImpedeDeEntrarEReativarDevolveOAcesso() {
+        Utilizador utilizador = membro();
+
+        utilizador.desativar();
+        assertFalse(utilizador.estaAtivo());
+        assertEquals(EstadoConta.DESATIVADO, utilizador.estado());
+
+        utilizador.reativar();
+        assertTrue(utilizador.estaAtivo());
+        assertEquals(EstadoConta.ATIVO, utilizador.estado());
+    }
 }

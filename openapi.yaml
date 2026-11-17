@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Matriz API
-  version: 0.4.0
+  version: 0.5.0
   contact:
     name: Equipa Matriz
     email: matriz@empresa.pt
@@ -10,8 +10,9 @@ info:
     operações da **Fase 1** do plano de implementação
     (docs/implementation-plan.md): autenticação, projetos, membros, tarefas,
     responsáveis e comentários. As operações da Fase 2 são acrescentadas
-    quando forem implementadas: já está "As minhas tarefas" (US11); faltam
-    arquivar, histórico, editar e apagar comentários e Administrador.
+    quando forem implementadas: já estão "As minhas tarefas" (US11) e a
+    gestão de contas do Administrador (US14); faltam arquivar, histórico e
+    editar e apagar comentários.
 
     **Autenticação (D06):** `POST /auth/login` cria uma sessão e devolve o
     cookie `matriz_sessao` (HttpOnly, SameSite=Strict; Secure quando servido
@@ -28,7 +29,8 @@ info:
     projeto acedem a ele e ao que contém (RN20); algumas operações são só do
     Gestor (indicado em cada uma). O Administrador não participa em projetos
     (RN19): recebe 403 em todas as operações de projetos, tarefas e
-    comentários.
+    comentários. As operações de `/contas` (US14) são só do Administrador; os
+    Membros recebem 403.
 
     **Projeto inexistente vs. sem permissão:** um identificador que não
     existe (ou que não é um UUID válido) devolve 404; um recurso que existe,
@@ -81,6 +83,8 @@ tags:
     description: Atribuir e remover responsáveis de uma tarefa (US05).
   - name: Comentários
     description: Comentários de uma tarefa (US12).
+  - name: Contas
+    description: Gestão das contas de Membro pelo Administrador (US14).
 
 paths:
   /auth/login:
@@ -413,6 +417,152 @@ paths:
           $ref: '#/components/responses/NaoAutenticado'
         '403':
           $ref: '#/components/responses/SemPermissao'
+
+  /contas:
+    get:
+      tags: [Contas]
+      operationId: listarContas
+      summary: Listar as contas de Membro (Administrador)
+      description: |
+        Só para o Administrador (US14). Devolve as contas de Membro ativas e
+        desativadas, ordenadas pelo nome; as contas de Administrador não
+        aparecem, porque não podem ser geridas na Matriz (RN21). Também
+        serve para escolher o novo Gestor ao desativar um Gestor
+        (`estado=ATIVO`).
+      parameters:
+        - name: q
+          in: query
+          description: Texto a procurar no nome ou no email, sem distinguir maiúsculas de minúsculas.
+          schema:
+            type: string
+        - name: estado
+          in: query
+          description: Omitido ou vazio = ativas e desativadas.
+          schema:
+            type: string
+            enum: [ATIVO, DESATIVADO]
+        - $ref: '#/components/parameters/Pagina'
+        - $ref: '#/components/parameters/Tamanho'
+      responses:
+        '200':
+          description: Página de contas.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginaContas'
+        '400':
+          $ref: '#/components/responses/Validacao'
+        '401':
+          $ref: '#/components/responses/NaoAutenticado'
+        '403':
+          $ref: '#/components/responses/SemPermissao'
+
+  /contas/{contaId}/projetos-geridos:
+    parameters:
+      - $ref: '#/components/parameters/ContaId'
+    get:
+      tags: [Contas]
+      operationId: listarProjetosGeridos
+      summary: Projetos de que a pessoa é Gestora (Administrador)
+      description: |
+        Só para o Administrador, antes de desativar uma conta (US14 crit. 3):
+        os projetos de que a pessoa é Gestora, incluindo os arquivados,
+        ordenados pelo nome. É a única exceção à regra de que só os membros
+        veem um projeto (S04): devolve apenas o id, o nome e se está
+        arquivado, e nunca o conteúdo do projeto.
+      responses:
+        '200':
+          description: Projetos geridos (vazio se a pessoa não for Gestora).
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProjetoGerido'
+        '401':
+          $ref: '#/components/responses/NaoAutenticado'
+        '403':
+          $ref: '#/components/responses/SemPermissao'
+        '404':
+          $ref: '#/components/responses/NaoEncontrado'
+
+  /contas/{contaId}/desativacao:
+    parameters:
+      - $ref: '#/components/parameters/ContaId'
+    post:
+      tags: [Contas]
+      operationId: desativarConta
+      summary: Desativar uma conta de Membro (Administrador)
+      description: |
+        Só para o Administrador (US14). Numa só operação:
+
+        1. cada projeto de que a pessoa é Gestora (incluindo arquivados)
+           passa a ter o novo Gestor indicado em `novosGestores`, que tem de
+           ser um Membro ativo diferente da pessoa; se ainda não for membro
+           do projeto, passa a sê-lo (crit. 3, RN17, RI07);
+        2. a pessoa deixa de ser responsável pelas tarefas não concluídas de
+           todos os projetos, incluindo arquivados; cada remoção fica no
+           histórico com o Administrador como autor (crit. 2, RI05);
+        3. a conta fica desativada e todas as sessões da pessoa terminam
+           (crit. 1, PR16). A pessoa continua na lista de membros (PR15).
+
+        Tem de haver exatamente um novo Gestor para cada projeto gerido; se
+        faltar algum, sobrar algum ou um escolhido não for elegível, devolve
+        400 no campo `novosGestores` e nada é alterado. Uma conta de
+        Administrador (incluindo a própria) devolve 403 (crit. 7). Desativar
+        uma conta já desativada não altera nada.
+      requestBody:
+        required: false
+        description: Pode ser omitido quando a pessoa não é Gestora de nenhum projeto.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DesativarContaPedido'
+            example:
+              novosGestores:
+                - projetoId: 7c1e2d3f-4a5b-4c6d-8e9f-0a1b2c3d4e5f
+                  gestorId: 5d4c3b2a-1f0e-4d9c-8b7a-6f5e4d3c2b1a
+      responses:
+        '200':
+          description: Conta desativada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Conta'
+        '400':
+          $ref: '#/components/responses/Validacao'
+        '401':
+          $ref: '#/components/responses/NaoAutenticado'
+        '403':
+          $ref: '#/components/responses/SemPermissao'
+        '404':
+          $ref: '#/components/responses/NaoEncontrado'
+
+  /contas/{contaId}/reativacao:
+    parameters:
+      - $ref: '#/components/parameters/ContaId'
+    post:
+      tags: [Contas]
+      operationId: reativarConta
+      summary: Reativar uma conta de Membro (Administrador)
+      description: |
+        Só para o Administrador (US14 crit. 6). A pessoa volta a poder
+        entrar e a aceder aos projetos de que é membro, como Membro, sem
+        recuperar tarefas nem o papel de Gestor. Uma conta de Administrador
+        devolve 403. Reativar uma conta ativa não altera nada.
+      responses:
+        '200':
+          description: Conta ativa.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Conta'
+        '401':
+          $ref: '#/components/responses/NaoAutenticado'
+        '403':
+          $ref: '#/components/responses/SemPermissao'
+        '404':
+          $ref: '#/components/responses/NaoEncontrado'
 
   /projetos/{projetoId}/tarefas:
     parameters:
@@ -789,6 +939,13 @@ components:
       description: Identificador do utilizador.
       schema:
         $ref: '#/components/schemas/Id'
+    ContaId:
+      name: contaId
+      in: path
+      required: true
+      description: Identificador da conta (utilizador).
+      schema:
+        $ref: '#/components/schemas/Id'
     Pagina:
       name: pagina
       in: query
@@ -1125,6 +1282,51 @@ components:
         nome:
           type: string
 
+    Conta:
+      type: object
+      description: Uma conta de Membro, como o Administrador a vê (US14).
+      required: [id, nome, email, estado]
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        nome:
+          type: string
+        email:
+          type: string
+          format: email
+        estado:
+          type: string
+          enum: [ATIVO, DESATIVADO]
+
+    ProjetoGerido:
+      type: object
+      description: Só o necessário para nomear o novo Gestor (S04).
+      required: [id, nome, arquivado]
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        nome:
+          type: string
+        arquivado:
+          type: boolean
+
+    DesativarContaPedido:
+      type: object
+      additionalProperties: false
+      properties:
+        novosGestores:
+          type: array
+          description: Um elemento por projeto de que a pessoa é Gestora.
+          items:
+            type: object
+            additionalProperties: false
+            required: [projetoId, gestorId]
+            properties:
+              projetoId:
+                $ref: '#/components/schemas/Id'
+              gestorId:
+                $ref: '#/components/schemas/Id'
+
     CriarComentarioPedido:
       type: object
       additionalProperties: false
@@ -1214,6 +1416,17 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/MinhaTarefa'
+
+    PaginaContas:
+      allOf:
+        - $ref: '#/components/schemas/Paginacao'
+        - type: object
+          required: [itens]
+          properties:
+            itens:
+              type: array
+              items:
+                $ref: '#/components/schemas/Conta'
 
     PaginaComentarios:
       allOf:

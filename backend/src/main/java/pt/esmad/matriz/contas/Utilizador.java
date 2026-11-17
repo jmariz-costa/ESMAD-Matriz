@@ -63,6 +63,16 @@ public class Utilizador {
         return estado == EstadoConta.ATIVO;
     }
 
+    /** US14 crit. 1: deixa de poder entrar. */
+    void desativar() {
+        estado = EstadoConta.DESATIVADO;
+    }
+
+    /** US14 crit. 6: volta a poder entrar. */
+    void reativar() {
+        estado = EstadoConta.ATIVO;
+    }
+
     /** Durante o bloqueio o login é recusado, mesmo com a palavra-passe certa (D09). */
     public boolean estaBloqueado(Instant agora) {
         return bloqueadoAte != null && agora.isBefore(bloqueadoAte);

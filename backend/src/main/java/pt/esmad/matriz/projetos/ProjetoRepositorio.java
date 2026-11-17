@@ -32,6 +32,15 @@ public class ProjetoRepositorio implements PanacheRepositoryBase<Projeto, UUID> 
                 .getResultList();
     }
 
+    /** Projetos de que a pessoa é Gestora, incluindo arquivados, ordenados pelo nome (US14 crit. 3). */
+    public List<Projeto> geridosPor(UUID gestorId) {
+        return getEntityManager()
+                .createQuery("select p from Projeto p where p.gestorId = :gestor order by lower(p.nome), p.id",
+                        Projeto.class)
+                .setParameter("gestor", gestorId)
+                .getResultList();
+    }
+
     /** Todos os projetos não arquivados de que o utilizador é membro, sem ordem nem página. */
     public List<Projeto> todosDoMembro(UUID membro) {
         return getEntityManager()

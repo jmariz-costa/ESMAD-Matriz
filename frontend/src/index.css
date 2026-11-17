@@ -902,6 +902,92 @@ label {
   font-size: 12px;
 }
 
+/* Gestão de contas (US14) */
+.btn.perigo {
+  background: var(--erro);
+  border-color: var(--erro);
+  color: var(--superficie);
+}
+
+.btn.perigo:hover:not(:disabled) {
+  background: var(--erro);
+  filter: brightness(0.92);
+}
+
+.btn.perigo-contorno {
+  color: var(--erro);
+  border-color: var(--erro);
+}
+
+.filtro-estado {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-weight: normal;
+  color: var(--texto-suave);
+}
+
+.filtro-estado .campo {
+  width: auto;
+}
+
+.estado-conta {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--e-concluida);
+  color: var(--texto);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.estado-conta[data-estado='DESATIVADO'] {
+  background: var(--superficie-2);
+  color: var(--texto-suave);
+}
+
+.tabela tr.desativada td:not(.acoes) {
+  color: var(--texto-suave);
+}
+
+.novos-gestores {
+  margin: 16px 0 0;
+  padding: 12px 14px;
+  border: 1px solid var(--linha);
+  border-radius: var(--raio-pequeno);
+}
+
+.novos-gestores legend {
+  padding: 0 6px;
+  font-weight: 600;
+}
+
+.novos-gestores > p {
+  margin: 0 0 4px;
+  font-size: 13px;
+}
+
+.novo-gestor label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.etiqueta-arquivado {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--superficie-2);
+  color: var(--texto-suave);
+}
+
+.lista-erros {
+  margin: 0;
+  padding-left: 18px;
+}
+
 /* Formulário da tarefa */
 .campos-lado {
   display: grid;

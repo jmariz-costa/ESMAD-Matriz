@@ -48,13 +48,17 @@ cliente foi:
 - "As minhas tarefas": as tarefas por concluir atribuídas a mim em todos os
   projetos, por prazo, e o histórico das concluídas, com a data de conclusão
   (US11).
+- Gestão de contas pelo Administrador: pesquisar e filtrar as contas de
+  Membro, desativar (com a escolha do novo Gestor de cada projeto da pessoa)
+  e reativar (US14).
 
 ### Previstas (Fase 2)
 
 - Consulta do histórico de cada tarefa e do registo de tarefas eliminadas.
 - Editar e apagar os próprios comentários.
 - Arquivo e reativação de projetos.
-- Desativação e reativação de contas por um Administrador.
+- Editar o nome das contas e repor o acesso (Administrador), e mudar a
+  própria palavra-passe.
 
 O detalhe está em [docs/requirements.md](docs/requirements.md) e o estado de
 cada incremento em
@@ -210,7 +214,7 @@ cd frontend && npm test                 # Vitest + Testing Library
 cd frontend && npx tsc -b && npm run lint && npm run build   # tipos, lint e build
 ```
 
-O Backend tem 118 testes unitários e 135 de integração (com `@Tag("integracao")`).
+O Backend tem 131 testes unitários e 150 de integração (com `@Tag("integracao")`).
 O relatório de cobertura fica em `backend/target/site/jacoco/index.html`; o
 `verify` falha abaixo de 95% de linhas ou de ramos. Os testes também leem o
 `backend/.env`: sem ele, o Admin e os dados de demonstração não são criados e
@@ -338,6 +342,8 @@ verificações em [docs/verification.md](docs/verification.md).
   tema claro e escuro (botão no cabeçalho; ver [CHANGELOG.md](CHANGELOG.md)).
 - Fase 2, incremento F2.4: "As minhas tarefas" (US11), com o histórico das
   concluídas (ver [docs/implementation-plan.md](docs/implementation-plan.md) §5).
+- Fase 2, incremento F2.6: gestão de contas pelo Administrador (US14).
 
-Próximo: Fase 2 (Administrador, arquivo, histórico consultável e edição de
-comentários).
+Próximo: editar o nome e repor o acesso (Administrador) e mudar a própria
+palavra-passe (F2.8); depois, arquivo, histórico consultável e edição de
+comentários.

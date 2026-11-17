@@ -26,16 +26,19 @@ describe('Aplicação', () => {
     expect(screen.getByRole('button', { name: 'Tema escuro' })).toBeInTheDocument()
   })
 
+  const SEM_CONTAS = { estado: 200, corpo: { itens: [], total: 0, pagina: 1, tamanho: 20 } }
+
   it('o Administrador só vê a gestão de contas', async () => {
-    simularApi({ 'GET /api/auth/me': { estado: 200, corpo: ADMIN } })
+    simularApi({ 'GET /api/auth/me': { estado: 200, corpo: ADMIN }, 'GET /api/contas?pagina=1&tamanho=20': SEM_CONTAS })
     renderizarAplicacao('/')
 
     expect(await screen.findByRole('heading', { name: 'Gestão de contas' })).toBeInTheDocument()
+    expect(await screen.findByText('Nenhuma conta encontrada.')).toBeInTheDocument()
     expect(screen.queryByRole('navigation')).not.toBeInTheDocument()
   })
 
   it('o Administrador não acede aos ecrãs de projetos', async () => {
-    simularApi({ 'GET /api/auth/me': { estado: 200, corpo: ADMIN } })
+    simularApi({ 'GET /api/auth/me': { estado: 200, corpo: ADMIN }, 'GET /api/contas?pagina=1&tamanho=20': SEM_CONTAS })
     renderizarAplicacao('/projetos')
 
     expect(await screen.findByRole('heading', { name: 'Gestão de contas' })).toBeInTheDocument()

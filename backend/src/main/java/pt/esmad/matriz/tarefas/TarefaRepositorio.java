@@ -97,6 +97,18 @@ public class TarefaRepositorio implements PanacheRepositoryBase<Tarefa, UUID> {
                 .getResultList();
     }
 
+    /** Tarefas não concluídas de todos os projetos, incluindo arquivados, em que a pessoa é responsável (RI05). */
+    List<Tarefa> naoConcluidasComResponsavel(UUID utilizadorId) {
+        return getEntityManager().createQuery("""
+                        select t from Tarefa t
+                        where t.estado <> :concluida
+                          and :utilizador member of t.responsaveis
+                        """, Tarefa.class)
+                .setParameter("concluida", Estado.CONCLUIDA)
+                .setParameter("utilizador", utilizadorId)
+                .getResultList();
+    }
+
     /** Tarefas não concluídas do projeto em que a pessoa é responsável (RN08, RI04). */
     List<Tarefa> naoConcluidasComResponsavel(UUID projetoId, UUID utilizadorId) {
         return getEntityManager().createQuery("""

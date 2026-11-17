@@ -12,4 +12,9 @@ public class SessaoRepositorio implements PanacheRepositoryBase<Sessao, UUID> {
     public Optional<Sessao> procurarPorTokenHash(String tokenHash) {
         return find("tokenHash", tokenHash).firstResultOptional();
     }
+
+    /** Termina todas as sessões da pessoa (PR16). */
+    public long apagarDoUtilizador(UUID utilizadorId) {
+        return delete("utilizadorId", utilizadorId);
+    }
 }

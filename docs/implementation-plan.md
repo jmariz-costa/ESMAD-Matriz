@@ -617,8 +617,9 @@ endpoints ao OpenAPI quando for implementada.
 | F2.3 Consultar o histórico de uma tarefa | US13 | ⬜ |
 | F2.4 As minhas tarefas | US11 | ✅ |
 | F2.5 Editar e apagar os próprios comentários | US12 crit. 3 e 4 | ⬜ |
-| F2.6 Administrador: desativar e reativar contas | US14 | ⬜ |
+| F2.6 Administrador: desativar e reativar contas | US14 | ✅ |
 | F2.7 Registo com confirmação por email (extensão) | US01 | ⬜ |
+| F2.8 Editar o nome e repor o acesso (Administrador); mudar a própria palavra-passe | novas (a escrever) | ⬜ |
 
 ### F2.4 — As minhas tarefas ✅
 
@@ -663,6 +664,53 @@ e o RF11.
   data".
 - No primeiro teste de integração, atribuí uma tarefa a quem não era membro
   do projeto (400, RI02); o erro era do teste, que foi corrigido.
+
+### F2.6 — Administrador: desativar e reativar contas ✅
+
+**Plano (2026-11-17).** Página de gestão de contas do Administrador (a
+referência foi uma captura de ecrã do utilizador), com os endpoints em
+`/contas`. Sem coluna "Papel": fora dos projetos só há Membros e
+Administradores (RN16, RN21). Editar contas e repor o acesso ficaram para um
+incremento à parte (F2.8), por decisão do utilizador.
+
+**Decisões do utilizador (2026-11-17)**
+- Âmbito: **3a** primeiro a US14 tal como está; o utilizador decidiu depois
+  acrescentar, na F2.8, editar o nome (o email não), repor o acesso com
+  palavra-passe temporária e mudança obrigatória no próximo login (**1a**) e
+  mudar a própria palavra-passe num diálogo no cabeçalho (**2a**).
+- US14: **1a** um só diálogo com o novo Gestor de cada projeto e o botão só
+  ativo quando todos estão escolhidos; **2a** confirmação a explicar o que
+  acontece também a quem não é Gestor; **3a** ativas e desativadas na mesma
+  lista, com filtro por estado.
+
+**Resultado (2026-11-17)**
+- **Contrato:** tag Contas com `listarContas`, `listarProjetosGeridos`,
+  `desativarConta` e `reativarConta`; schemas `Conta`, `ProjetoGerido`,
+  `DesativarContaPedido` e `PaginaContas`; OpenAPI 0.5.0.
+- **Backend:** `ContasRecurso` e `GestaoContasServico` no módulo Contas;
+  numa só transação, os novos Gestores (`GestoresServico`, módulo Projetos),
+  a saída das tarefas por concluir de todos os projetos com o Administrador
+  como autor no histórico (`AtribuicoesServico`, módulo Tarefas), a
+  desativação e o fim das sessões. As regras da escolha dos novos Gestores
+  estão numa função sem base de dados (`GestoresServico.validar`). Testes:
+  `GestaoContasApiTest` (15, integração), `ContasRecursoTest`,
+  `GestoresServicoTest` e casos novos em `ProjetoTest` e `UtilizadorTest`
+  (13 unitários). Numa cópia limpa: 281 testes (131 unitários e 150 de
+  integração), cobertura de 98,9% das linhas e 96,2% dos ramos.
+- **Frontend:** ecrã `GestaoContas` (a página inicial do Administrador),
+  diálogo `DesativarConta` e `api/contas.ts`; 7 testes novos (120 no total).
+- Verificado contra o Backend real (consultas como Administrador) e testado
+  pelo utilizador no browser.
+
+**Desvios ao plano**
+- Desativar uma conta já desativada, ou reativar uma ativa, devolve 200 sem
+  alterar nada (não estava previsto na US14).
+- A primeira versão só tinha testes unitários da leitura do pedido; o
+  utilizador perguntou por eles e foram acrescentados os das regras do
+  domínio (novo Gestor, `nomearGestor`, desativar e reativar).
+- Uma execução da suite falhou ao arrancar o Quarkus porque o Backend de
+  desenvolvimento ocupava a porta 8081; repetida com
+  `-Dquarkus.http.test-port=0`, como indica o `AGENTS.md`.
 
 ## 6. Pontos em aberto
 

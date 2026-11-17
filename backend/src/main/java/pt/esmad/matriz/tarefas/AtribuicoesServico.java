@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Atribuições de responsáveis pedidas pelo módulo Projetos (ADR 0001, regra 5).
+ * Atribuições de responsáveis pedidas pelos módulos Projetos e Contas (ADR 0001, regra 5).
  * A atribuição e a remoção feitas na tarefa estão no {@link TarefasServico}.
  */
 @ApplicationScoped
@@ -31,7 +31,19 @@ public class AtribuicoesServico {
      * membro como autor (RI12). Tem de ser chamado dentro da transação de quem remove o membro.
      */
     public int retirarDasTarefasNaoConcluidas(UUID projetoId, UUID utilizadorId, UUID autorId) {
-        List<Tarefa> afetadas = tarefas.naoConcluidasComResponsavel(projetoId, utilizadorId);
+        return retirar(tarefas.naoConcluidasComResponsavel(projetoId, utilizadorId), utilizadorId, autorId);
+    }
+
+    /**
+     * Quem é desativado deixa de ser responsável pelas tarefas não concluídas de todos os
+     * projetos, incluindo arquivados (RN18, RI05); cada remoção fica no histórico com o
+     * Administrador como autor. Tem de ser chamado dentro da transação da desativação.
+     */
+    public int retirarDeTodasAsTarefasNaoConcluidas(UUID utilizadorId, UUID autorId) {
+        return retirar(tarefas.naoConcluidasComResponsavel(utilizadorId), utilizadorId, autorId);
+    }
+
+    private int retirar(List<Tarefa> afetadas, UUID utilizadorId, UUID autorId) {
         if (afetadas.isEmpty()) {
             return 0;
         }
