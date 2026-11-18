@@ -78,7 +78,7 @@ Versões em uso na `0.2.0-rc.1`; as decisões estão em
 | Backend | Java 21, Quarkus 3.40 (REST com Jackson, Hibernate ORM 7.4 com Panache, Hibernate Validator, SmallRye Health), Flyway 12, bcrypt |
 | Base de dados | PostgreSQL 17 |
 | Frontend | React 19, TypeScript 7.0, Vite 8, React Router 8; letra Plus Jakarta Sans (`@fontsource-variable`) |
-| Testes | JUnit 6 e RestAssured 6 (Backend, com Quarkus Dev Services); Vitest 5 e Testing Library (Frontend); Playwright 1.55 com Firefox (E2E) |
+| Testes | JUnit 6 e RestAssured 6 (Backend, com Quarkus Dev Services); ArchUnit 1.5 (regras de arquitetura do Backend); Vitest 5 e Testing Library (Frontend); Playwright 1.55 com Firefox (E2E) |
 | Qualidade | oxlint, `npm audit`, `tsc` |
 | Execução | Docker e Docker Compose; nginx 1.30 a servir o Frontend; JRE 21 (Eclipse Temurin) no Backend |
 | CI/CD | GitHub Actions (pipeline em 5 etapas, release e deploy em produção); JaCoCo; imagens no Docker Hub |
@@ -118,6 +118,7 @@ make configurar        # primeira vez: cria o backend/.env com palavras-passe al
 make arrancar          # aplicação completa em Docker: http://localhost:8090
 make parar             # para os contentores (os dados mantêm-se)
 make testes-unitarios  # Backend, sem Quarkus nem base de dados
+make testes-arquitetura # Backend, só as regras de arquitetura do ADR 0001 (ArchUnit)
 make testes-integracao # Backend, com um PostgreSQL temporário (precisa do Docker)
 make testes-frontend   # Vitest
 make testes-e2e        # Playwright, contra a aplicação do make arrancar
@@ -251,12 +252,18 @@ A conta de Administrador usa `MATRIZ_ADMIN_EMAIL` e `MATRIZ_ADMIN_PASSWORD`.
 cd backend && ./mvnw test               # todos (unitários e integração); precisa do Docker: cria um PostgreSQL temporário
 cd backend && ./mvnw test -DexcludedGroups=integracao   # só os unitários (sem Quarkus nem base de dados)
 cd backend && ./mvnw test -Dgroups=integracao           # só os de integração (@QuarkusTest)
+cd backend && ./mvnw test -Dgroups=arquitetura          # só as regras de arquitetura (ArchUnit)
 cd backend && ./mvnw verify             # todos, com relatório de cobertura e mínimo de 95% (JaCoCo)
 cd frontend && npm test                 # Vitest + Testing Library
 cd frontend && npx tsc -b && npm run lint && npm run build   # tipos, lint e build
 ```
 
-O Backend tem 137 testes unitários e 160 de integração (com `@Tag("integracao")`).
+O Backend tem 140 testes unitários e 160 de integração (com `@Tag("integracao")`).
+Três dos unitários são as regras de arquitetura do
+[ADR 0001](docs/decisions/0001-arquitetura-interna-backend.md), verificadas
+com ArchUnit em `ArquiteturaTest`: camadas (recurso → serviço → repositório),
+entre módulos só pelos serviços e o package `comum` sem dependências dos
+módulos.
 O relatório de cobertura fica em `backend/target/site/jacoco/index.html`; o
 `verify` falha abaixo de 95% de linhas ou de ramos. Os testes também leem o
 `backend/.env`: sem ele, o Admin e os dados de demonstração não são criados e
@@ -294,7 +301,8 @@ cd frontend && MATRIZ_DEMO_PASSWORD=<valor do backend/.env> npm run e2e
 **Integração contínua:** cada push e Pull Request para `main` corre a pipeline
 [`.github/workflows/ci.yml`](.github/workflows/ci.yml) no GitHub Actions, em
 5 etapas: (1) build do Backend e do Frontend, com lint e `npm audit`;
-(2) testes unitários, de integração e do Frontend; (3) cobertura JaCoCo, com
+(2) regras de arquitetura (ArchUnit) e testes unitários, de integração e do
+Frontend; (3) cobertura JaCoCo, com
 mínimo de 95% de linhas e de ramos; (4) imagens Docker, smoke tests e o teste
 E2E contra o Docker Compose; (5) só em push para o `main`, publicação das
 imagens testadas no Docker Hub (`matriz-backend` e `matriz-frontend`). Os
@@ -387,5 +395,7 @@ verificações em [docs/verification.md](docs/verification.md).
 - Fase 2, incremento F2.6: gestão de contas pelo Administrador (US14).
 - Fase 2, incremento F2.8: editar o nome e repor o acesso (US19) e mudar a
   própria palavra-passe (US20); a L01 foi revista.
+- Regras de arquitetura do ADR 0001 verificadas com ArchUnit, num passo
+  próprio da pipeline; os ciclos entre módulos ficam registados no ADR.
 
 Próximo: Fase 2 (arquivo, histórico consultável e edição de comentários).

@@ -154,7 +154,7 @@ build-frontend ───> testes-frontend ────────────�
 |-------|-----|--------------|
 | 1 | `build-backend` | Java 21; `./mvnw -B package -DskipTests` |
 | 1 | `build-frontend` | Node 24; `npm ci`, oxlint, `npm run build` (inclui `tsc -b`), `npm audit --audit-level=high` |
-| 2 | `testes-unitarios` | `./mvnw -B test -DexcludedGroups=integracao`: os testes sem `@Tag("integracao")`, sem Quarkus nem base de dados. Guarda `jacoco-unit.exec` |
+| 2 | `testes-unitarios` | Primeiro, num passo próprio, as regras de arquitetura do ADR 0001 (`./mvnw -B test -Dgroups=arquitetura`: `ArquiteturaTest`, com ArchUnit). Depois, `./mvnw -B test -DexcludedGroups=integracao,arquitetura`: os restantes testes sem `@Tag("integracao")`, sem Quarkus nem base de dados. Guarda `jacoco-unit.exec` |
 | 2 | `testes-integracao` | `./mvnw -B test -Dgroups=integracao`: os `@QuarkusTest`, com o PostgreSQL dos Dev Services. Guarda `jacoco-integracao.exec` |
 | 2 | `testes-frontend` | `npm ci`, `npm test` (Vitest) |
 | 3 | `cobertura` | Junta os dois ficheiros de cobertura (`jacoco:merge`), gera o relatório (`jacoco:report`) e **falha abaixo de 95% de linhas ou de ramos** (`jacoco:check`). Mostra a tabela da cobertura no resumo da execução e guarda o relatório HTML durante 14 dias (`relatorio-cobertura`) |

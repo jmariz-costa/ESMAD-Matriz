@@ -15,7 +15,8 @@ URL_APP := http://localhost:8090
 SEGREDOS := POSTGRES_PASSWORD MATRIZ_ADMIN_PASSWORD MATRIZ_DEMO_PASSWORD
 
 .PHONY: ajuda configurar arrancar parar registos estado bd \
-        testes testes-unitarios testes-integracao testes-frontend testes-e2e cobertura verificar
+        testes testes-unitarios testes-arquitetura testes-integracao testes-frontend testes-e2e \
+        cobertura verificar
 
 ajuda: ## Mostra esta ajuda
 	@echo "Matriz: comandos disponíveis"
@@ -68,6 +69,9 @@ testes: testes-unitarios testes-integracao testes-frontend ## Unitários e integ
 
 testes-unitarios: ## Backend: testes unitários (sem Quarkus nem base de dados)
 	cd backend && ./mvnw -B test -DexcludedGroups=integracao
+
+testes-arquitetura: ## Backend: só as regras de arquitetura do ADR 0001 (ArchUnit)
+	cd backend && ./mvnw -B test -Dgroups=arquitetura
 
 testes-integracao: | $(ENV) ## Backend: testes de integração (precisa do Docker: PostgreSQL temporário)
 	cd backend && ./mvnw -B test -Dgroups=integracao -Dquarkus.http.test-port=0

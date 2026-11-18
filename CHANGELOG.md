@@ -10,6 +10,12 @@ Enquanto a versão for `0.x`, a API não é considerada estável.
 
 ### Added
 
+- **Regras de arquitetura verificadas com ArchUnit** (`ArquiteturaTest`): as
+  regras 1, 2 e 5 do ADR 0001 (o `comum` não depende dos módulos; camadas
+  recurso → serviço → repositório; entre módulos só pelos serviços) passam a
+  ser testes. Correm num passo próprio da pipeline, antes dos testes
+  unitários, e localmente com `make testes-arquitetura`. O ADR 0001 regista
+  também os três ciclos entre módulos, aceites como compromisso.
 - **`Makefile`** para correr localmente: `make configurar` (cria o
   `backend/.env` com palavras-passe aleatórias e mostra-as uma vez),
   `make arrancar`/`parar`/`registos`, e cada tipo de teste em separado

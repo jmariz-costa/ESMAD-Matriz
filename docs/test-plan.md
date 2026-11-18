@@ -11,7 +11,8 @@ Secções: [como foi feito](#como-foi-feito) ·
 [matriz de cenários](#matriz-de-cenários) ·
 [testes novos](#testes-novos-da-ficha-pl-04) ·
 [fora do âmbito](#fora-do-âmbito) · [resultados](#resultados) ·
-[pirâmide e cobertura](#pirâmide-de-testes-e-cobertura-depois-da-ficha-pl-05)
+[pirâmide e cobertura](#pirâmide-de-testes-e-cobertura-depois-da-ficha-pl-05) ·
+[regras de arquitetura](#regras-de-arquitetura-archunit)
 
 ## Como foi feito
 
@@ -158,3 +159,32 @@ testes e a cobertura desce para cerca de 90%.
 incidental, porque nenhum teste verifica as contas criadas; e a margem nos
 ramos é pequena (14 ramos por cobrir), por isso código novo sem testes pode
 fazer a pipeline falhar.
+
+## Regras de arquitetura (ArchUnit)
+
+Desde 2026-11-18, três regras do
+[ADR 0001](decisions/0001-arquitetura-interna-backend.md) são testes
+unitários, em `ArquiteturaTest` (biblioteca ArchUnit, etiqueta
+`arquitetura`). Leem as classes compiladas, sem Quarkus nem base de dados, e
+correm num passo próprio da pipeline, antes dos outros testes unitários
+(`make testes-arquitetura` localmente).
+
+| Regra (teste) | O que verifica | ADR 0001 |
+|---------------|----------------|----------|
+| `camadas` | Os recursos não usam repositórios nem entidades; os repositórios só são usados pelos serviços; as entidades só pelos serviços e pelos repositórios | regra 2 |
+| `entreModulosSoPorServicos` | Um módulo não usa entidades, repositórios nem recursos de outro módulo | regra 5 |
+| `comumNaoDependeDosModulos` | O package `comum` não depende de nenhum módulo | regra 1 |
+
+**Verificação das regras:** o código atual cumpre as três. Para confirmar que
+as regras detetam violações, foram criadas temporariamente duas classes que as
+quebravam (um recurso com um repositório e com a entidade `Projeto` de outro
+módulo; uma classe do `comum` com um DTO de `contas`): os três testes
+falharam e indicaram cada violação. As classes foram apagadas a seguir.
+
+**Limitações:** não verificam as regras 3, 4 e 6 (agregados, invariantes no
+agregado, permissões nos serviços), que continuam na revisão de cada
+incremento; não verificam a ausência de ciclos entre módulos, aceites no
+ADR 0001; as camadas reconhecem-se pelo sufixo do nome, por isso uma classe
+com um nome fora da convenção fica de fora da regra das camadas (a exceção
+conhecida, `AcessoProjeto`, está declarada no teste como parte da camada de
+serviço).

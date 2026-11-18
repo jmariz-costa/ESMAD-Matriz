@@ -164,6 +164,10 @@ Um package comum guarda o que é partilhado: o formato único de erro, a
 autenticação (leitura do cookie e identificação do utilizador) e a
 configuração. Um módulo só usa outro através do serviço desse módulo.
 
+Estas regras de organização são verificadas pelo teste `ArquiteturaTest`
+(ArchUnit). Os ciclos entre módulos, todos através de serviços, são um
+compromisso aceite e estão registados no ADR 0001.
+
 ### Autenticação e sessão (D06)
 
 1. No login, o backend verifica o email e a palavra-passe (bcrypt) e o

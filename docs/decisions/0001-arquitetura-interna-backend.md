@@ -102,3 +102,49 @@ Regras de organização:
 - ❌ Há conversões entre entidades e DTOs em cada recurso.
 - ❌ É preciso disciplina para não pôr regras nos serviços quando pertencem a
   um agregado; este ponto é verificado na revisão de cada incremento.
+
+## Verificação automática das regras (2026-11-18)
+
+As regras 1, 2 e 5 são verificadas pelo teste unitário
+`backend/src/test/java/pt/esmad/matriz/ArquiteturaTest.java`, com a
+biblioteca ArchUnit. Se alguma for violada, a etapa de testes unitários da
+pipeline falha.
+
+- **Regra 2 (camadas):** os recursos não usam repositórios nem entidades; os
+  repositórios só são usados pelos serviços; as entidades só são usadas pelos
+  serviços e pelos repositórios. As camadas distinguem-se pelo sufixo do nome
+  (`*Recurso`, `*Servico`, `*Repositorio`) e pela anotação `@Entity`. A classe
+  `AcessoProjeto` não tem o sufixo `Servico`, mas conta como parte da camada de
+  serviço: apoia os serviços de Projetos, carregando o projeto e verificando o
+  acesso.
+- **Regra 5 (entre módulos):** um módulo não usa entidades, repositórios nem
+  recursos de outro módulo.
+- **Regra 1 (`comum`):** o package `comum` não depende de nenhum módulo.
+
+As regras 3, 4 e 6 (agregados, invariantes no agregado e permissões nos
+serviços) não se podem verificar assim e continuam a ser verificadas na revisão
+de cada incremento.
+
+## Dependências circulares entre módulos (2026-11-18)
+
+Há três ciclos entre módulos, todos através de serviços, como a regra 5 exige:
+
+- **Contas ↔ Projetos:** Contas usa o `GestoresServico` (desativar um Gestor
+  obriga a indicar um novo Gestor para cada projeto que ele gere, US14);
+  Projetos usa o `ContasServico` (nomes das pessoas e se uma conta está ativa).
+- **Contas ↔ Tarefas:** Contas usa o `AtribuicoesServico` (desativar uma conta
+  retira-a das tarefas não concluídas, US14); Tarefas usa o `ContasServico`
+  (nomes das pessoas).
+- **Projetos ↔ Tarefas:** Projetos usa o `AtribuicoesServico` (remover um membro
+  retira-o das tarefas não concluídas, RN08) e o `ContagemTarefasServico`
+  (contagens por estado); Tarefas usa o `AcessoProjetosServico` (acesso ao
+  projeto e se uma pessoa é membro ativo).
+
+São um compromisso aceite: nenhum módulo mexe nas entidades nem nas tabelas do
+outro, e num monólito desta dimensão o custo de os eliminar é maior do que o
+benefício. Por isso o `ArquiteturaTest` não verifica a ausência de ciclos.
+
+Se um dia for preciso eliminá-los (por exemplo, para separar um módulo), o
+caminho é o módulo de cima publicar eventos em vez de chamar o de baixo (por
+exemplo, Projetos anuncia «membro removido» e Tarefas reage, sem Projetos
+conhecer Tarefas), ou mover a orquestração para um serviço acima de ambos.

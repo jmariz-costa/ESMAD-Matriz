@@ -122,9 +122,16 @@ jobs:
       - name: Preparar configuração de exemplo
         run: cp .env.example .env
 
+      # Regras do ADR 0001 (ArquiteturaTest, etiqueta "arquitetura"): camadas, entre módulos só por
+      # serviços, comum sem dependências dos módulos. Lê as classes compiladas, não executa código,
+      # por isso a cobertura vai para um ficheiro à parte, que não é guardado
+      - name: Verificar regras de arquitetura (ArchUnit, ADR 0001)
+        run: ./mvnw -B test -Dgroups=arquitetura -Djacoco.ficheiro=jacoco-arquitetura.exec
+
       # Testes sem @Tag("integracao"): sem Quarkus nem base de dados
+      # (as regras de arquitetura já correram no passo anterior)
       - name: Executar testes unitários
-        run: ./mvnw -B test -DexcludedGroups=integracao -Djacoco.ficheiro=jacoco-unit.exec
+        run: ./mvnw -B test -DexcludedGroups=integracao,arquitetura -Djacoco.ficheiro=jacoco-unit.exec
 
       - name: Guardar dados de cobertura
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

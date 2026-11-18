@@ -17,6 +17,7 @@
         <skipITs>true</skipITs>
         <surefire-plugin.version>3.5.6</surefire-plugin.version>
         <jacoco-plugin.version>0.8.15</jacoco-plugin.version>
+        <archunit.version>1.5.1</archunit.version>
         <!-- Cobertura mínima de linhas e de ramos (0.00 a 1.00): abaixo dela, jacoco:check falha -->
         <cobertura.minima.linhas>0.95</cobertura.minima.linhas>
         <cobertura.minima.ramos>0.95</cobertura.minima.ramos>
@@ -77,6 +78,13 @@
         <dependency>
             <groupId>io.rest-assured</groupId>
             <artifactId>rest-assured</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <!-- Regras de arquitetura do ADR 0001 verificadas como testes unitários (ArquiteturaTest) -->
+            <groupId>com.tngtech.archunit</groupId>
+            <artifactId>archunit-junit5</artifactId>
+            <version>${archunit.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
