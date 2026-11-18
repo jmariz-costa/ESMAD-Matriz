@@ -243,7 +243,7 @@ existem:
 | `MATRIZ_COOKIE_SEGURO` | Backend | `true` |
 | `MATRIZ_ADMIN_EMAIL`, `MATRIZ_ADMIN_PASSWORD` | Backend | Administrador (painel) |
 | `MATRIZ_SEED_DEMO`, `MATRIZ_DEMO_PASSWORD` | Backend | `true`; palavra-passe de produção das contas de demonstração (painel) |
-| `MATRIZ_DOMINIO_EMAIL` | Backend | `empresa.pt`: só se criam contas de Membro com email deste domínio (US21). Opcional; definida no painel a 2026-11-18, aplica-se a partir do Deploy prod da `v0.2.0` |
+| `MATRIZ_DOMINIO_EMAIL` | Backend | `empresa.pt`: só se criam contas de Membro com email deste domínio (US21). Opcional; definida no painel a 2026-11-18, em vigor desde a `v0.2.0` |
 | `MATRIZ_API_URL` | Frontend | `https://matriz-backend-eeka.onrender.com`, sem barra no fim (painel) |
 | `PORT` | Ambos | `8081` (Backend) e `8080` (Frontend): porta dentro do contentor |
 
@@ -285,6 +285,15 @@ endereço do Frontend funcionou.
 
 **Primeira release em produção (2026-11-17):** a release `v0.2.0-rc.1` foi
 posta em produção com o "Deploy prod".
+
+**Release `v0.2.0` em produção (2026-11-18):** release publicada no GitHub
+sobre o `23dcd29` (pipeline verde); workflows "Release" e "Deploy prod"
+verdes. Verificado depois: página do Frontend 200, `/api/auth/me` 401 sem
+sessão, `/q/health` do Backend `UP` (a migração V2 foi aplicada no Neon no
+arranque), e o Frontend servido é o do build atual (o mesmo
+`index-<hash>.js` do build local). O utilizador entrou como Administrador e
+confirmou que criar uma conta com email de outro domínio é recusado
+(`MATRIZ_DOMINIO_EMAIL=empresa.pt`).
 
 **Antes de uma apresentação:** abrir o endereço do Frontend alguns minutos
 antes, para acordar os dois serviços (plano gratuito).
