@@ -38,16 +38,16 @@ início e no fim (RN23).
 | Atributo                 | Tipo conceptual | Restrições                                   | Origem          |
 |--------------------------|-----------------|----------------------------------------------|-----------------|
 | `id`                     | identificador   | PK                                           |                 |
-| `nome`                   | texto           | obrig.                                       | US01, S07       |
-| `email`                  | texto           | obrig., único, do domínio da empresa         | RN02, IF01      |
+| `nome`                   | texto           | obrig.                                       | US21, S07       |
+| `email`                  | texto           | obrig., único; do domínio da empresa, quando configurado | RN02, R06, IF01 |
 | `password_hash`          | texto           | obrig.; nunca a palavra-passe em claro       | S01             |
 | `tipo`                   | enumerado       | Membro / Administrador                       | RN16, RN19      |
-| `estado`                 | enumerado       | Por confirmar / Ativo / Desativado           | US01, US14      |
-| `token_confirmacao_hash` | texto           | opc.; limpo ao confirmar a conta             | RN03, S05       |
-| `token_expira_em`        | data-hora       | opc.; 24 h após gerar o link                 | RN03, S05       |
+| `estado`                 | enumerado       | Ativo / Desativado (o valor Por confirmar existe no esquema, sem uso desde que a US01 foi retirada) | US21, US14 |
+| `token_confirmacao_hash` | texto           | opc.; sem uso (US01 retirada)                | RN03, S05       |
+| `token_expira_em`        | data-hora       | opc.; sem uso (US01 retirada)                | RN03, S05       |
 | `tentativas_falhadas`    | inteiro         | obrig.; começa a 0; volta a 0 num login correto | D09          |
 | `bloqueado_ate`          | data-hora       | opc.; login recusado até esta data-hora      | D09             |
-| `deve_mudar_palavra_passe` | booleano      | obrig.; verdadeiro depois de o Administrador repor o acesso, até a pessoa definir uma palavra-passe nova | US19, PR20 |
+| `deve_mudar_palavra_passe` | booleano      | obrig.; verdadeiro depois de o Administrador criar a conta ou repor o acesso, até a pessoa definir uma palavra-passe nova | US19, US21, PR20 |
 
 ### Projeto
 
@@ -279,15 +279,15 @@ Regras que o diagrama não mostra e que a aplicação tem de garantir:
 | RI10 | Num projeto arquivado não se cria, altera nem apaga nada; exceções: reativar o projeto, pelo Gestor (US08), eliminar o projeto, pelo Gestor (RN22), e as ações da US14. | RN15, RN22, US08 crit. 3, US14 crit. 4 |
 | RI11 | As entradas do histórico nunca são editadas nem apagadas (exceto ao eliminar a tarefa, RI09).                     | PR12              |
 | RI12 | Criar uma tarefa, alterar título, descrição, estado, prazo ou prioridade, ou atribuir ou remover um responsável gera uma entrada no histórico. | RF13, US13 crit. 1 |
-| RI13 | O email é único e pertence ao domínio da empresa.                                                                  | RN02, US01 crit. 4–5 |
-| RI14 | O token de confirmação é guardado em hash, expira 24 h depois de gerado, é substituído quando se pede novo link e é limpo quando a conta é confirmada. | RN03, S05, US01 crit. 7 |
+| RI13 | O email é único, sem distinguir maiúsculas de minúsculas. Nas contas criadas pelo Administrador, pertence ao domínio da empresa, quando está configurado (IF01). | RN02, R06, US21 crit. 2–3 |
+| RI14 | *(Retirada a 2026-11-18 com a US01.)* O token de confirmação é guardado em hash, expira 24 h depois de gerado, é substituído quando se pede novo link e é limpo quando a conta é confirmada. | RN03, S05, US01 crit. 7 |
 | RI15 | Utilizadores nunca são apagados (só desativados), pelo que as referências a eles se mantêm válidas. Projetos só são apagados quando o Gestor os elimina (RI17). | RN18, RN22 |
 | RI16 | Só Membros com conta ativa podem ser adicionados a um projeto (nunca Administradores, contas por confirmar ou desativadas). | US04 crit. 1, US14 crit. 5, RN19 |
 | RI17 | Eliminar um projeto apaga, em cascata, os seus membros (MembroProjeto), tarefas, atribuições, comentários, histórico e registos de TarefaEliminada, sem deixar dados órfãos. | RN22, L06 |
 | RI18 | Cada alteração de uma tarefa aumenta a `versao`; uma alteração feita com uma versão desatualizada é recusada.      | D08               |
 | RI19 | Uma sessão é válida só enquanto não passarem 30 minutos desde a `ultima_atividade`. Sair apaga a sessão; desativar uma conta apaga todas as sessões dessa pessoa. | D06, PR16, US02 crit. 4 |
 | RI20 | Ao chegar a 5 tentativas falhadas seguidas, `bloqueado_ate` passa a 15 minutos depois; um login correto põe `tentativas_falhadas` a 0. | D09, PR03 |
-| RI21 | Repor o acesso guarda o hash da palavra-passe temporária, põe `deve_mudar_palavra_passe` a verdadeiro, limpa o bloqueio (D09) e apaga as sessões da pessoa; mudar a palavra-passe põe-no a falso e apaga as outras sessões. | US19, US20, PR20, PR21 |
+| RI21 | Criar uma conta de Membro guarda o hash da palavra-passe temporária e põe `deve_mudar_palavra_passe` a verdadeiro. Repor o acesso faz o mesmo, limpa o bloqueio (D09) e apaga as sessões da pessoa; mudar a palavra-passe põe-no a falso e apaga as outras sessões. | US19, US20, US21, PR20, PR21 |
 
 ## 6. Pressupostos e decisões pendentes
 
@@ -298,7 +298,9 @@ Regras que o diagrama não mostra e que a aplicação tem de garantir:
 - O Gestor é indicado por `gestor_id` no Projeto, o que garante pela estrutura
   um único Gestor por projeto (PR01).
 - O link de confirmação é guardado em campos do Utilizador; gerar um novo link
-  substitui o anterior (US01 crit. 7).
+  substitui o anterior (US01 crit. 7). *(Sem uso desde 2026-11-18: a US01 foi
+  retirada. As colunas e o valor Por confirmar ficam no esquema, porque
+  retirá-los exigia uma migração sem benefício para o MVP.)*
 - Os valores do histórico são guardados como texto; estado e prioridade como
   códigos, traduzidos ao mostrar (PR18).
 - Os identificadores são UUID (Ficha PL 03).
@@ -314,4 +316,4 @@ no Utilizador) e os tamanhos máximos dos textos (RN23).
 | ID   | Impacto no modelo                                                                                 |
 |------|---------------------------------------------------------------------------------------------------|
 | D10  | Pedido de apagamento de dados (RGPD): o histórico e os comentários guardam nomes de pessoas.      |
-| IF01 | Domínio de email da empresa, necessário para validar a RI13 (só quando a US01 for implementada). |
+| IF01 | Domínio de email da empresa, para a RI13: enquanto o cliente não o indicar, é configurável (`MATRIZ_DOMINIO_EMAIL`, US21). |

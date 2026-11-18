@@ -47,6 +47,9 @@ services:
         value: "true"
       - key: MATRIZ_DEMO_PASSWORD
         sync: false
+      # Só se criam contas de Membro com email deste domínio (US21, R06); não é segredo
+      - key: MATRIZ_DOMINIO_EMAIL
+        value: empresa.pt
 
   - type: web
     name: matriz-frontend

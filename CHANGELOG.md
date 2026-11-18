@@ -10,6 +10,13 @@ Enquanto a versão for `0.x`, a API não é considerada estável.
 
 ### Added
 
+- **Criar contas de Membro** (US21, incremento F2.9): na gestão de contas, o
+  Administrador cria a conta de uma pessoa com nome, email e uma
+  palavra-passe temporária, que ela tem de mudar no primeiro login. Novo
+  endpoint `POST /contas` (OpenAPI 0.7.0). Nova variável opcional
+  `MATRIZ_DOMINIO_EMAIL`: se estiver definida, só se criam contas com email
+  desse domínio. Quem já tem um `backend/.env` pode acrescentá-la (o
+  `.env.example` traz `empresa.pt`).
 - **Regras de arquitetura verificadas com ArchUnit** (`ArquiteturaTest`): as
   regras 1, 2 e 5 do ADR 0001 (o `comum` não depende dos módulos; camadas
   recurso → serviço → repositório; entre módulos só pelos serviços) passam a
@@ -52,6 +59,9 @@ Enquanto a versão for `0.x`, a API não é considerada estável.
 
 ### Changed
 
+- **Sem registo público** (RN02 e L07 revistas): a US01 (registo com
+  confirmação por email), que estava adiada, foi retirada e substituída pela
+  US21. Deixam de se aplicar a RN03, a S05, o RA01 e a D05 (serviço de email).
 - **Recuperação da palavra-passe** (L01 revista): continua a não haver
   recuperação automática por email, mas o Administrador pode repor o acesso
   (US19). Novas regras PR20, PR21 e RI21; nome de uma pessoa entre 2 e 150

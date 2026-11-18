@@ -26,7 +26,7 @@ e [constraints.md](constraints.md).
 
 | ID   | User Story                                         | Prioridade |
 |------|----------------------------------------------------|------------|
-| US01 | Registo com email da empresa *(adiada, ver L07)*   | Alta       |
+| US01 | Registo com email da empresa *(retirada, substituída pela US21)* | Alta |
 | US02 | Entrar e sair da conta                             | Alta       |
 | US03 | Criar projeto                                      | Alta       |
 | US04 | Gerir membros do projeto                           | Alta       |
@@ -45,16 +45,22 @@ e [constraints.md](constraints.md).
 | US18 | Ver o painel inicial                               | Média      |
 | US19 | Editar o nome e repor o acesso de uma conta (Administrador) | Média |
 | US20 | Mudar a minha palavra-passe                        | Média      |
+| US21 | Criar contas de Membro (Administrador)             | Alta       |
 
 A US15 (etiquetas) ficou fora do MVP: ver a secção [Fora do MVP](#fora-do-mvp)
 no fim deste documento. As US16 a US18 foram acrescentadas na Ficha PL 03 e
 as US19 e US20 a 2026-11-17, por decisão do responsável do projeto.
-A US01 foi adiada na Ficha PL 03: enquanto não for implementada, as contas de
-Membro são criadas por seed (L07 em [constraints.md](constraints.md)).
+A US01 foi adiada na Ficha PL 03 e retirada a 2026-11-18: foi substituída pela
+US21, acrescentada nessa data, em que o Administrador cria as contas de Membro
+(L07 em [constraints.md](constraints.md)).
 
 ---
 
-## US01 — Registo com email da empresa · Alta *(adiada)*
+## US01 — Registo com email da empresa · Alta *(retirada)*
+
+*(Retirada a 2026-11-18 e substituída pela US21: não há registo público; as
+contas de Membro são criadas pelo Administrador. O texto fica como registo da
+decisão.)*
 
 Como **pessoa da empresa**, quero registar-me com o meu email da empresa, para
 poder aceder à Matriz.
@@ -346,6 +352,29 @@ conhecimento.
 3. **Dado** que entro com uma conta de Administrador, **então** não posso
    mudar a palavra-passe na Matriz: é definida na instalação (RN21, D07).
 
+## US21 — Criar contas de Membro (Administrador) · Alta
+
+*(Acrescentada a 2026-11-18, por decisão do responsável do projeto; substitui
+a US01.)*
+
+Como **Administrador**, quero criar a conta de cada pessoa que precisa de usar
+a Matriz, para que só tenha acesso quem a empresa autoriza.
+
+1. **Dado** que sou Administrador, **quando** crio uma conta com nome (entre 2
+   e 150 caracteres, RN23), email e palavra-passe temporária (pelo menos 8
+   caracteres, RN04), **então** a conta fica ativa, como Membro, e aparece na
+   lista de contas.
+2. **Dado** que a instalação tem o domínio da empresa configurado, **quando** o
+   email não é desse domínio, **então** a criação é recusada e nenhuma conta é
+   criada (R06).
+3. **Dado** um email que já tem conta, de Membro (ativa ou desativada) ou de
+   Administrador, sem distinguir maiúsculas de minúsculas, **então** a criação
+   é recusada e nenhuma conta nova é criada.
+4. **Dado** que a minha conta foi criada, **quando** entro pela primeira vez
+   com a palavra-passe temporária, **então** tenho de definir uma palavra-passe
+   nova (US20) antes de usar a Matriz (PR20).
+5. **Dado** que não sou Administrador, **então** a criação é recusada (RN19).
+
 ## US16 — Editar e eliminar projeto · Alta
 
 Como **Gestor**, quero editar e eliminar o meu projeto, para corrigir os seus
@@ -408,7 +437,7 @@ perceber de relance o estado do trabalho. *(Ficha PL 03)*
 |-----|-----------------------------------------------------------|----------------------------------------------------------------------|----------------|
 | CE1 | O Gestor remove um membro com tarefas atribuídas          | O membro deixa de ser responsável pelas tarefas não concluídas       | US04 (crit. 4) |
 | CE2 | O Gestor tenta remover-se do próprio projeto              | Ação recusada                                                        | US04 (crit. 5) |
-| CE3 | O link de confirmação é aberto depois das 24 horas        | Link recusado; a pessoa pode pedir um novo link de confirmação       | US01 (crit. 7) |
+| CE3 | *(Retirado com a US01.)* O link de confirmação é aberto depois das 24 horas | Link recusado; a pessoa pode pedir um novo link de confirmação | US01 (crit. 7) |
 | CE4 | Tentativa de alterar qualquer coisa num projeto arquivado | Ação recusada; o projeto é só de leitura (única exceção: US14)       | US06, US08     |
 | CE5 | Duas pessoas editam a mesma tarefa ao mesmo tempo         | A segunda gravação é recusada; a interface pede para recarregar, sem perder o que foi escrito (D08) | US05 (crit. 8) |
 | CE6 | O Administrador desativa uma pessoa que é Gestora         | Tem de escolher primeiro um novo Gestor para cada projeto dela       | US14 (crit. 3) |

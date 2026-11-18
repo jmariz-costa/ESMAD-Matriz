@@ -265,3 +265,105 @@ describe('Gestão de contas (US14)', () => {
     expect(await within(dialogo).findByRole('alert')).toHaveTextContent('Reative-a antes de repor o acesso.')
   })
 })
+
+describe('Criar contas (US21)', () => {
+  const eva: Conta = { id: 'eva', nome: 'Eva Rocha', email: 'eva@empresa.pt', estado: 'ATIVO' }
+
+  it('valida os campos, cria a conta e mostra-a na lista', async () => {
+    let criada = false
+    const fetchFalso = simularApi({
+      ...SESSAO,
+      [LISTAR]: () => pagina(criada ? [ana, eva] : [ana]),
+      'POST /api/contas': () => {
+        criada = true
+        return { estado: 201, corpo: eva }
+      },
+    })
+    renderizarAplicacao('/')
+    await screen.findByRole('cell', { name: 'Ana Exemplo' })
+
+    await userEvent.click(screen.getByRole('button', { name: '+ Criar conta' }))
+    const dialogo = await screen.findByRole('dialog', { name: 'Criar conta' })
+    expect(within(dialogo).getByText(/vai ter de a trocar por uma nova/)).toBeInTheDocument()
+    expect(within(dialogo).getByLabelText(/Palavra-passe temporária/)).toHaveAttribute('type', 'text')
+
+    await userEvent.click(within(dialogo).getByRole('button', { name: 'Criar conta' }))
+    expect(within(dialogo).getByText('O nome é obrigatório.')).toBeInTheDocument()
+    expect(within(dialogo).getByText('O email é obrigatório.')).toBeInTheDocument()
+    expect(within(dialogo).getByText('A palavra-passe é obrigatória.')).toBeInTheDocument()
+
+    await userEvent.type(within(dialogo).getByLabelText('Nome *'), '  Eva Rocha ')
+    await userEvent.type(within(dialogo).getByLabelText('Email *'), 'eva@')
+    await userEvent.type(within(dialogo).getByLabelText(/Palavra-passe temporária/), '1234567')
+    await userEvent.click(within(dialogo).getByRole('button', { name: 'Criar conta' }))
+    expect(within(dialogo).getByText('Indique um email válido, no formato nome@dominio.')).toBeInTheDocument()
+    expect(within(dialogo).getByText('A palavra-passe deve ter pelo menos 8 caracteres.')).toBeInTheDocument()
+    expect(within(dialogo).getByLabelText('Email *')).toHaveAttribute('aria-invalid', 'true')
+    expect(fetchFalso.mock.calls.some(([u, init]) => u === '/api/contas' && init?.method === 'POST')).toBe(false)
+
+    await userEvent.type(within(dialogo).getByLabelText('Email *'), 'empresa.pt ')
+    await userEvent.type(within(dialogo).getByLabelText(/Palavra-passe temporária/), '8')
+    await userEvent.click(within(dialogo).getByRole('button', { name: 'Criar conta' }))
+
+    expect(await screen.findByText('Conta de Eva Rocha criada. Comunique-lhe a palavra-passe temporária.'))
+      .toBeInTheDocument()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(corpoDe(fetchFalso, 'POST', '/api/contas'))
+      .toEqual({ nome: 'Eva Rocha', email: 'eva@empresa.pt', palavraPasseTemporaria: '12345678' })
+    expect(await screen.findByRole('cell', { name: 'Eva Rocha' })).toBeInTheDocument()
+  })
+
+  it('mostra no campo do email o erro do domínio e o de um email que já tem conta', async () => {
+    let tentativa = 0
+    simularApi({
+      ...SESSAO,
+      [LISTAR]: pagina([ana]),
+      'POST /api/contas': () => {
+        tentativa++
+        return tentativa === 1
+          ? {
+              estado: 400,
+              corpo: {
+                codigo: 'VALIDACAO', mensagem: 'O pedido tem dados inválidos.',
+                detalhes: [{ campo: 'email', mensagem: 'O email tem de ser do domínio empresa.pt.' }],
+              },
+            }
+          : { estado: 409, corpo: { codigo: 'JA_EXISTE', mensagem: 'Este email já tem conta.' } }
+      },
+    })
+    renderizarAplicacao('/')
+    await userEvent.click(await screen.findByRole('button', { name: '+ Criar conta' }))
+    const dialogo = await screen.findByRole('dialog', { name: 'Criar conta' })
+    await userEvent.type(within(dialogo).getByLabelText('Nome *'), 'Eva Rocha')
+    await userEvent.type(within(dialogo).getByLabelText('Email *'), 'eva@outra.pt')
+    await userEvent.type(within(dialogo).getByLabelText(/Palavra-passe temporária/), 'temporaria-1')
+
+    await userEvent.click(within(dialogo).getByRole('button', { name: 'Criar conta' }))
+    expect(await within(dialogo).findByText('O email tem de ser do domínio empresa.pt.')).toBeInTheDocument()
+    expect(within(dialogo).queryByRole('alert')).not.toBeInTheDocument()
+
+    await userEvent.click(within(dialogo).getByRole('button', { name: 'Criar conta' }))
+    expect(await within(dialogo).findByText('Este email já tem conta.')).toBeInTheDocument()
+    expect(within(dialogo).getByLabelText('Email *')).toHaveAttribute('aria-invalid', 'true')
+    expect(within(dialogo).getByLabelText('Nome *')).toHaveValue('Eva Rocha')
+    expect(within(dialogo).getByRole('button', { name: 'Criar conta' })).toBeEnabled()
+  })
+
+  it('outros erros do servidor aparecem no topo do diálogo', async () => {
+    simularApi({
+      ...SESSAO,
+      [LISTAR]: pagina([ana]),
+      'POST /api/contas': { estado: 403, corpo: { codigo: 'SEM_PERMISSAO', mensagem: 'Não tem permissão para esta ação.' } },
+    })
+    renderizarAplicacao('/')
+    await userEvent.click(await screen.findByRole('button', { name: '+ Criar conta' }))
+    const dialogo = await screen.findByRole('dialog', { name: 'Criar conta' })
+    await userEvent.type(within(dialogo).getByLabelText('Nome *'), 'Eva Rocha')
+    await userEvent.type(within(dialogo).getByLabelText('Email *'), 'eva@empresa.pt')
+    await userEvent.type(within(dialogo).getByLabelText(/Palavra-passe temporária/), 'temporaria-1')
+
+    await userEvent.click(within(dialogo).getByRole('button', { name: 'Criar conta' }))
+
+    expect(await within(dialogo).findByRole('alert')).toHaveTextContent('Não tem permissão para esta ação.')
+  })
+})

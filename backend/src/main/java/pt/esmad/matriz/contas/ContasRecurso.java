@@ -19,10 +19,14 @@ import pt.esmad.matriz.projetos.GestoresServico;
 
 import java.util.List;
 
-/** Endpoints da gestão de contas pelo Administrador (openapi.yaml, tag Contas; US14, US19). */
+/** Endpoints da gestão de contas pelo Administrador (openapi.yaml, tag Contas; US14, US19, US21). */
 @Path("/contas")
 @Produces(MediaType.APPLICATION_JSON)
 public class ContasRecurso {
+
+    /** Corpo de POST /contas (openapi.yaml, CriarContaPedido). */
+    public record CriarContaPedido(String nome, String email, String palavraPasseTemporaria) {
+    }
 
     /** Corpo de POST /contas/{id}/desativacao (openapi.yaml, DesativarContaPedido). */
     public record DesativarContaPedido(List<NovoGestorPedido> novosGestores) {
@@ -52,6 +56,13 @@ public class ContasRecurso {
                                         @QueryParam("tamanho") String tamanho) {
         EstadoConta filtro = lerEstado(estado);
         return servico.listar(q, filtro, PedidoPagina.de(pagina, tamanho));
+    }
+
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response criar(@NotNull(message = "O corpo do pedido é obrigatório.") CriarContaPedido pedido) {
+        ContaResposta conta = servico.criar(pedido.nome(), pedido.email(), pedido.palavraPasseTemporaria());
+        return Response.status(Response.Status.CREATED).entity(conta).build();
     }
 
     @PATCH

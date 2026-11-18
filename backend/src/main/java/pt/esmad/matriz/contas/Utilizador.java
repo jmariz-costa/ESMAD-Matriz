@@ -12,12 +12,14 @@ import pt.esmad.matriz.comum.texto.Texto;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Locale;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
  * Conta de Membro ou de Administrador (agregado do módulo Contas).
- * Protege as regras do limite de tentativas de login (D09), do nome (RN23) e da
- * palavra-passe temporária (PR20).
+ * Protege as regras do limite de tentativas de login (D09), do nome (RN23), do email das contas
+ * novas (RI13, R06) e da palavra-passe temporária (PR20).
  */
 @Entity
 @Table(name = "utilizador")
@@ -27,6 +29,7 @@ public class Utilizador {
     static final Duration DURACAO_BLOQUEIO = Duration.ofMinutes(15); // D09
     static final int NOME_MINIMO = 2;   // RN23, US19
     static final int NOME_MAXIMO = 150; // RN23, US19
+    static final int EMAIL_MAXIMO = 254; // tamanho da coluna email (VARCHAR(254))
 
     @Id
     private UUID id;
@@ -72,17 +75,70 @@ public class Utilizador {
         return estado == EstadoConta.ATIVO;
     }
 
+    /**
+     * US21: conta de Membro ativa, com a palavra-passe temporária definida pelo Administrador, que
+     * tem de ser mudada no primeiro login (PR20, RI21). Os problemas do nome, do email e da
+     * palavra-passe são devolvidos todos juntos. Não verifica se o email já tem conta: isso é do
+     * serviço, que consulta a base de dados.
+     *
+     * @param dominio domínio da empresa sem "@" e em minúsculas, ou vazio se não estiver configurado
+     */
+    static Utilizador novoMembro(String nome, String email, String palavraPasseTemporaria, Optional<String> dominio) {
+        Validacao validacao = new Validacao();
+        String nomeValido = validarNome(nome, validacao);
+        String emailValido = validarEmail(email, dominio, validacao);
+        PalavraPasse.validar(palavraPasseTemporaria, "palavraPasseTemporaria", validacao);
+        validacao.lancarSeHouverErros();
+        Utilizador conta = new Utilizador(UUID.randomUUID(), nomeValido, emailValido,
+                PalavraPasse.hash(palavraPasseTemporaria), TipoUtilizador.MEMBRO, EstadoConta.ATIVO);
+        conta.deveMudarPalavraPasse = true;
+        return conta;
+    }
+
     /** US19 crit. 1: só o nome muda, entre 2 e 150 caracteres sem contar os espaços nas pontas. */
     void alterarNome(String novoNome) {
-        String normalizado = Texto.normalizar(novoNome);
         Validacao validacao = new Validacao();
+        String normalizado = validarNome(novoNome, validacao);
+        validacao.lancarSeHouverErros();
+        nome = normalizado;
+    }
+
+    /** RN23: entre 2 e 150 caracteres, sem contar os espaços nas pontas. Devolve o nome sem eles. */
+    private static String validarNome(String nome, Validacao validacao) {
+        String normalizado = Texto.normalizar(nome);
         if (normalizado == null) {
             validacao.erro("nome", "O nome é obrigatório.");
         } else if (Texto.comprimento(normalizado) < NOME_MINIMO || Texto.comprimento(normalizado) > NOME_MAXIMO) {
             validacao.erro("nome", "O nome deve ter entre 2 e 150 caracteres.");
         }
-        validacao.lancarSeHouverErros();
-        nome = normalizado;
+        return normalizado;
+    }
+
+    /**
+     * US21 crit. 2, RI13: sem espaços nas pontas e em minúsculas; um só "@", com texto antes e
+     * depois, sem espaços no meio; até 254 caracteres; e, se houver domínio configurado, desse
+     * domínio exatamente (R06). Devolve o email normalizado.
+     */
+    private static String validarEmail(String email, Optional<String> dominio, Validacao validacao) {
+        String normalizado = Texto.normalizar(email);
+        if (normalizado == null) {
+            validacao.erro("email", "O email é obrigatório.");
+            return null;
+        }
+        normalizado = normalizado.toLowerCase(Locale.ROOT);
+        int arroba = normalizado.indexOf('@');
+        boolean formatoValido = arroba > 0
+                && arroba == normalizado.lastIndexOf('@')
+                && arroba < normalizado.length() - 1
+                && normalizado.codePoints().noneMatch(c -> Character.isWhitespace(c) || Character.isSpaceChar(c));
+        if (Texto.comprimento(normalizado) > EMAIL_MAXIMO) {
+            validacao.erro("email", "O email deve ter no máximo 254 caracteres.");
+        } else if (!formatoValido) {
+            validacao.erro("email", "Indique um email válido, no formato nome@dominio.");
+        } else if (dominio.isPresent() && !normalizado.substring(arroba + 1).equals(dominio.get())) {
+            validacao.erro("email", "O email tem de ser do domínio " + dominio.get() + ".");
+        }
+        return normalizado;
     }
 
     /**

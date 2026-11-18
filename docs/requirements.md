@@ -46,8 +46,8 @@ desativar e reativar contas.
 | ID   | Regra                                                                                                                         |
 |------|-------------------------------------------------------------------------------------------------------------------------------|
 | RN01 | A Matriz é usada por uma única empresa.                                                                                       |
-| RN02 | Qualquer pessoa pode registar-se, mas só com um email do domínio da empresa, e tem de o confirmar através de um link.         |
-| RN03 | O link de confirmação é válido durante 24 horas.                                                                              |
+| RN02 | As contas de Membro são criadas pelo Administrador, só com um email do domínio da empresa (R06); não há registo público. *(Revista a 2026-11-18, US21: antes, qualquer pessoa podia registar-se e confirmava o email através de um link.)* |
+| RN03 | *(Retirada a 2026-11-18 com a US01: não há links de confirmação.)* O link de confirmação é válido durante 24 horas.           |
 | RN04 | A palavra-passe tem pelo menos 8 caracteres.                                                                                  |
 | RN05 | Qualquer Membro pode criar projetos; quem cria um projeto torna-se o seu Gestor.                                              |
 | RN06 | Uma pessoa pode pertencer a vários projetos ao mesmo tempo.                                                                   |
@@ -73,7 +73,7 @@ desativar e reativar contas.
 
 | ID   | Requisito                                                                                          | Prioridade | User Story |
 |------|----------------------------------------------------------------------------------------------------|------------|------------|
-| RF01 | Registo de conta com email da empresa e confirmação por link                                       | Alta       | US01       |
+| RF01 | Criação de contas de Membro pelo Administrador, com palavra-passe temporária *(revisto a 2026-11-18; antes: registo com confirmação por link, US01)* | Alta       | US21       |
 | RF02 | Entrar e sair da conta                                                                             | Alta       | US02       |
 | RF03 | Criar projetos                                                                                     | Alta       | US03       |
 | RF04 | Adicionar e remover membros de um projeto                                                          | Alta       | US04       |
@@ -109,9 +109,10 @@ O MVP inclui os requisitos **RF01 a RF14** (User Stories US01 a US14) e,
 desde a Ficha PL 03, os requisitos **RF16 a RF18** (US16 a US18). O RF15
 (etiquetas, US15) foi retirado do MVP pelo cliente e está na secção seguinte.
 
-Na Ficha PL 03, o RF01 (registo, US01) foi adiado: enquanto não for
-implementado, as contas de Membro são criadas por seed (ver L07 em
-[constraints.md](constraints.md)).
+Na Ficha PL 03, o RF01 (registo, US01) foi adiado e as contas de Membro
+passaram a ser criadas por seed. A 2026-11-18, o RF01 foi revisto: a US01 foi
+retirada e substituída pela US21, em que o Administrador cria as contas de
+Membro (ver L07 em [constraints.md](constraints.md)).
 
 ## 8. Fora do âmbito inicial
 

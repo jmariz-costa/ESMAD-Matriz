@@ -1,4 +1,4 @@
-// Gestão de contas pelo Administrador (openapi.yaml, tag Contas; US14).
+// Gestão de contas pelo Administrador (openapi.yaml, tag Contas; US14, US19, US21).
 import { pedido } from './cliente'
 import { TAMANHO_PAGINA, type Pagina } from './projetos'
 
@@ -63,4 +63,9 @@ export function reporAcesso(contaId: string, palavraPasseTemporaria: string): Pr
   return pedido(`/contas/${encodeURIComponent(contaId)}/reposicao-acesso`, {
     metodo: 'POST', corpo: { palavraPasseTemporaria },
   })
+}
+
+/** Conta de Membro ativa, com palavra-passe temporária a mudar no primeiro login (US21, PR20). */
+export function criarConta(dados: { nome: string; email: string; palavraPasseTemporaria: string }): Promise<Conta> {
+  return pedido('/contas', { metodo: 'POST', corpo: dados })
 }

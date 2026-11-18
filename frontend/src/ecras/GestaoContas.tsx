@@ -5,6 +5,7 @@ import { listarContas, reativarConta, type Conta, type EstadoConta } from '../ap
 import { TAMANHO_PAGINA } from '../api/projetos'
 import { useDados } from '../comum/useDados'
 import { useNotificar } from '../comum/notificacao'
+import { CriarConta } from '../contas/CriarConta'
 import { DesativarConta } from '../contas/DesativarConta'
 import { EditarConta } from '../contas/EditarConta'
 import { ReporAcesso } from '../contas/ReporAcesso'
@@ -26,9 +27,9 @@ function textoTotal(total: number): string {
 }
 
 /**
- * Gestão de contas do Administrador (US14, US19): contas de Membro com pesquisa, filtro por
- * estado e paginação, guardados no URL. Editar o nome e repor o acesso abrem um diálogo;
- * desativar abre a confirmação (e a escolha dos novos Gestores); reativar é imediato.
+ * Gestão de contas do Administrador (US14, US19, US21): contas de Membro com pesquisa, filtro por
+ * estado e paginação, guardados no URL. Criar uma conta, editar o nome e repor o acesso abrem um
+ * diálogo; desativar abre a confirmação (e a escolha dos novos Gestores); reativar é imediato.
  */
 export function GestaoContas() {
   const [parametros, setParametros] = useSearchParams()
@@ -36,6 +37,7 @@ export function GestaoContas() {
   const estado = estadoDoUrl(parametros.get('estado'))
   const pagina = paginaDoUrl(parametros.get('pagina'))
   const [texto, setTexto] = useState(q)
+  const [aCriar, setACriar] = useState(false)
   const [aDesativar, setADesativar] = useState<Conta | null>(null)
   const [aEditar, setAEditar] = useState<Conta | null>(null)
   const [aReporAcesso, setAReporAcesso] = useState<Conta | null>(null)
@@ -108,6 +110,9 @@ export function GestaoContas() {
             <option value="DESATIVADO">Desativadas</option>
           </select>
         </label>
+        <button type="button" className="btn principal direita" onClick={() => setACriar(true)}>
+          + Criar conta
+        </button>
       </div>
 
       {erro && <div className="aviso" role="alert">{erro}</div>}
@@ -183,6 +188,16 @@ export function GestaoContas() {
         </>
       )}
 
+      {aCriar && (
+        <CriarConta
+          aoFechar={() => setACriar(false)}
+          aoCriar={(conta) => {
+            notificar(`Conta de ${conta.nome} criada. Comunique-lhe a palavra-passe temporária.`)
+            setACriar(false)
+            recarregar()
+          }}
+        />
+      )}
       {aEditar && (
         <EditarConta
           conta={aEditar}

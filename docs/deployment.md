@@ -39,7 +39,7 @@ Git (`.gitignore`). O Compose passa-o aos serviços `postgres` e `backend`
 
 | Variável | Onde é definida | Nota |
 |----------|-----------------|------|
-| `POSTGRES_*`, `MATRIZ_ADMIN_*`, `MATRIZ_SEED_DEMO`, `MATRIZ_DEMO_PASSWORD`, `MATRIZ_COOKIE_SEGURO` | `backend/.env` | Os valores do `.env.example` são públicos: **mudar as palavras-passe** |
+| `POSTGRES_*`, `MATRIZ_ADMIN_*`, `MATRIZ_SEED_DEMO`, `MATRIZ_DEMO_PASSWORD`, `MATRIZ_COOKIE_SEGURO`, `MATRIZ_DOMINIO_EMAIL` (opcional) | `backend/.env` | Os valores do `.env.example` são públicos: **mudar as palavras-passe** |
 | `MATRIZ_DB_HOST` | `compose.yaml` (`postgres`) | Só dentro do Docker; em modo de desenvolvimento fica `localhost` (`application.properties`) |
 
 Se `MATRIZ_ADMIN_EMAIL` ou `MATRIZ_ADMIN_PASSWORD` faltarem, o Backend arranca
@@ -243,6 +243,7 @@ existem:
 | `MATRIZ_COOKIE_SEGURO` | Backend | `true` |
 | `MATRIZ_ADMIN_EMAIL`, `MATRIZ_ADMIN_PASSWORD` | Backend | Administrador (painel) |
 | `MATRIZ_SEED_DEMO`, `MATRIZ_DEMO_PASSWORD` | Backend | `true`; palavra-passe de produção das contas de demonstração (painel) |
+| `MATRIZ_DOMINIO_EMAIL` | Backend | `empresa.pt`: só se criam contas de Membro com email deste domínio (US21). Opcional; definida no painel a 2026-11-18, aplica-se a partir do Deploy prod da `v0.2.0` |
 | `MATRIZ_API_URL` | Frontend | `https://matriz-backend-eeka.onrender.com`, sem barra no fim (painel) |
 | `PORT` | Ambos | `8081` (Backend) e `8080` (Frontend): porta dentro do contentor |
 

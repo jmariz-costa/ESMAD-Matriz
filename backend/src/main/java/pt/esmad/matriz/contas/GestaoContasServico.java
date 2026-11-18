@@ -2,6 +2,7 @@ package pt.esmad.matriz.contas;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import pt.esmad.matriz.comum.autenticacao.Identidade;
 import pt.esmad.matriz.comum.autenticacao.UtilizadorAtual;
 import pt.esmad.matriz.comum.erros.ErroAplicacao;
@@ -12,10 +13,12 @@ import pt.esmad.matriz.projetos.GestoresServico;
 import pt.esmad.matriz.tarefas.AtribuicoesServico;
 
 import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Gestão das contas de Membro pelo Administrador (US14, US19). Ao desativar, pede ao módulo
+ * Gestão das contas de Membro pelo Administrador (US14, US19, US21). Ao desativar, pede ao módulo
  * Projetos os novos Gestores e ao módulo Tarefas que retire as atribuições (ADR 0001,
  * regra 5; architecture.md §6), tudo na mesma transação.
  */
@@ -29,14 +32,40 @@ public class GestaoContasServico {
     private final GestoresServico gestores;
     private final AtribuicoesServico atribuicoes;
     private final UtilizadorAtual utilizadorAtual;
+    private final Optional<String> dominioEmail;
 
     GestaoContasServico(UtilizadorRepositorio utilizadores, SessaoRepositorio sessoes, GestoresServico gestores,
-                        AtribuicoesServico atribuicoes, UtilizadorAtual utilizadorAtual) {
+                        AtribuicoesServico atribuicoes, UtilizadorAtual utilizadorAtual,
+                        // Optional: sem MATRIZ_DOMINIO_EMAIL, o domínio não é verificado (IF01)
+                        @ConfigProperty(name = "matriz.contas.dominio-email") Optional<String> dominioEmail) {
         this.utilizadores = utilizadores;
         this.sessoes = sessoes;
         this.gestores = gestores;
         this.atribuicoes = atribuicoes;
         this.utilizadorAtual = utilizadorAtual;
+        this.dominioEmail = dominioConfigurado(dominioEmail);
+    }
+
+    /** O domínio configurado sem espaços, sem "@" no início e em minúsculas; vazio se não houver. */
+    static Optional<String> dominioConfigurado(Optional<String> valor) {
+        return valor.map(d -> d.strip().toLowerCase(Locale.ROOT))
+                .map(d -> d.startsWith("@") ? d.substring(1) : d)
+                .filter(d -> !d.isEmpty());
+    }
+
+    /**
+     * US21: conta de Membro ativa, com palavra-passe temporária a mudar no primeiro login (PR20).
+     * Um email que já tem conta (de Membro ou de Administrador, sem distinguir maiúsculas) dá 409.
+     */
+    @Transactional
+    public ContaResposta criar(String nome, String email, String palavraPasseTemporaria) {
+        utilizadorAtual.exigirAdministrador();
+        Utilizador conta = Utilizador.novoMembro(nome, email, palavraPasseTemporaria, dominioEmail);
+        if (utilizadores.procurarPorEmail(conta.email()).isPresent()) {
+            throw ErroAplicacao.jaExiste("Este email já tem conta.");
+        }
+        utilizadores.persist(conta);
+        return ContaResposta.de(conta);
     }
 
     /** Contas de Membro ativas e desativadas (ou só as de {@code estado}); sem Administradores (RN21). */

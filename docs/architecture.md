@@ -64,7 +64,6 @@ flowchart LR
     end
 
     BE --> DB[(PostgreSQL)]
-    C -.->|links de confirmação<br/>US01 adiada| EM[Serviço de email externo]
 ```
 
 | Componente                  | Responsabilidade                                                                                     |
@@ -72,9 +71,12 @@ flowchart LR
 | Frontend web                | Aplicação React (TypeScript, Vite) em português de Portugal, para Firefox em ecrãs a partir de 1280 px (RNF01–RNF03); o layout adapta-se a larguras menores, sem que isso passe a ser um requisito. Não decide permissões: apenas mostra o que o servidor permite. |
 | Aplicação Matriz (backend)  | Aplicação Quarkus (Java 21). Expõe a API REST, aplica as regras de negócio e verifica as permissões no servidor (S03, S04). |
 | Base de dados               | Uma única base de dados PostgreSQL, partilhada pelos módulos da aplicação. O esquema é criado por migrations Flyway. |
-| Serviço de email externo    | Envia os links de confirmação de conta (RF01). Fornecedor por decidir (D05); só é necessário quando a US01 for implementada. |
 
 Toda a comunicação entre o browser e o servidor é feita por HTTPS (S02).
+
+Não há serviço de email: a confirmação de conta por email (US01) foi retirada
+a 2026-11-18, porque as contas de Membro passaram a ser criadas pelo
+Administrador (US21).
 
 ### Execução com Docker Compose (Ficha PL 05)
 
@@ -101,13 +103,13 @@ flowchart LR
 
 O Frontend não chega à base de dados: estão em redes diferentes. Localmente,
 a ligação é por HTTP; o HTTPS (S02) depende do alojamento (D04, pendente).
-O serviço de email não existe nesta fase (US01 adiada).
+Não há serviço de email (US01 retirada).
 
 ## 6. Módulos e responsabilidades
 
 | Módulo          | Responsabilidade                                                                                                   | Requisitos             |
 |-----------------|--------------------------------------------------------------------------------------------------------------------|------------------------|
-| **Contas**      | Registo com email da empresa e confirmação por link (adiados), login e logout, sessões, limite de tentativas, desativar e reativar contas de Membro, editar o nome e repor o acesso, mudar a própria palavra-passe | RF01, RF02, RF14, RF19, RF20 |
+| **Contas**      | Criar contas de Membro (Administrador), login e logout, sessões, limite de tentativas, desativar e reativar contas de Membro, editar o nome e repor o acesso, mudar a própria palavra-passe | RF01, RF02, RF14, RF19, RF20 |
 | **Projetos**    | Criar, editar, eliminar e pesquisar projetos, gerir membros e o Gestor, arquivar e reativar, calcular a percentagem de conclusão e as contagens do painel | RF03, RF04, RF08, RF10, RF16–RF18 |
 | **Tarefas**     | Criar, editar e eliminar tarefas (com o registo das tarefas eliminadas), mudar estados, atribuir e remover responsáveis, controlo de versão, filtrar, quadro Kanban, lista "As minhas tarefas" | RF05–RF07, RF09, RF11, RF17 |
 | **Comentários** | Comentar tarefas; só o autor edita ou apaga o seu comentário (PR11)                                                | RF12                   |

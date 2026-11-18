@@ -618,8 +618,9 @@ endpoints ao OpenAPI quando for implementada.
 | F2.4 As minhas tarefas | US11 | ✅ |
 | F2.5 Editar e apagar os próprios comentários | US12 crit. 3 e 4 | ⬜ |
 | F2.6 Administrador: desativar e reativar contas | US14 | ✅ |
-| F2.7 Registo com confirmação por email (extensão) | US01 | ⬜ |
+| F2.7 Registo com confirmação por email (extensão) *(retirado a 2026-11-18, substituído pelo F2.9)* | US01 | — |
 | F2.8 Editar o nome e repor o acesso (Administrador); mudar a própria palavra-passe | US19, US20 | ✅ |
+| F2.9 Administrador: criar contas de Membro | US21 | ✅ |
 
 ### F2.4 — As minhas tarefas ✅
 
@@ -758,6 +759,53 @@ L01, a RN23, o RF19 e o RF20, com as regras PR20, PR21 e RI21.
 - A confirmação da palavra-passe nova só é verificada no Frontend.
 - O campo da palavra-passe temporária é de texto visível, para o
   Administrador a poder comunicar.
+
+### F2.9 — Administrador: criar contas de Membro ✅
+
+**Plano (2026-11-18).** O utilizador pediu que as contas novas passassem a ser
+criadas pelo Administrador, para que só ele gira as contas. Isto contradizia a
+RN02 e a US01 (registo público com confirmação por email, adiada), por isso,
+antes do código, foram escritas a US21 e revistas a RN02, o RF01, a PR02, a
+PR20, a L07, a IF01, a RI13 e a RI21; a RN03, a S05, o RA01, a D05, a RI14 e o
+CE3 foram marcados como retirados.
+
+**Decisões do utilizador (2026-11-18)**
+- **1a** a US01 é retirada e substituída pela US21 (este incremento substitui
+  o F2.7); **2b** o domínio do email é verificado no servidor quando a
+  variável opcional `MATRIZ_DOMINIO_EMAIL` está definida (R06, IF01): sem ela,
+  não é verificado; **3a** antes da release `v0.2.0`.
+- Na produção, a variável foi definida no painel do Render (`empresa.pt`) e
+  aplica-se a partir do Deploy prod da `v0.2.0`.
+
+**Resultado (2026-11-18)**
+- **Contrato:** `criarConta` (`POST /contas`), com o corpo
+  `CriarContaPedido`; 201 com a `Conta`, 400, 401, 403 e 409 `JA_EXISTE`;
+  OpenAPI 0.7.0.
+- **Backend:** sem migração (o esquema já tinha `deve_mudar_palavra_passe` e
+  o email único sem distinguir maiúsculas). Regras no `Utilizador`
+  (`novoMembro`: nome, email, domínio e palavra-passe validados juntos; a
+  regra do nome passou a ser partilhada com `alterarNome`);
+  `GestaoContasServico.criar` verifica o Administrador e o email repetido.
+  Configuração `matriz.contas.dominio-email` (fixa em `empresa.pt` nos
+  testes). Testes: `CriarContaTest` (20) e `CriarContaApiTest` (6). Numa cópia
+  limpa: 326 testes (160 unitários, incluindo as 3 regras de arquitetura, e
+  166 de integração), cobertura de 99,0% das linhas e 96,5% dos ramos.
+- **Frontend:** botão "+ Criar conta" na gestão de contas e diálogo
+  `CriarConta`, com as mesmas regras do Backend; o erro do domínio e o do
+  email repetido aparecem no campo do email. 3 testes novos (131 no total).
+- Verificado contra o Backend real, pelo proxy do Vite (201, 409, 400 com o
+  domínio e com os três campos, 403 para um Membro, primeiro login com a
+  palavra-passe temporária), e testado pelo utilizador no browser.
+
+**Desvios ao plano**
+- O `compose.yaml` não precisou de mudar: já lê o `backend/.env` inteiro.
+- O valor `POR_CONFIRMAR` e as colunas do token de confirmação ficam no
+  esquema, sem uso (retirá-los exigia uma migração sem benefício).
+- Dois pedidos simultâneos com o mesmo email: o segundo é recusado pelo
+  índice único da base de dados, mas com 500 em vez de 409 (improvável com um
+  só Administrador).
+- Na verificação ficou criada, na base de dados local do utilizador, a conta
+  "Conta de Verificação" (as contas não se apagam, RI15).
 
 ## 6. Pontos em aberto
 

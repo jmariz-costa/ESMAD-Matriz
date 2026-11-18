@@ -21,7 +21,7 @@ Inclui também os requisitos de segurança e privacidade, as decisões técnicas
 
 | ID   | Informação                                                                             |
 |------|----------------------------------------------------------------------------------------|
-| IF01 | O domínio de email da empresa (ex.: `@empresa.pt`) ainda não foi indicado pelo cliente. |
+| IF01 | O domínio de email da empresa (ex.: `@empresa.pt`) ainda não foi indicado pelo cliente. Por isso é configurável na instalação (`MATRIZ_DOMINIO_EMAIL`, US21); sem ele, o domínio não é verificado. |
 
 ## 2. Pressupostos assumidos
 
@@ -31,7 +31,7 @@ mas são pressupostos e não requisitos pedidos pelo cliente: podem ser revistos
 | ID   | Pressuposto                                                                                                                                      | Afeta       |
 |------|--------------------------------------------------------------------------------------------------------------------------------------------------|-------------|
 | PR01 | Cada projeto tem um único Gestor: quem o criou, ou quem o Administrador nomear ao desativar o Gestor anterior (US14).                             | US03, US04  |
-| PR02 | O login é feito com email e palavra-passe. Nas contas de Membro, a palavra-passe é definida no registo; nas de Administrador, na instalação (D07). | US01, US02  |
+| PR02 | O login é feito com email e palavra-passe. Nas contas de Membro, o Administrador define uma palavra-passe temporária ao criar a conta (US21) e a pessoa define a sua no primeiro login (PR20); nas de Administrador, na instalação (D07). | US21, US02  |
 | PR03 | Se o login falhar, a mensagem não indica se o erro foi no email ou na palavra-passe.                                                              | US02        |
 | PR04 | Um projeto tem nome obrigatório e descrição opcional.                                                                                             | US03        |
 | PR05 | Uma tarefa nova começa no estado "A fazer"; só o título é obrigatório.                                                                            | US05        |
@@ -49,7 +49,7 @@ mas são pressupostos e não requisitos pedidos pelo cliente: podem ser revistos
 | PR17 | A empresa está sediada na União Europeia, pelo que os dados pessoais estão sujeitos ao RGPD.                                                      | Segurança   |
 | PR18 | Os textos da interface são preparados desde o início para acrescentar inglês no futuro, sem refazer a interface.                                 | RNF03       |
 | PR19 | As contas de Administrador usam um email da empresa próprio da função (ex.: `admin@empresa.pt`), diferente do email individual da pessoa. Assim, quem é Administrador pode ter também uma conta de Membro com o seu email individual da empresa. | US14, D07   |
-| PR20 | A palavra-passe temporária definida pelo Administrador (US19) tem de ser mudada no primeiro login; até lá, o servidor só aceita mudar a palavra-passe, consultar a sessão e sair (S03). | US19, US20 |
+| PR20 | A palavra-passe temporária definida pelo Administrador (ao repor o acesso, US19, ou ao criar a conta, US21) tem de ser mudada no primeiro login; até lá, o servidor só aceita mudar a palavra-passe, consultar a sessão e sair (S03). | US19, US20, US21 |
 | PR21 | Mudar a própria palavra-passe termina as outras sessões abertas da pessoa; a sessão onde a mudança foi feita mantém-se.                | US20, D06   |
 
 ## 3. Segurança e privacidade
@@ -60,7 +60,7 @@ mas são pressupostos e não requisitos pedidos pelo cliente: podem ser revistos
 | S02  | Toda a comunicação entre o browser e o servidor é cifrada (HTTPS).                                                              |
 | S03  | As permissões (Membro, Gestor, Administrador) são verificadas no servidor, e não apenas escondendo opções na interface.         |
 | S04  | Um Membro só consegue ver projetos, tarefas e comentários dos projetos de que é membro. Única exceção: o Administrador vê o nome dos projetos de uma pessoa que está a desativar (US14). |
-| S05  | Os links de confirmação de email são de uso único e expiram ao fim de 24 horas.                                                  |
+| S05  | *(Retirado a 2026-11-18 com a US01: não há links de confirmação.)* Os links de confirmação de email são de uso único e expiram ao fim de 24 horas. |
 | S06  | Uma conta de Membro só fica ativa depois de o email ser confirmado. As contas de Administrador são configuradas na instalação (D07). |
 | S07  | Só são recolhidos os dados pessoais necessários: nome, email e palavra-passe (minimização de dados, RGPD).                       |
 | S08  | Credenciais, chaves e outros segredos nunca são guardados no repositório.                                                        |
@@ -69,7 +69,7 @@ mas são pressupostos e não requisitos pedidos pelo cliente: podem ser revistos
 
 | ID   | Risco                                                                                                                                       | Motivo da aceitação                                                                 |
 |------|---------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------|
-| RA01 | O registo indica quando um email já tem conta (US01, crit. 5), o que permite descobrir que emails estão registados, apesar do PR03.          | Aplicação interna de até 50 pessoas; os emails dos colegas já são conhecidos dentro da empresa. |
+| RA01 | *(Retirado a 2026-11-18: sem registo público, só o Administrador vê se um email já tem conta, US21 crit. 3.)* O registo indica quando um email já tem conta (US01, crit. 5), o que permite descobrir que emails estão registados, apesar do PR03.          | Aplicação interna de até 50 pessoas; os emails dos colegas já são conhecidos dentro da empresa. |
 
 ## 4. Decisões técnicas
 
@@ -82,7 +82,7 @@ PL 03, e a D04 depois da Ficha PL 05. As restantes continuam pendentes.
 | D02  | Base de dados. **Decidida** (Ficha PL 03): PostgreSQL, executado em Docker; esquema criado por migrations (Flyway). Alternativas e justificação no [ADR 0003](decisions/0003-base-de-dados-relacional-postgresql.md). |
 | D03  | Arquitetura da aplicação. **Decidida** (Ficha PL 02): monólito modular, ver [architecture.md](architecture.md). |
 | D04  | Alojamento (onde a Matriz vai correr). **Decidida** (2026-11-16): Frontend e Backend no Render (imagens do Docker Hub, região Frankfurt) e PostgreSQL no Neon (Frankfurt), com HTTPS; deploy por release com o workflow "Deploy prod". Alternativas e justificação no [ADR 0006](decisions/0006-alojamento-render-e-neon.md). |
-| D05  | Serviço de envio de emails (confirmação de conta).                                                        |
+| D05  | Serviço de envio de emails (confirmação de conta). *(Deixou de ser necessária a 2026-11-18: a US01 foi retirada.)* |
 | D06  | Mecanismo de autenticação e de sessão, incluindo o tempo até uma sessão inativa expirar. **Decidida** (Ficha PL 03): sessão guardada na base de dados; o browser recebe um token aleatório num cookie HttpOnly e o servidor guarda apenas o hash do token. A sessão expira ao fim de 30 minutos sem atividade (cada pedido renova o prazo). Sair apaga a sessão; desativar uma conta apaga todas as sessões dessa pessoa (PR16). Alternativas (JWT, SSO) e justificação no [ADR 0004](decisions/0004-autenticacao-sessao-na-base-de-dados.md). |
 | D07  | Como são configuradas as contas de Administrador na instalação. **Decidida** (Ficha PL 03): no arranque, se a conta de Administrador ainda não existir, é criada com o email e a palavra-passe indicados em variáveis de ambiente. Uma conta já existente nunca é alterada. |
 | D08  | O que acontece quando duas pessoas editam a mesma tarefa ao mesmo tempo (caso CE5). **Decidida** (Ficha PL 03): bloqueio otimista. A tarefa tem um número de versão; se outra pessoa a tiver guardado entretanto, a alteração é recusada (409) e a interface pede para recarregar, sem perder o que foi escrito. |
@@ -102,4 +102,4 @@ Consequências conhecidas das decisões tomadas para o MVP:
 | L04  | A interface existe apenas em português.                                                                                         |
 | L05  | Não é possível anexar ficheiros às tarefas.                                                                                     |
 | L06  | Eliminar um projeto é definitivo: apaga também os seus membros, tarefas, responsáveis, comentários, histórico e registo de tarefas eliminadas, sem deixar registo da eliminação. Para guardar os dados, o Gestor deve arquivar em vez de eliminar. |
-| L07  | O registo público (US01) foi adiado: enquanto não for implementado, as contas de Membro são criadas por seed (dados de demonstração). |
+| L07  | Não há registo público: as contas de Membro são criadas pelo Administrador (US21). As contas de demonstração continuam a ser criadas por seed. *(Revista a 2026-11-18: a US01, adiada na Ficha PL 03, foi retirada.)* |

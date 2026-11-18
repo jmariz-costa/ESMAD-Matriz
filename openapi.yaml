@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Matriz API
-  version: 0.6.0
+  version: 0.7.0
   contact:
     name: Equipa Matriz
     email: matriz@empresa.pt
@@ -11,12 +11,12 @@ info:
     (docs/implementation-plan.md): autenticação, projetos, membros, tarefas,
     responsáveis e comentários. As operações da Fase 2 são acrescentadas
     quando forem implementadas: já estão "As minhas tarefas" (US11), a
-    gestão de contas do Administrador (US14 e US19) e mudar a própria
+    gestão de contas do Administrador (US14, US19 e US21) e mudar a própria
     palavra-passe (US20); faltam arquivar, histórico e editar e apagar
     comentários.
 
-    **Palavra-passe temporária (PR20):** depois de o Administrador repor o
-    acesso, `UtilizadorAutenticado.deveMudarPalavraPasse` vem a `true` e
+    **Palavra-passe temporária (PR20):** depois de o Administrador criar a
+    conta (US21) ou repor o acesso (US19), `UtilizadorAutenticado.deveMudarPalavraPasse` vem a `true` e
     todas as operações, exceto `GET /auth/me`, `POST /auth/palavra-passe` e
     `POST /auth/logout`, devolvem 403 `PALAVRA_PASSE_TEMPORARIA` até a pessoa
     definir uma palavra-passe nova.
@@ -91,7 +91,7 @@ tags:
   - name: Comentários
     description: Comentários de uma tarefa (US12).
   - name: Contas
-    description: Gestão das contas de Membro pelo Administrador (US14).
+    description: Gestão das contas de Membro pelo Administrador (US14, US19, US21).
 
 paths:
   /auth/login:
@@ -491,6 +491,52 @@ paths:
           $ref: '#/components/responses/NaoAutenticado'
         '403':
           $ref: '#/components/responses/SemPermissao'
+    post:
+      tags: [Contas]
+      operationId: criarConta
+      summary: Criar uma conta de Membro (Administrador)
+      description: |
+        Só para o Administrador (US21). Cria uma conta de Membro ativa, com
+        uma palavra-passe temporária (pelo menos 8 caracteres, RN04) que a
+        pessoa tem de mudar no primeiro login (PR20). O nome tem entre 2 e
+        150 caracteres (RN23). O email é guardado em minúsculas e, se a
+        instalação tiver o domínio da empresa configurado
+        (`MATRIZ_DOMINIO_EMAIL`), tem de ser desse domínio (R06, IF01);
+        caso contrário, 400 no campo `email`. Um email que já tem conta, de
+        Membro ou de Administrador, sem distinguir maiúsculas, devolve 409
+        `JA_EXISTE`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CriarContaPedido'
+            example:
+              nome: Eva Rocha
+              email: eva@empresa.pt
+              palavraPasseTemporaria: <palavra-passe temporária>
+      responses:
+        '201':
+          description: Conta criada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Conta'
+        '400':
+          $ref: '#/components/responses/Validacao'
+        '401':
+          $ref: '#/components/responses/NaoAutenticado'
+        '403':
+          $ref: '#/components/responses/SemPermissao'
+        '409':
+          description: O email já tem conta.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+              example:
+                codigo: JA_EXISTE
+                mensagem: Este email já tem conta.
 
   /contas/{contaId}:
     parameters:
@@ -1155,6 +1201,26 @@ components:
         nome:
           type: string
           description: Entre 2 e 150 caracteres, sem contar os espaços nas pontas (RN23).
+
+    CriarContaPedido:
+      type: object
+      additionalProperties: false
+      required: [nome, email, palavraPasseTemporaria]
+      properties:
+        nome:
+          type: string
+          description: Entre 2 e 150 caracteres, sem contar os espaços nas pontas (RN23).
+        email:
+          type: string
+          format: email
+          maxLength: 254
+          description: |
+            Do domínio da empresa, quando está configurado (R06, IF01). Os
+            espaços nas pontas não contam; é guardado em minúsculas.
+        palavraPasseTemporaria:
+          type: string
+          format: password
+          minLength: 8
 
     ReporAcessoPedido:
       type: object

@@ -31,7 +31,7 @@ cliente foi:
 
 - Entrar e sair da conta, com sessão que expira ao fim de 30 minutos sem
   atividade e bloqueio de 15 minutos depois de 5 tentativas falhadas. As
-  contas de demonstração são criadas por seed (o registo foi adiado, L07).
+  contas de demonstração são criadas por seed; não há registo público (L07).
 - Projetos: criar, editar, eliminar e pesquisar, com paginação. Quem cria o
   projeto é o Gestor e gere os membros.
 - Painel inicial com as contagens de tarefas por estado e percentagem de
@@ -52,6 +52,9 @@ cliente foi:
   Membro, desativar (com a escolha do novo Gestor de cada projeto da pessoa)
   e reativar (US14), editar o nome e repor o acesso com uma palavra-passe
   temporária, que a pessoa tem de mudar no login seguinte (US19).
+- Criar contas de Membro pelo Administrador, com uma palavra-passe
+  temporária a mudar no primeiro login e, se estiver configurado, só com
+  email do domínio da empresa (US21). Substitui o registo público (US01).
 - Mudar a própria palavra-passe, a partir do nome no cabeçalho (US20).
 
 ### Previstas (Fase 2)
@@ -195,6 +198,7 @@ ver `compose.yaml`).
 | `MATRIZ_ADMIN_NOME`, `MATRIZ_ADMIN_EMAIL`, `MATRIZ_ADMIN_PASSWORD` | Conta de Administrador, criada no arranque se ainda não existir (D07) |
 | `MATRIZ_SEED_DEMO`      | `true` cria os dados de demonstração no arranque, se ainda não existirem Membros |
 | `MATRIZ_DEMO_PASSWORD`  | Palavra-passe das contas de demonstração                                        |
+| `MATRIZ_DOMINIO_EMAIL`  | Opcional. Domínio, sem `@`, das contas de Membro criadas pelo Administrador (ex.: `empresa.pt`); vazio ou ausente, o domínio não é verificado (US21, IF01) |
 | `MATRIZ_COOKIE_SEGURO`  | `true` quando a aplicação é servida por HTTPS (cookie `Secure`, D06)           |
 
 O endereço do Backend usado pelo Frontend em desenvolvimento está num único
@@ -258,7 +262,7 @@ cd frontend && npm test                 # Vitest + Testing Library
 cd frontend && npx tsc -b && npm run lint && npm run build   # tipos, lint e build
 ```
 
-O Backend tem 140 testes unitários e 160 de integração (com `@Tag("integracao")`).
+O Backend tem 160 testes unitários e 166 de integração (com `@Tag("integracao")`).
 Três dos unitários são as regras de arquitetura do
 [ADR 0001](docs/decisions/0001-arquitetura-interna-backend.md), verificadas
 com ArchUnit em `ArquiteturaTest`: camadas (recurso → serviço → repositório),
@@ -397,5 +401,7 @@ verificações em [docs/verification.md](docs/verification.md).
   própria palavra-passe (US20); a L01 foi revista.
 - Regras de arquitetura do ADR 0001 verificadas com ArchUnit, num passo
   próprio da pipeline; os ciclos entre módulos ficam registados no ADR.
+- Fase 2, incremento F2.9: o Administrador cria as contas de Membro (US21),
+  que substitui o registo público (US01, retirada).
 
 Próximo: Fase 2 (arquivo, histórico consultável e edição de comentários).
