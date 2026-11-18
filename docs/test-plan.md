@@ -160,6 +160,38 @@ incidental, porque nenhum teste verifica as contas criadas; e a margem nos
 ramos é pequena (14 ramos por cobrir), por isso código novo sem testes pode
 fazer a pipeline falhar.
 
+### Situação na versão 0.2.0 (2026-11-18)
+
+| Nível | Testes | Sem servidor nem base de dados |
+|-------|--------|--------------------------------|
+| Unitários do Backend (incluindo as 3 regras de arquitetura) | 160 | Sim |
+| Frontend (Vitest e Testing Library, com a API simulada) | 131 | Sim |
+| Integração do Backend (RestAssured e PostgreSQL real) | 166 | Não |
+| E2E (Playwright, Firefox) | 1 | Não |
+
+Cobertura do Backend: 99,0% de linhas e 96,5% de ramos.
+
+Na aplicação inteira, a forma é de pirâmide (291 testes na base, 166 no meio
+e 1 no topo). **Só no Backend, não é:** há quase tantos testes de integração
+como unitários. Foi uma escolha consciente:
+
+- O [ADR 0001](decisions/0001-arquitetura-interna-backend.md) põe as
+  invariantes nos agregados, testadas por testes unitários, e deixa as
+  **permissões e a persistência** para os testes de integração. A maior parte
+  dos testes de integração verifica quem pode fazer o quê (401, 403, 404,
+  IDOR) e o que fica gravado, o que só se verifica a sério com a API e a base
+  de dados reais.
+- A pirâmide é uma orientação de custo. Aqui, os testes de integração correm
+  em cerca de um minuto, num PostgreSQL descartável (Dev Services).
+- Testar os serviços sem base de dados exigiria simular os repositórios
+  (mocks), o que aumentaria o número de testes unitários sem verificar mais do
+  que os testes de integração já verificam.
+
+**Melhoria possível, não feita:** alguns casos de validação (limites de texto
+e formatos) estão testados no agregado e também pela API. Deixar na API só um
+caso por regra aproximaria a proporção da pirâmide, sem perder cobertura das
+regras.
+
 ## Regras de arquitetura (ArchUnit)
 
 Desde 2026-11-18, três regras do

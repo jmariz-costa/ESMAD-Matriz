@@ -70,7 +70,7 @@ cada incremento em
 
 ## Tecnologias
 
-Versões em uso na `0.2.0-rc.1`; as decisões estão em
+Versões em uso na `0.2.0`; as decisões estão em
 [docs/constraints.md](docs/constraints.md) §4 e nos ADR
 [0002](docs/decisions/0002-execucao-em-contentores-e-ci.md),
 [0005](docs/decisions/0005-pipeline-em-etapas-e-publicacao-no-docker-hub.md) e
@@ -107,7 +107,7 @@ Versões em uso na `0.2.0-rc.1`; as decisões estão em
 | [docs/delivery-report.md](docs/delivery-report.md) | Validação final e relatório de entrega da `0.1.0-rc.1` (Ficha PL 05)                      |
 | [docs/decisions/](docs/decisions/)             | Architecture Decision Records (ADRs), com índice no README da pasta                           |
 | [CHANGELOG.md](CHANGELOG.md)                   | Histórico de alterações por versão (Keep a Changelog, Semantic Versioning)                    |
-| [RELEASE_NOTES.md](RELEASE_NOTES.md)           | Notas da versão candidata `0.2.0-rc.1`                                                         |
+| [RELEASE_NOTES.md](RELEASE_NOTES.md)           | Notas da versão `0.2.0`                                                                        |
 | [AGENTS.md](AGENTS.md)                         | Instruções para agentes de IA que trabalhem neste repositório                                 |
 
 ## Executar com o Makefile
@@ -403,5 +403,8 @@ verificações em [docs/verification.md](docs/verification.md).
   próprio da pipeline; os ciclos entre módulos ficam registados no ADR.
 - Fase 2, incremento F2.9: o Administrador cria as contas de Membro (US21),
   que substitui o registo público (US01, retirada).
+- Versão **`0.2.0`** (tag `v0.2.0`): junta tudo o que está acima desde a
+  `0.2.0-rc.1` ([CHANGELOG.md](CHANGELOG.md),
+  [RELEASE_NOTES.md](RELEASE_NOTES.md)).
 
 Próximo: Fase 2 (arquivo, histórico consultável e edição de comentários).

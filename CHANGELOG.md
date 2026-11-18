@@ -8,6 +8,14 @@ Enquanto a versão for `0.x`, a API não é considerada estável.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-18
+
+Primeira versão **não candidata** da Matriz: à Fase 1 juntam-se parte da
+Fase 2 ("As minhas tarefas" e a gestão de contas completa pelo
+Administrador, incluindo criar contas), o novo design com tema escuro, o
+`Makefile` e as regras de arquitetura verificadas na pipeline. No deploy, o
+Backend aplica a migração Flyway V2 (`deve_mudar_palavra_passe`).
+
 ### Added
 
 - **Criar contas de Membro** (US21, incremento F2.9): na gestão de contas, o
@@ -200,6 +208,7 @@ Primeira versão identificada: versão **candidata** com a Fase 1 do MVP
 - Valores de exemplo novos para as três palavras-passe do `.env.example`;
   os anteriores tinham sido usados numa instalação local (S1).
 
-[Unreleased]: https://github.com/jmariz-costa/ESMAD-Matriz/compare/v0.2.0-rc.1...HEAD
+[Unreleased]: https://github.com/jmariz-costa/ESMAD-Matriz/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/jmariz-costa/ESMAD-Matriz/compare/v0.2.0-rc.1...v0.2.0
 [0.2.0-rc.1]: https://github.com/jmariz-costa/ESMAD-Matriz/compare/v0.1.0-rc.1...v0.2.0-rc.1
 [0.1.0-rc.1]: https://github.com/jmariz-costa/ESMAD-Matriz/tree/v0.1.0-rc.1
