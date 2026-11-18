@@ -74,7 +74,8 @@ mas são pressupostos e não requisitos pedidos pelo cliente: podem ser revistos
 ## 4. Decisões técnicas
 
 As decisões D01 a D03 e D06 a D09 e D11 foram tomadas nas Fichas PL 02 e
-PL 03, e a D04 depois da Ficha PL 05. As restantes continuam pendentes.
+PL 03, e a D04 depois da Ficha PL 05. A D05 deixou de ser necessária
+(2026-11-18). Só a D10 continua pendente.
 
 | ID   | Decisão                                                                                                   |
 |------|-----------------------------------------------------------------------------------------------------------|

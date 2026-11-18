@@ -187,9 +187,9 @@ erDiagram
         texto email UK
         texto password_hash
         enum tipo "Membro | Administrador"
-        enum estado "Por confirmar | Ativo | Desativado"
-        texto token_confirmacao_hash "opcional"
-        datahora token_expira_em "opcional"
+        enum estado "Ativo | Desativado (Por confirmar: sem uso)"
+        texto token_confirmacao_hash "opcional, sem uso"
+        datahora token_expira_em "opcional, sem uso"
         inteiro tentativas_falhadas
         datahora bloqueado_ate "opcional"
         booleano deve_mudar_palavra_passe

@@ -102,7 +102,7 @@ flowchart LR
 | `postgres` | A base de dados, com os dados no volume `matriz-dados` | `127.0.0.1:5432`, só para o modo de desenvolvimento |
 
 O Frontend não chega à base de dados: estão em redes diferentes. Localmente,
-a ligação é por HTTP; o HTTPS (S02) depende do alojamento (D04, pendente).
+a ligação é por HTTP; em produção, o Render serve por HTTPS (S02, D04, ADR 0006).
 Não há serviço de email (US01 retirada).
 
 ## 6. Módulos e responsabilidades
@@ -211,9 +211,11 @@ pelo cliente.
   (contrato em [../openapi.yaml](../openapi.yaml)).
 - Existe uma única instalação da Matriz, para uma única empresa (RN01).
 
-**Continuam pendentes**, entre outras (ver [constraints.md](constraints.md)):
+**Continua pendente** (ver [constraints.md](constraints.md)):
 
 | ID  | Decisão                                       |
 |-----|-----------------------------------------------|
-| D04 | Alojamento                                    |
-| D05 | Serviço de envio de emails                    |
+| D10 | Pedido de apagamento de dados pessoais (RGPD) |
+
+A D04 (alojamento) foi decidida a 2026-11-16 (ADR 0006); a D05 (serviço de
+envio de emails) deixou de ser necessária a 2026-11-18, com a US01 retirada.

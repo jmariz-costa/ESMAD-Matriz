@@ -96,7 +96,7 @@ Versões em uso na `0.2.0-rc.1`; as decisões estão em
 | [docs/constraints.md](docs/constraints.md)     | Restrições, pressupostos, segurança e privacidade, decisões pendentes, limitações de âmbito   |
 | [docs/architecture.md](docs/architecture.md)   | Arquitetura escolhida (monólito modular), justificação, componentes e módulos                 |
 | [docs/database.md](docs/database.md)           | Modelo de dados, diagrama ER em Mermaid e regras de integridade                               |
-| [openapi.yaml](openapi.yaml)                   | Contrato REST (OpenAPI 3.1) da Fase 1: autenticação, projetos, membros, tarefas, comentários  |
+| [openapi.yaml](openapi.yaml)                   | Contrato REST (OpenAPI 3.1) do que está implementado: autenticação e palavra-passe, contas, projetos, membros, tarefas, "As minhas tarefas", comentários |
 | [docs/ui/](docs/ui/)                           | Wireframes do quadro Kanban e dos restantes ecrãs (PNG e HTML de origem)                      |
 | [docs/implementation-plan.md](docs/implementation-plan.md) | Plano de implementação: incrementos I0–I8 da Fase 1, Fase 2 e estado de cada um   |
 | [docs/verification.md](docs/verification.md)   | Registo das verificações do MVP: percurso da interface (I6) e casos de verificação (I7)       |

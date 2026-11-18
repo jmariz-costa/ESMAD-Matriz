@@ -105,8 +105,9 @@ desativar e reativar contas.
 
 ## 7. Âmbito do MVP
 
-O MVP inclui os requisitos **RF01 a RF14** (User Stories US01 a US14) e,
-desde a Ficha PL 03, os requisitos **RF16 a RF18** (US16 a US18). O RF15
+O MVP inclui os requisitos **RF01 a RF14** (User Stories US02 a US14 e, para
+o RF01, a US21), desde a Ficha PL 03 os requisitos **RF16 a RF18** (US16 a
+US18) e, desde 2026-11-17, os requisitos **RF19 e RF20** (US19 e US20). O RF15
 (etiquetas, US15) foi retirado do MVP pelo cliente e está na secção seguinte.
 
 Na Ficha PL 03, o RF01 (registo, US01) foi adiado e as contas de Membro

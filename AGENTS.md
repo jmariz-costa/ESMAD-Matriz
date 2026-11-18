@@ -6,7 +6,7 @@ repositório da Matriz.
 ## Projeto
 
 A Matriz é uma aplicação web interna de gestão de projetos e tarefas. O
-projeto tem a **Fase 1 implementada** (Ficha PL 03): monólito modular com Backend
+projeto tem a **Fase 1 implementada** (Ficha PL 03) e parte da Fase 2: monólito modular com Backend
 em Java 21 + Quarkus (`backend/`), Frontend em React + TypeScript (`frontend/`)
 e PostgreSQL em Docker. O estado de cada incremento está em
 [docs/implementation-plan.md](docs/implementation-plan.md).
@@ -87,7 +87,7 @@ Estes documentos são a fonte de verdade do projeto.
 
 - Não acrescentar funcionalidades, regras ou comportamentos que não estejam documentados.
 - Não tomar decisões que estejam listadas como pendentes em `constraints.md`
-  (ex.: tecnologias, base de dados, autenticação). Propor opções e esperar aprovação.
+  (hoje, a D10: pedidos de apagamento de dados pessoais). Propor opções e esperar aprovação.
 - Não tratar pressupostos como requisitos confirmados.
 - Se faltar informação, perguntar em vez de assumir.
 
